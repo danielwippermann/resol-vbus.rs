@@ -1,3 +1,6 @@
+//! A module containing utitlities functions for processing VBus data.
+
+
 /// Calc checksum according to VBus protocol version x.0.
 pub fn calc_checksum_v0(buf: &[u8]) -> u8 {
     buf.iter().fold(0x7F, |acc, &x| (0x80 + acc - x) & 0x7F)
@@ -46,6 +49,11 @@ pub fn copy_bytes_injecting_septett(dst: &mut [u8], src: &[u8]) {
         let mask = if (septett & (1 << idx)) != 0 { 0x80 } else { 0x00 };
         *dst_b = b | mask;
     }
+}
+
+
+pub fn has_msb_set(buf: &[u8]) -> bool {
+    buf.iter().any(| b | b & 0x80 != 0)
 }
 
 
