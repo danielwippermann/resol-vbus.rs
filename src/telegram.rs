@@ -19,13 +19,13 @@ pub struct Telegram {
 impl Telegram {
 
     /// Get number of frames from a VBus protocol version 3.x command.
-    pub fn frame_count_for_command(command: u8) -> u8 {
+    pub fn frame_count_from_command(command: u8) -> u8 {
         command >> 5
     }
 
     /// Get number of 7-byte frames attached to this `Telegram`.
     pub fn frame_count(&self) -> u8 {
-        Telegram::frame_count_for_command(self.command)
+        Telegram::frame_count_from_command(self.command)
     }
 
     /// Creates an ID string for this `Telegram`.
@@ -54,11 +54,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_frame_count_for_command() {
-        assert_eq!(0, Telegram::frame_count_for_command(0x1F));
-        assert_eq!(1, Telegram::frame_count_for_command(0x3F));
-        assert_eq!(2, Telegram::frame_count_for_command(0x5F));
-        assert_eq!(3, Telegram::frame_count_for_command(0x7F));
+    fn test_frame_count_from_command() {
+        assert_eq!(0, Telegram::frame_count_from_command(0x1F));
+        assert_eq!(1, Telegram::frame_count_from_command(0x3F));
+        assert_eq!(2, Telegram::frame_count_from_command(0x5F));
+        assert_eq!(3, Telegram::frame_count_from_command(0x7F));
     }
 
     #[test]
