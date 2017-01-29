@@ -24,6 +24,8 @@ mod test_data;
 #[cfg(test)]
 mod test_utils;
 
+pub mod utils;
+
 mod stream_blob_length;
 pub use stream_blob_length::StreamBlobLength;
 
