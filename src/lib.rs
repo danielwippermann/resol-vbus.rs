@@ -35,3 +35,6 @@ pub use header::Header;
 
 mod packet;
 pub use packet::Packet;
+
+mod datagram;
+pub use datagram::Datagram;
