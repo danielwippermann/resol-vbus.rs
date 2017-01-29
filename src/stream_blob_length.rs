@@ -1,5 +1,5 @@
 /// Provides information whether a slice of bytes contains a valid blob of data.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StreamBlobLength {
     /// The slice of bytes starts with a valid blob of given size.
     BlobLength(usize),
