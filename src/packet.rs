@@ -6,16 +6,16 @@ use header::Header;
 /// The `Packet` type stores information according to the VBus protocol version 1.x.
 pub struct Packet {
     /// The shared `Header` of all VBus protocol types.
-    header: Header,
+    pub header: Header,
 
     /// The command of this `Packet`.
-    command: u16,
+    pub command: u16,
 
     /// The number of 4-byte frames attached to this `Packet`.
-    frame_count: u8,
+    pub frame_count: u8,
 
     /// The actual data from the frames attached to this `Packet`.
-    frame_data: [u8; 508],
+    pub frame_data: [u8; 508],
 }
 
 

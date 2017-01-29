@@ -6,16 +6,16 @@ use header::Header;
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
 pub struct Datagram {
     /// The shared `Header` of all VBus protocol types.
-    header: Header,
+    pub header: Header,
 
     /// The command of this `Datagram`.
-    command: u16,
+    pub command: u16,
 
     /// The 16-bit parameter attached to this `Datagram`.
-    param16: i16,
+    pub param16: i16,
 
     /// The 32-bit parameter attached to this `Datagram`.
-    param32: i32,
+    pub param32: i32,
 }
 
 
