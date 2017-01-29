@@ -52,6 +52,7 @@ pub fn copy_bytes_injecting_septett(dst: &mut [u8], src: &[u8]) {
 }
 
 
+/// Checks a slice of bytes whether one of them has its MSB set.
 pub fn has_msb_set(buf: &[u8]) -> bool {
     buf.iter().any(| b | b & 0x80 != 0)
 }
