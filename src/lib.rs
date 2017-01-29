@@ -38,3 +38,6 @@ pub use packet::Packet;
 
 mod datagram;
 pub use datagram::Datagram;
+
+mod telegram;
+pub use telegram::Telegram;
