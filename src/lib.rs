@@ -26,3 +26,6 @@ mod test_utils;
 
 mod stream_blob_length;
 pub use stream_blob_length::StreamBlobLength;
+
+mod blob_reader;
+pub use blob_reader::BlobReader;
