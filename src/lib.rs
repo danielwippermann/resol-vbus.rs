@@ -18,5 +18,11 @@ extern crate byteorder;
 extern crate chrono;
 
 
+#[cfg(test)]
+mod test_data;
+
+#[cfg(test)]
+mod test_utils;
+
 mod stream_blob_length;
 pub use stream_blob_length::StreamBlobLength;
