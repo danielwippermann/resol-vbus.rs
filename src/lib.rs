@@ -29,3 +29,6 @@ pub use stream_blob_length::StreamBlobLength;
 
 mod blob_reader;
 pub use blob_reader::BlobReader;
+
+mod header;
+pub use header::Header;
