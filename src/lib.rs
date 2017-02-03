@@ -59,3 +59,5 @@ pub use live_data_reader::LiveDataReader;
 
 mod live_data_writer;
 pub use live_data_writer::LiveDataWriter;
+
+pub mod recording_decoder;
