@@ -2,7 +2,7 @@
 //! File Format.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{TimeZone, UTC};
+use chrono::{DateTime, TimeZone, UTC};
 
 use stream_blob_length::StreamBlobLength::{self, BlobLength, Partial, Malformed};
 use header::Header;
@@ -38,9 +38,18 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
 }
 
 
+/// Convert slice of bytes to `DateTime<UTC>` object.
+pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<UTC> {
+    let timestamp_ms = LittleEndian::read_i64(&buf [0..8]);
+    let timestamp_s = timestamp_ms / 1000;
+    let timestamp_ns = (timestamp_ms % 1000) as u32 * 1000000;
+    UTC.timestamp(timestamp_s, timestamp_ns)
+}
+
+
 /// Convert slice of bytes to respective `Data` variant.
 pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
-    let timestamp_ms = LittleEndian::read_i64(&buf [6..14]);
+    let timestamp = timestamp_from_checked_bytes(&buf [6..14]);
     let destination_address = LittleEndian::read_u16(&buf [14..16]);
     let source_address = LittleEndian::read_u16(&buf [16..18]);
     let protocol_version = buf [18];
@@ -56,7 +65,7 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
 
         Data::Packet(Packet {
             header: Header {
-                timestamp: UTC.timestamp(timestamp_ms / 1000, (timestamp_ms % 1000) as u32 * 1000000),
+                timestamp: timestamp,
                 channel: channel,
                 destination_address: destination_address,
                 source_address: source_address,
@@ -136,16 +145,72 @@ mod tests {
     }
 
     #[test]
+    fn test_timestamp_from_checked_bytes() {
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [20..]);
+        assert_eq!("2017-01-09T09:57:28.975+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [106..]);
+        assert_eq!("2017-01-09T09:57:27.880+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [240..]);
+        assert_eq!("2017-01-09T09:57:28.765+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [270..]);
+        assert_eq!("2017-01-09T09:57:28.764+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [336..]);
+        assert_eq!("2017-01-09T09:57:08.893+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [418..]);
+        assert_eq!("2017-01-09T09:57:13.901+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [500..]);
+        assert_eq!("2017-01-09T09:57:17.894+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [582..]);
+        assert_eq!("2017-01-09T09:57:21.797+00:00", timestamp.to_rfc3339());
+
+        let timestamp = timestamp_from_checked_bytes(&RECORDING_1 [664..]);
+        assert_eq!("2017-01-09T09:57:26.080+00:00", timestamp.to_rfc3339());
+    }
+
+    #[test]
     fn test_data_from_checked_bytes() {
-        assert_eq!("00_0010_0053_10_0100", data_from_checked_bytes(0x00, &RECORDING_1 [14..]).to_id_string());
-        assert_eq!("01_0010_7E11_10_0100", data_from_checked_bytes(0x01, &RECORDING_1 [100..]).to_id_string());
-        assert_eq!("01_0010_7E21_10_0100", data_from_checked_bytes(0x01, &RECORDING_1 [234..]).to_id_string());
-        assert_eq!("01_0015_7E11_10_0100", data_from_checked_bytes(0x01, &RECORDING_1 [264..]).to_id_string());
-        assert_eq!("01_6651_7E11_10_0200", data_from_checked_bytes(0x01, &RECORDING_1 [330..]).to_id_string());
-        assert_eq!("01_6652_7E11_10_0200", data_from_checked_bytes(0x01, &RECORDING_1 [412..]).to_id_string());
-        assert_eq!("01_6653_7E11_10_0200", data_from_checked_bytes(0x01, &RECORDING_1 [494..]).to_id_string());
-        assert_eq!("01_6654_7E11_10_0200", data_from_checked_bytes(0x01, &RECORDING_1 [576..]).to_id_string());
-        assert_eq!("01_6655_7E11_10_0200", data_from_checked_bytes(0x01, &RECORDING_1 [658..]).to_id_string());
+        let data = data_from_checked_bytes(0x00, &RECORDING_1 [14..]);
+        assert_eq!("2017-01-09T09:57:28.975+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("00_0010_0053_10_0100", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [100..]);
+        assert_eq!("2017-01-09T09:57:27.880+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0010_7E11_10_0100", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [234..]);
+        assert_eq!("2017-01-09T09:57:28.765+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0010_7E21_10_0100", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [264..]);
+        assert_eq!("2017-01-09T09:57:28.764+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0015_7E11_10_0100", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [330..]);
+        assert_eq!("2017-01-09T09:57:08.893+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_6651_7E11_10_0200", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [412..]);
+        assert_eq!("2017-01-09T09:57:13.901+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_6652_7E11_10_0200", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [494..]);
+        assert_eq!("2017-01-09T09:57:17.894+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_6653_7E11_10_0200", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [576..]);
+        assert_eq!("2017-01-09T09:57:21.797+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_6654_7E11_10_0200", data.to_id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_1 [658..]);
+        assert_eq!("2017-01-09T09:57:26.080+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_6655_7E11_10_0200", data.to_id_string());
     }
 
     #[test]
