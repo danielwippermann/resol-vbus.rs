@@ -49,5 +49,7 @@ pub use data::Data;
 
 pub mod live_data_decoder;
 
+pub mod live_data_encoder;
+
 mod live_data_reader;
 pub use live_data_reader::LiveDataReader;
