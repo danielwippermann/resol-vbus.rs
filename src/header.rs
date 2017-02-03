@@ -4,6 +4,7 @@ use chrono::{DateTime, UTC};
 
 
 /// All VBus data types consist of a `Header` element.
+#[derive(Clone)]
 pub struct Header {
     /// The timestamp when this `Header` was received.
     pub timestamp: DateTime<UTC>,

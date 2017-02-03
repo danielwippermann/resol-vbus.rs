@@ -45,6 +45,22 @@ impl Debug for Telegram {
 }
 
 
+impl Clone for Telegram {
+
+    fn clone(&self) -> Self {
+        let mut frame_data = [0u8; 21];
+        frame_data.copy_from_slice(&self.frame_data);
+
+        Telegram {
+            header: self.header.clone(),
+            command: self.command,
+            frame_data: frame_data,
+        }
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};

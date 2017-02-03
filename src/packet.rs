@@ -38,6 +38,23 @@ impl Debug for Packet {
 }
 
 
+impl Clone for Packet {
+
+    fn clone(&self) -> Self {
+        let mut frame_data = [0u8; 508];
+        frame_data.copy_from_slice(&self.frame_data);
+
+        Packet {
+            header: self.header.clone(),
+            command: self.command,
+            frame_count: self.frame_count,
+            frame_data: frame_data,
+        }
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};

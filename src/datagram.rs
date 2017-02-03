@@ -4,6 +4,7 @@ use header::Header;
 
 
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
+#[derive(Clone)]
 pub struct Datagram {
     /// The shared `Header` of all VBus protocol types.
     pub header: Header,

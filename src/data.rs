@@ -5,7 +5,7 @@ use telegram::Telegram;
 
 
 /// `Data` is a type that contains one of the supported VBus protocol data variants.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Data {
     /// Contains a `Packet` conforming to VBus protocol version 1.x.
     Packet(Packet),
