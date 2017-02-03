@@ -29,7 +29,7 @@ impl<R: Read> RecordingReader<R> {
     }
 
     /// Read from the stream until a valid blob of data is found.
-    pub fn read_bytes(&mut self) -> Result<&[u8]> {
+    pub fn read_record(&mut self) -> Result<&[u8]> {
         if self.previous_length > 0 {
             self.reader.consume(self.previous_length);
             self.previous_length = 0;
@@ -58,7 +58,7 @@ impl<R: Read> RecordingReader<R> {
 
     fn read_to_next_data_set_record(&mut self) -> Result<Option<DateTime<UTC>>> {
         loop {
-            let bytes = self.read_bytes()?;
+            let bytes = self.read_record()?;
             let length = bytes.len();
 
             if length == 0 {
@@ -79,7 +79,7 @@ impl<R: Read> RecordingReader<R> {
             let mut current_channel = 0u8;
 
             loop {
-                let bytes = self.read_bytes()?;
+                let bytes = self.read_record()?;
                 let length = bytes.len();
 
                 if length == 0 {
@@ -117,16 +117,16 @@ mod tests {
     use test_data::{RECORDING_1};
 
     #[test]
-    fn test_read_bytes() {
+    fn test_read_record() {
         let mut rr = RecordingReader::new(RECORDING_1);
         for expected_len in [ 14, 70, 16, 134, 30, 66, 82, 82, 82, 82, 82, 0, 0, 0 ].iter() {
-            let result = rr.read_bytes().unwrap();
+            let result = rr.read_record().unwrap();
             assert_eq!(*expected_len, result.len());
         }
 
         let mut rr = RecordingReader::new(&RECORDING_1 [1..]);
         for expected_len in [ 70, 16, 134, 30, 66, 82, 82, 82, 82, 82, 0, 0, 0 ].iter() {
-            let result = rr.read_bytes().unwrap();
+            let result = rr.read_record().unwrap();
             assert_eq!(*expected_len, result.len());
         }
     }
