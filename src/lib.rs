@@ -47,6 +47,9 @@ pub use telegram::Telegram;
 mod data;
 pub use data::Data;
 
+mod data_set;
+pub use data_set::DataSet;
+
 pub mod live_data_decoder;
 
 pub mod live_data_encoder;
