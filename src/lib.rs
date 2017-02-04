@@ -67,3 +67,6 @@ pub use recording_reader::RecordingReader;
 
 mod specification_file;
 pub use specification_file::*;
+
+mod specification;
+pub use specification::*;
