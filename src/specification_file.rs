@@ -8,39 +8,65 @@ use utils::{calc_crc16};
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
 #[derive(Debug)]
 pub enum Error {
+    /// The data is too small for a valid FILEHEADER.
     InvalidFileHeader,
 
+    /// The data length does not match the "TotalLength" field of the FILEHEADER.
     InvalidFileHeaderTotalLength,
+    /// The data does not match the "ChecksumA" field of the FILEHEADER.
     InvalidFileHeaderChecksumA,
+    /// The data does not match the "ChecksumB" field of the FILEHEADER.
     InvalidFileHeaderChecksumB,
+    /// The "DataVersion" field of the FILEHEADER is not supported.
     InvalidFileHeaderDataVersion,
+    /// The "SpecificationOffset" of the FILEHEADER is out-of-bounds.
     InvalidFileHeaderSpecificationOffset,
 
+    /// The "Text{Count,TableOffset}" fields of the SPECIFICATION block are out-of-bounds.
     InvalidSpecificationTextTable,
+    /// The "LocalizedText{Count,TableOffset}" fields of the SPECIFICATION block are out-of-bounds.
     InvalidSpecificationLocalizedTextTable,
+    /// The "Unit{Count,TableOffset}" fields of the SPECIFICATION block are out-of-bounds.
     InvalidSpecificationUnitTable,
+    /// The "DeviceTemplate{Count,TableOffset}" fields of the SPECIFICATION block are out-of-bounds.
     InvalidSpecificationDeviceTemplateTable,
+    /// The "PacketTemplate{Count,TableOffset}" fields of the SPECIFICATION block are out-of-bounds.
     InvalidSpecificationPacketTemplateTable,
 
+    /// The "StringOffset" field of a TEXT block is out-of-bounds.
     InvalidTextStringOffset,
+    /// The contents of a TEXT is out-of-bounds.
     InvalidTextContent,
 
+    /// The "TextIndexEN" field of a LOCALIZEDTEXT block is out-of-bounds.
     InvalidLocalizedTextTextIndexEn,
+    /// The "TextIndexDE" field of a LOCALIZEDTEXT block is out-of-bounds.
     InvalidLocalizedTextTextIndexDe,
+    /// The "TextIndexFR" field of a LOCALIZEDTEXT block is out-of-bounds.
     InvalidLocalizedTextTextIndexFr,
 
+    /// The "UnitFamilyId" field of a UNIT block is out-of-bounds.
     InvalidUnitUnitFamilyId,
+    /// The "UnitCodeTextIndex" field of a UNIT block is out-of-bounds.
     InvalidUnitUnitCodeTextIndex,
+    /// The "UnitTextTextIndex" field of a UNIT block is out-of-bounds.
     InvalidUnitUnitTextTextIndex,
 
+    /// The "NameLocalizedTextIndex" field of a DEVICETEMPLATE block is out-of-bounds.
     InvalidDeviceTemplateNameLocalizedTextIndex,
 
+    /// The "Field{Count,TableOffset}" fields of a PACKETTEMPLATE block are out-of-bounds.
     InvalidPacketTemplateFieldTable,
 
+    /// The "IdTextIndex" of a PACKETTEMPLATEFIELD block is out-of-bounds.
     InvalidPacketTemplateFieldIdTextIndex,
+    /// The "NameLocalizedTextIndex" of a PACKETTEMPLATEFIELD block is out-of-bounds.
     InvalidPacketTemplateFieldNameLocalizedTextIndex,
+    /// The "UnitId" of a PACKETTEMPLATEFIELD block is out-of-bounds.
     InvalidPacketTemplateFieldUnitId,
+    /// The "TypeId" of a PACKETTEMPLATEFIELD block is out-of-bounds.
     InvalidPacketTemplateFieldTypeId,
+    /// The "Part{Count,TableOffset}" of a PACKETTEMPLATEFIELD is out-of-bounds.
     InvalidPacketTemplateFieldPartTable,
 }
 
@@ -69,100 +95,201 @@ fn slice_table_entry<'a>(buf: &'a [u8], offset: usize, length: usize, index: usi
 /// Languages supported by VSF1 specification.
 #[derive(Debug)]
 pub enum Language {
+    /// English language
     En,
+
+    /// German language
     De,
+
+    /// French language
     Fr,
 }
 
 
+/// A numeric reference to a `Text`.
 #[derive(Clone, Debug)]
 pub struct TextIndex(i32);
 
 
+/// Combines three `TextIndex` values for each of the supported languages to form a localized text.
 #[derive(Debug)]
 pub struct LocalizedText {
+    /// A `TextIndex` to the english text.
     pub text_index_en: TextIndex,
+
+    /// A `TextIndex` to the german text.
     pub text_index_de: TextIndex,
+
+    /// A `TextIndex` to the french text.
     pub text_index_fr: TextIndex,
 }
 
 
+/// A numeric reference to a `LocalizedText` instance.
 #[derive(Clone, Debug)]
 pub struct LocalizedTextIndex(i32);
 
 
+/// A numeric reference to an `UnitFamily` instance.
 #[derive(Clone, Debug, PartialEq)]
 pub struct UnitFamilyId(pub i32);
 
 
+/// One of the unit families supported by the VSF1 specification.
 #[derive(Clone, Debug, PartialEq)]
 pub enum UnitFamily {
+    /// Not associated with a unit family.
     None,
+
+    /// Temperature
     Temperature,
+
+    /// Energy
     Energy,
+
+    /// Volume flow
     VolumeFlow,
+
+    /// Pressure
     Pressure,
+
+    /// Volume
     Volume,
+
+    /// Time
     Time,
+
+    /// Power
     Power,
 }
 
 
+/// A numeric reference to an `Unit` instance.
 #[derive(Clone, Debug, PartialEq)]
 pub struct UnitId(pub i32);
 
 
+/// A physical unit.
 #[derive(Debug)]
 pub struct Unit {
+    /// The numeric ID of the `Unit`.
     pub unit_id: UnitId,
+
+    /// The numeric ID of the `UnitFamily`.
     pub unit_family_id: UnitFamilyId,
+
+    /// The `TextIndex` of the unit's machine-readable name.
     pub unit_code_text_index: TextIndex,
+
+    /// The `TextIndex` of the unit's human-readable name.
     pub unit_text_text_index: TextIndex,
 }
 
 
+/// Contains information about a VBus device.
 #[derive(Debug)]
 pub struct DeviceTemplate {
+    /// The VBus address of the device itself.
     pub self_address: u16,
+
+    /// The mask applied to the VBus address of the device itself.
     pub self_mask: u16,
+
+    /// The VBus address of a potential peer device.
     pub peer_address: u16,
+
+    /// The mask applied to the VBus address of the potential peer device.
     pub peer_mask: u16,
+
+    /// The `LocalizedTextIndex` of the device's name.
     pub name_localized_text_index: LocalizedTextIndex,
 }
 
 
+/// Contains information about a VBus packet.
 #[derive(Clone, Debug)]
 pub struct PacketTemplate {
+    /// The VBus address of the destination device.
     pub destination_address: u16,
+
+    /// The mask applied to the VBus address of the destination device.
     pub destination_mask: u16,
+
+    /// The VBus address of the source device.
     pub source_address: u16,
+
+    /// The mask applied to the VBus address of the source device.
     pub source_mask: u16,
+
+    /// The VBus command of the packet.
     pub command: u16,
+
+    /// The list of fields contained in the frame data payload.
     pub fields: Vec<PacketTemplateField>,
 }
 
 
+/// A type to describe different data types within the packet fields.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Type {
+    /// Floating-point number, supporting precision and an optional unit.
+    Number,
+
+    /// Time as hours and minutes: "HH:MM".
+    Time,
+
+    /// Date and time as weekday, hours and minutes: "DDD,HH:MM".
+    WeekTime,
+
+    /// Date and time: "YYYY-MM-DD HH:MM:SS"
+    DateTime,
+}
+
+
+/// A numeric reference to a `Type` instance.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeId(pub i32);
 
 
+/// Contains information about a field with the frame data payload of a VBus packet.
 #[derive(Clone, Debug)]
 pub struct PacketTemplateField {
+    /// The `TextIndex` of the field's ID.
     pub id_text_index: TextIndex,
+
+    /// The `LocalizedTextIndex` of the field's name.
     pub name_localized_text_index: LocalizedTextIndex,
+
+    /// The `UnitId` of the field.
     pub unit_id: UnitId,
+
+    /// The number of fractional digits.
     pub precision: i32,
+
+    /// The `TypeId` of the field.
     pub type_id: TypeId,
+
+    /// The list of parts that make up the field's value.
     pub parts: Vec<PacketTemplateFieldPart>,
 }
 
 
-#[derive(Clone, Debug)]
+/// Contains information about one part of a packet field's raw value.
+#[derive(Clone, Debug, PartialEq)]
 pub struct PacketTemplateFieldPart {
+    /// The offset into the frame data payload.
     pub offset: i32,
+
+    /// The bit position from which the part starts.
     pub bit_pos: u8,
+
+    /// The bit mask that is applied to this part's value.
     pub mask: u8,
+
+    /// Whether this part is signed (= sign-extended) or not (= zero-extended).
     pub is_signed: bool,
+
+    /// The factor this part is multiplied with.
     pub factor: i64,
 }
 
@@ -274,6 +401,17 @@ impl SpecificationFile {
     /// Get `Unit` by its index.
     pub fn unit_by_id(&self, id: &UnitId) -> &Unit {
         self.units.iter().find(|&unit| &unit.unit_id == id).unwrap()
+    }
+
+    /// Get `Type` by its ID.
+    pub fn type_by_id(&self, id: &TypeId) -> Type {
+        match id.0 {
+            1 => Type::Number,
+            3 => Type::Time,
+            4 => Type::WeekTime,
+            5 => Type::DateTime,
+            _ => panic!("Unsupported type ID {:?}", id),
+        }
     }
 
     /// Find a `DeviceTemplate` matching the self and peer addresses.
@@ -902,7 +1040,15 @@ mod tests {
         assert_eq!(0x0100, pt.command);
         assert_eq!(8, pt.fields.len());
 
-        let ptf = &pt.fields [0];
+        let pt = &spec_file.packet_templates [1];
+        assert_eq!(0x0010, pt.destination_address);
+        assert_eq!(0xFFFF, pt.destination_mask);
+        assert_eq!(0x7F61, pt.source_address);
+        assert_eq!(0xFFFF, pt.source_mask);
+        assert_eq!(0x0100, pt.command);
+        assert_eq!(18, pt.fields.len());
+
+        let ptf = &spec_file.packet_templates [0].fields [0];
         assert_eq!("000_4_0", spec_file.text_by_index(&ptf.id_text_index));
         assert_eq!("Heat quantity", spec_file.localized_text_by_index(&ptf.name_localized_text_index, &Language::En));
         assert_eq!("Wärmemenge", spec_file.localized_text_by_index(&ptf.name_localized_text_index, &Language::De));
