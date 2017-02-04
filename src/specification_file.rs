@@ -257,7 +257,7 @@ impl SpecificationFile {
     }
 
     /// Get `UnitFamily` by its ID.
-    pub fn unit_familiy_by_id(&self, id: &UnitFamilyId) -> UnitFamily {
+    pub fn unit_family_by_id(&self, id: &UnitFamilyId) -> UnitFamily {
         match id.0 {
             -1 => UnitFamily::None,
             0 => UnitFamily::Temperature,
@@ -826,7 +826,7 @@ mod tests {
             let unit = &spec_file.units [unit_index];
 
             assert_eq!(UnitId(unit_id), unit.unit_id);
-            assert_eq!(unit_family, spec_file.unit_familiy_by_id(&unit.unit_family_id));
+            assert_eq!(unit_family, spec_file.unit_family_by_id(&unit.unit_family_id));
             assert_eq!(unit_code, spec_file.text_by_index(&unit.unit_code_text_index));
             assert_eq!(unit_text, spec_file.text_by_index(&unit.unit_text_text_index));
 
