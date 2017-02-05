@@ -107,6 +107,85 @@ impl<R: Read> RecordingReader<R> {
         }
     }
 
+    /// Quickly read to EOF of the source and return the DataSet for all uniquely found `Data` variants.
+    pub fn read_topology_data_set(&mut self) -> Result<DataSet> {
+        let mut set = HashSet::new();
+
+        let mut current_channel = 0u8;
+
+        loop {
+            let record = self.read_record()?;
+            let length = record.len();
+            if length == 0 {
+                break;
+            }
+
+            if record [1] == 0x44 {
+                current_channel = 0;
+            } else if record [1] == 0x66 {
+                if length >= 26 {
+                    let mut fingerprint = [0u8; 10];
+                    fingerprint [0] = current_channel;
+                    fingerprint [1] = record [14];
+                    fingerprint [2] = record [15];
+                    fingerprint [3] = record [16];
+                    fingerprint [4] = record [17];
+                    fingerprint [5] = record [18];
+                    fingerprint [6] = record [20];
+                    fingerprint [7] = record [21];
+                    fingerprint [8] = record [24];
+                    fingerprint [9] = record [25];
+                    set.insert(fingerprint);
+                }
+            } else if record [1] == 0x77 {
+                if length >= 16 {
+                    current_channel = record [14];
+                }
+            } else {
+                panic!("Unsupported record type 0x{:02X}", record [1]);
+            }
+        }
+
+        let mut data_set = DataSet::new();
+
+        for fingerprint in set {
+            let mut fake_record = [0u8; 26];
+            fake_record [0] = 0xA5;
+            fake_record [1] = 0x66;
+            fake_record [2] = 0x1A;
+            fake_record [3] = 0x00;
+            fake_record [4] = 0x1A;
+            fake_record [5] = 0x00;
+            fake_record [6] = 0x00;
+            fake_record [7] = 0x00;
+            fake_record [8] = 0x00;
+            fake_record [9] = 0x00;
+            fake_record [10] = 0x00;
+            fake_record [11] = 0x00;
+            fake_record [12] = 0x00;
+            fake_record [13] = 0x00;
+            fake_record [14] = fingerprint [1];
+            fake_record [15] = fingerprint [2];
+            fake_record [16] = fingerprint [3];
+            fake_record [17] = fingerprint [4];
+            fake_record [18] = fingerprint [5];
+            fake_record [19] = 0;
+            fake_record [20] = fingerprint [6];
+            fake_record [21] = fingerprint [7];
+            fake_record [22] = 0;
+            fake_record [23] = 0;
+            fake_record [24] = fingerprint [8];
+            fake_record [25] = fingerprint [9];
+
+            if let Some(data) = data_from_bytes(fingerprint [0], &fake_record) {
+                data_set.add_data(data);
+            }
+        }
+
+        data_set.sort();
+        Ok(data_set)
+    }
+
 }
 
 
