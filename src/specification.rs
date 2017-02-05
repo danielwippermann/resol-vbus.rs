@@ -100,7 +100,7 @@ pub struct PacketFieldSpec {
 pub struct PacketFieldFormatter<'a> {
     typ: Type,
     precision: usize,
-    raw_value: f64,
+    raw_value: Option<f64>,
     unit_text: &'a str,
 }
 
@@ -394,7 +394,7 @@ impl PacketFieldSpec {
     }
 
     /// Format a raw value into its textual representation.
-    pub fn fmt_raw_value<'a>(&'a self, raw_value: f64, append_unit: bool) -> PacketFieldFormatter<'a> {
+    pub fn fmt_raw_value<'a>(&'a self, raw_value: Option<f64>, append_unit: bool) -> PacketFieldFormatter<'a> {
         let unit_text = if append_unit {
             &self.unit_text
         } else {
@@ -414,26 +414,30 @@ impl PacketFieldSpec {
 impl<'a> fmt::Display for PacketFieldFormatter<'a> {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.typ {
-            Type::Number => {
-                write!(f, "{:.*}{}", self.precision, self.raw_value, self.unit_text)
+        if let Some(raw_value) = self.raw_value {
+            match self.typ {
+                Type::Number => {
+                    write!(f, "{:.*}{}", self.precision, raw_value, self.unit_text)
+                }
+                Type::Time => {
+                    let raw_value = raw_value.round() as i64;
+                    let hours = raw_value / 60;
+                    let minutes = raw_value % 60;
+                    write!(f, "{:02}:{:02}", hours, minutes)
+                }
+                Type::WeekTime => {
+                    let raw_value = raw_value.round() as i64;
+                    let timestamp = UTC.timestamp(raw_value * 60 + 4 * 86400, 0);
+                    write!(f, "{}", timestamp.format("%a,%H:%M"))
+                }
+                Type::DateTime => {
+                    let raw_value = raw_value.round() as i64;
+                    let timestamp = UTC.timestamp(raw_value + 978307200, 0);
+                    write!(f, "{}", timestamp.format("%Y-%m-%d %H:%M:%S"))
+                }
             }
-            Type::Time => {
-                let raw_value = self.raw_value.round() as i64;
-                let hours = raw_value / 60;
-                let minutes = raw_value % 60;
-                write!(f, "{:02}:{:02}", hours, minutes)
-            }
-            Type::WeekTime => {
-                let raw_value = self.raw_value.round() as i64;
-                let timestamp = UTC.timestamp(raw_value * 60 + 4 * 86400, 0);
-                write!(f, "{}", timestamp.format("%a,%H:%M"))
-            }
-            Type::DateTime => {
-                let raw_value = self.raw_value.round() as i64;
-                let timestamp = UTC.timestamp(raw_value + 978307200, 0);
-                write!(f, "{}", timestamp.format("%Y-%m-%d %H:%M:%S"))
-            }
+        } else {
+            Ok(())
         }
     }
 
@@ -662,7 +666,7 @@ mod tests {
         };
 
         let fmt_raw_value = |field_spec: &PacketFieldSpec, raw_value, append_unit| {
-            let test_value = field_spec.fmt_raw_value(raw_value, append_unit);
+            let test_value = field_spec.fmt_raw_value(Some(raw_value), append_unit);
             format!("{}", test_value)
         };
 
