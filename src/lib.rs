@@ -70,3 +70,6 @@ pub use specification_file::*;
 
 mod specification;
 pub use specification::*;
+
+mod file_list_reader;
+pub use file_list_reader::FileListReader;
