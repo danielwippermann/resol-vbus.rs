@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::{Read, Result};
 
 use chrono::{DateTime, UTC};
