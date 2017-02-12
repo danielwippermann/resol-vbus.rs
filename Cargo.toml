@@ -5,4 +5,4 @@ authors = ["Daniel Wippermann <Daniel.Wippermann@gmail.com>"]
 
 [dependencies]
 byteorder = "1"
-chrono = "0.2"
+chrono = "0.3"
