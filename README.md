@@ -2,6 +2,10 @@
 
 A Rust library for processing RESOL VBus data.
 
+[![Build Status](https://travis-ci.org/danielwippermann/resol-vbus.rs.svg?branch=master)](https://travis-ci.org/danielwippermann/resol-vbus.rs)
+
+[Documentation](https://docs.rs/resol-vbus/)
+
 
 ## Usage
 
