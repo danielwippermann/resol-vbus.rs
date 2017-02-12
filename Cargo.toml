@@ -4,7 +4,11 @@ version = "0.1.1"
 authors = ["Daniel Wippermann <Daniel.Wippermann@gmail.com>"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/danielwippermann/resol-vbus.rs"
+documentation = "https://docs.rs/resol-vbus"
 description = "A Rust library for processing RESOL VBus data."
+
+[badges]
+travis-ci = { repository = "danielwippermann/resol-vbus.rs" }
 
 [dependencies]
 byteorder = "1"
