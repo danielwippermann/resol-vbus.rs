@@ -102,8 +102,8 @@ pub mod recording_decoder;
 mod recording_reader;
 pub use recording_reader::RecordingReader;
 
-mod specification_file;
-pub use specification_file::*;
+pub mod specification_file;
+pub use specification_file::{Language, SpecificationFile};
 
 mod specification;
 pub use specification::*;

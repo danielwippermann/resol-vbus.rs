@@ -1,3 +1,10 @@
+//! A module that parses the contents of a VBus Specification File Version 1 (VSF1).
+//!
+//! The VBus Specification File format is used to provide information about VBus Protocol Version
+//! 1.x `Packet`s and their frame data payload. The file contains:
+//!
+//! See the [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
+//! for details.
 use std;
 
 use byteorder::{LittleEndian, ByteOrder};
