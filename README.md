@@ -1,4 +1,4 @@
-# rust-resol-vbus
+# resol-vbus.rs
 
 A Rust library for processing RESOL VBus data.
 

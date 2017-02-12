@@ -1,8 +1,8 @@
-// This is part of rust-resol-vbus.
+// This is part of resol-vbus.rs.
 // Copyright (c) 2017, Daniel Wippermann.
 // See README.md and LICENSE.txt for details.
 
-//! # rust-resol-vbus
+//! # resol-vbus.rs
 //!
 //! A Rust library for processing RESOL VBus data.
 //!
