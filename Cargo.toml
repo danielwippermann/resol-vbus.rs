@@ -2,6 +2,9 @@
 name = "resol-vbus"
 version = "0.1.0"
 authors = ["Daniel Wippermann <Daniel.Wippermann@gmail.com>"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/danielwippermann/resol-vbus.rs"
+description = "A Rust library for processing RESOL VBus data."
 
 [dependencies]
 byteorder = "1"
