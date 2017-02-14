@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use chrono::{TimeZone, UTC};
 
+use data::Data;
+use data_set::DataSet;
 use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
 
 
@@ -112,6 +114,27 @@ pub struct Specification {
     language: Language,
     devices: RefCell<Vec<Arc<DeviceSpec>>>,
     packets: RefCell<Vec<Arc<PacketSpec>>>,
+}
+
+
+/// An iterator over the fields of the `Packet` instances in a `DataSet`.
+#[derive(Debug)]
+pub struct DataSetPacketFieldIterator<'a> {
+    spec: &'a Specification,
+    data_set: &'a DataSet,
+    data_index: usize,
+    field_index: usize,
+}
+
+
+/// An item returned from the `DataSetPacketFieldIterator` for each field.
+#[derive(Debug)]
+pub struct DataSetPacketField<'a> {
+    data_set: &'a DataSet,
+    data_index: usize,
+    packet_spec: Arc<PacketSpec>,
+    field_index: usize,
+    raw_value: Option<f64>,
 }
 
 
@@ -332,6 +355,16 @@ impl Specification {
         get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, &self.language)
     }
 
+    /// Returns an iterator that iterates over all known packet fields in the data set.
+    pub fn fields_in_data_set<'a>(&'a self, data_set: &'a DataSet) -> DataSetPacketFieldIterator<'a> {
+        DataSetPacketFieldIterator {
+            spec: self,
+            data_set: data_set,
+            data_index: 0,
+            field_index: 0,
+        }
+    }
+
 }
 
 
@@ -440,11 +473,97 @@ impl<'a> fmt::Display for PacketFieldFormatter<'a> {
 }
 
 
+impl<'a> Iterator for DataSetPacketFieldIterator<'a> {
+    type Item = DataSetPacketField<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let data_slice = self.data_set.as_data_slice();
+        let data_slice_len = self.data_set.as_data_slice().len();
+
+        while self.data_index < data_slice_len {
+            let data = &data_slice [self.data_index];
+            if let Data::Packet(ref packet) = *data {
+                let packet_spec = self.spec.get_packet_spec(packet.header.channel, packet.header.destination_address, packet.header.source_address, packet.command);
+                if self.field_index < packet_spec.fields.len() {
+                    let field_index = self.field_index;
+                    self.field_index += 1;
+
+                    let frame_data = &packet.frame_data [0..packet.frame_count as usize * 4];
+
+                    let field_spec = &packet_spec.fields [field_index];
+                    let raw_value = field_spec.get_raw_value_f64(frame_data);
+
+                    return Some(DataSetPacketField {
+                        data_set: self.data_set,
+                        data_index: self.data_index,
+                        packet_spec: packet_spec.clone(),
+                        field_index: field_index,
+                        raw_value: raw_value,
+                    });
+                }
+            }
+
+            self.data_index += 1;
+            self.field_index = 0;
+        }
+
+        None
+    }
+}
+
+
+impl<'a> DataSetPacketField<'a> {
+
+    /// Return the `DataSet` associated with this field.
+    pub fn data_set(&self) -> &DataSet {
+        self.data_set
+    }
+
+    /// Return the index of the `Data` associated with this field.
+    pub fn data_index(&self) -> usize {
+        self.data_index
+    }
+
+    /// Return the `Data` associated with this field.
+    pub fn data(&self) -> &Data {
+        &self.data_set.as_data_slice() [self.data_index]
+    }
+
+    /// Return the `PacketSpec` associated with this field.
+    pub fn packet_spec(&self) -> &PacketSpec {
+        self.packet_spec.as_ref()
+    }
+
+    /// Return the index of the `PacketFieldSpec` associated with this field.
+    pub fn field_index(&self) -> usize {
+        self.field_index
+    }
+
+    /// Return the `PacketFieldSpec` associated with this field.
+    pub fn field_spec(&self) -> &PacketFieldSpec {
+        &self.packet_spec.fields [self.field_index]
+    }
+
+    /// Return the raw value associated with this field.
+    pub fn raw_value(&self) -> &Option<f64> {
+        &self.raw_value
+    }
+
+    /// Format the raw value associated with this field.
+    pub fn fmt_raw_value(&self, append_unit: bool) -> PacketFieldFormatter {
+        self.field_spec().fmt_raw_value(self.raw_value, append_unit)
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
+    use recording_reader::RecordingReader;
+
     use super::*;
 
-    use test_data::{SPEC_FILE_1};
+    use test_data::{RECORDING_2, SPEC_FILE_1};
 
     #[test]
     fn test_get_power_of_10() {
@@ -695,5 +814,90 @@ mod tests {
 
         let field_spec = fake_field_spec(10, Type::DateTime, "don't append unit");
         assert_eq!("2013-12-22 15:17:42", fmt_raw_value(&field_spec, 409418262.0, true));
+    }
+
+    #[test]
+    fn test_fields_in_data_set() {
+        let mut rr = RecordingReader::new(RECORDING_2);
+
+        let data_set = rr.read_data_set().unwrap().unwrap();
+
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        let fields = spec.fields_in_data_set(&data_set).collect::<Vec<_>>();
+
+        assert_eq!(8, fields.len());
+
+        let field = &fields [0];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(0, field.field_index());
+        assert_eq!("000_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [1];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(1, field.field_index());
+        assert_eq!("008_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [2];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(2, field.field_index());
+        assert_eq!("012_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [3];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(3, field.field_index());
+        assert_eq!("020_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [4];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(4, field.field_index());
+        assert_eq!("016_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [5];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(5, field.field_index());
+        assert_eq!("024_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
+
+        let field = &fields [6];
+        assert_eq!(1, field.data_index());
+        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
+        assert_eq!(6, field.field_index());
+        assert_eq!("028_4_0", field.field_spec().field_id);
+        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
+        assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
     }
 }
