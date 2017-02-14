@@ -29,7 +29,7 @@ impl<W: Write> LiveDataWriter<W> {
 
         bytes_from_data(data, &mut bytes);
 
-        self.writer.write(&bytes)?;
+        self.writer.write_all(&bytes)?;
 
         Ok(())
     }

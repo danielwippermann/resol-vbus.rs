@@ -88,12 +88,12 @@ fn check_offset(buf: &[u8], offset: usize, length: usize, count: usize) -> bool 
 }
 
 
-fn slice_entry<'a>(buf: &'a [u8], offset: usize, length: usize) -> &'a [u8] {
+fn slice_entry(buf: &[u8], offset: usize, length: usize) -> &[u8] {
     &buf [offset..(offset + length)]
 }
 
 
-fn slice_table_entry<'a>(buf: &'a [u8], offset: usize, length: usize, index: usize) -> &'a [u8] {
+fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> &[u8] {
     let table_entry_offset = offset + (index * length);
     slice_entry(buf, table_entry_offset, length)
 }
@@ -382,10 +382,10 @@ impl SpecificationFile {
     /// Get localized text by its index and language.
     pub fn localized_text_by_index(&self, idx: &LocalizedTextIndex, language: &Language) -> &str {
         let localized_text = &self.localized_texts [idx.0 as usize];
-        let text_index = match language {
-            &Language::En => &localized_text.text_index_en,
-            &Language::De => &localized_text.text_index_de,
-            &Language::Fr => &localized_text.text_index_fr,
+        let text_index = match *language {
+            Language::En => &localized_text.text_index_en,
+            Language::De => &localized_text.text_index_de,
+            Language::Fr => &localized_text.text_index_fr,
         };
         self.text_by_index(text_index)
     }

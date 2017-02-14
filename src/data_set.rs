@@ -79,6 +79,15 @@ impl DataSet {
 }
 
 
+impl Default for DataSet {
+
+    fn default() -> DataSet {
+        DataSet::new()
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, TimeZone, UTC};

@@ -115,7 +115,7 @@ pub struct Specification {
 }
 
 
-fn get_cached_device_spec(devices: &Vec<Arc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16) -> Option<Arc<DeviceSpec>> {
+fn get_cached_device_spec(devices: &[Arc<DeviceSpec>], channel: u8, self_address: u16, peer_address: u16) -> Option<Arc<DeviceSpec>> {
     let result = devices.iter().find(|&device| {
         if device.channel != channel {
             false
@@ -129,7 +129,7 @@ fn get_cached_device_spec(devices: &Vec<Arc<DeviceSpec>>, channel: u8, self_addr
     });
 
     match result {
-        Some(ref device) => Some((*device).clone()),
+        Some(device) => Some((*device).clone()),
         None => None,
     }
 }
@@ -140,10 +140,7 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Arc<DeviceSpec>>, channel:
         return device;
     }
 
-    let device_template = match file.find_device_template(self_address, peer_address) {
-        Some(device_template) => Some(device_template.clone()),
-        None => None,
-    };
+    let device_template = file.find_device_template(self_address, peer_address);
 
     let peer_address_option = match device_template {
         None => None,
@@ -161,15 +158,14 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Arc<DeviceSpec>>, channel:
 
     let name = match device_template {
         None => {
-            match language {
-                &Language::En => format!("Unknown device 0x{:04X}", self_address),
-                &Language::De => format!("Unbekanntes Gerät 0x{:04X}", self_address),
-                &Language::Fr => format!("Unknown device 0x{:04X}", self_address),  // FIXME(daniel): missing translation
+            match *language {
+                Language::En => format!("Unknown device 0x{:04X}", self_address),
+                Language::De => format!("Unbekanntes Gerät 0x{:04X}", self_address),
+                Language::Fr => format!("Unknown device 0x{:04X}", self_address),  // FIXME(daniel): missing translation
             }
         },
         Some(device_template) => {
-            let format = file.localized_text_by_index(&device_template.name_localized_text_index, language);
-            format.to_string()  // FIXME(daniel): replace module nr placeholder
+            file.localized_text_by_index(&device_template.name_localized_text_index, language).to_owned()
         }
     };
 
@@ -192,7 +188,7 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Arc<DeviceSpec>>, channel:
 }
 
 
-fn get_cached_packet_spec(packets: &Vec<Arc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Option<Arc<PacketSpec>> {
+fn get_cached_packet_spec(packets: &[Arc<PacketSpec>], channel: u8, destination_address: u16, source_address: u16, command: u16) -> Option<Arc<PacketSpec>> {
     let result = packets.iter().find(|&packet| {
         if packet.channel != channel {
             false
@@ -208,7 +204,7 @@ fn get_cached_packet_spec(packets: &Vec<Arc<PacketSpec>>, channel: u8, destinati
     });
 
     match result {
-        Some(ref packet) => Some((*packet).clone()),
+        Some(packet) => Some(packet.clone()),
         None => None,
     }
 }
@@ -237,7 +233,7 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Arc<PacketSpec>>, channel:
 
                 let packet_field_id = format!("{}_{}", packet_id, field_id);
 
-                let field_name = file.localized_text_by_index(&field.name_localized_text_index, &language).to_string();
+                let field_name = file.localized_text_by_index(&field.name_localized_text_index, language).to_string();
 
                 let unit = file.unit_by_id(&field.unit_id);
 
@@ -394,7 +390,7 @@ impl PacketFieldSpec {
     }
 
     /// Format a raw value into its textual representation.
-    pub fn fmt_raw_value<'a>(&'a self, raw_value: Option<f64>, append_unit: bool) -> PacketFieldFormatter<'a> {
+    pub fn fmt_raw_value(&self, raw_value: Option<f64>, append_unit: bool) -> PacketFieldFormatter {
         let unit_text = if append_unit {
             &self.unit_text
         } else {

@@ -44,7 +44,7 @@ impl<R: Read> BlobReader<R> {
 
     /// Returns the byte slice of the internal buffer.
     pub fn as_bytes(&self) -> &[u8] {
-        return &self.buf[self.start..];
+        &self.buf[self.start..]
     }
 
 }
@@ -52,7 +52,6 @@ impl<R: Read> BlobReader<R> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     use test_data::LIVE_DATA_1;
