@@ -1,7 +1,7 @@
 use std::io::{Read, Result};
 
 
-/// A buffering reader.
+/// A buffering reader that allows to borrow the internal buffer.
 #[derive(Debug)]
 pub struct BlobReader<R: Read> {
     reader: R,
@@ -42,7 +42,7 @@ impl<R: Read> BlobReader<R> {
         self.start += length;
     }
 
-    /// Returns the byte slice of the internal buffer.
+    /// Returns the unconsumed byte slice of the internal buffer.
     pub fn as_bytes(&self) -> &[u8] {
         &self.buf[self.start..]
     }

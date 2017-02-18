@@ -4,6 +4,9 @@ use std::path::Path;
 
 
 /// Chains multiple files together in a single `Read` object.
+///
+/// The main advantage of this type compared to multiple `chain`ed `Read` values is, that only
+/// one file is open at any given time.
 #[derive(Debug)]
 pub struct FileListReader<T: AsRef<Path>> {
     file_list: Vec<T>,
