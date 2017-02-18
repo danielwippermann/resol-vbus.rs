@@ -227,15 +227,15 @@ mod tests {
 
         assert_eq!("2017-01-09T09:57:29.009+00:00", data_set.timestamp.to_rfc3339());
         assert_eq!(9, data_set.as_data_slice().len());
-        assert_eq!("00_0010_0053_10_0100", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("01_0010_7E11_10_0100", data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("01_0010_7E21_10_0100", data_set.as_data_slice() [2].to_id_string());
-        assert_eq!("01_0015_7E11_10_0100", data_set.as_data_slice() [3].to_id_string());
-        assert_eq!("01_6651_7E11_10_0200", data_set.as_data_slice() [4].to_id_string());
-        assert_eq!("01_6652_7E11_10_0200", data_set.as_data_slice() [5].to_id_string());
-        assert_eq!("01_6653_7E11_10_0200", data_set.as_data_slice() [6].to_id_string());
-        assert_eq!("01_6654_7E11_10_0200", data_set.as_data_slice() [7].to_id_string());
-        assert_eq!("01_6655_7E11_10_0200", data_set.as_data_slice() [8].to_id_string());
+        assert_eq!("00_0010_0053_10_0100", data_set.as_data_slice() [0].id_string());
+        assert_eq!("01_0010_7E11_10_0100", data_set.as_data_slice() [1].id_string());
+        assert_eq!("01_0010_7E21_10_0100", data_set.as_data_slice() [2].id_string());
+        assert_eq!("01_0015_7E11_10_0100", data_set.as_data_slice() [3].id_string());
+        assert_eq!("01_6651_7E11_10_0200", data_set.as_data_slice() [4].id_string());
+        assert_eq!("01_6652_7E11_10_0200", data_set.as_data_slice() [5].id_string());
+        assert_eq!("01_6653_7E11_10_0200", data_set.as_data_slice() [6].id_string());
+        assert_eq!("01_6654_7E11_10_0200", data_set.as_data_slice() [7].id_string());
+        assert_eq!("01_6655_7E11_10_0200", data_set.as_data_slice() [8].id_string());
 
         assert_eq!(true, rr.read_data_set().unwrap().is_none());
     }

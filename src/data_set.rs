@@ -114,7 +114,7 @@ mod tests {
         data_set.add_data(packet_data.clone());
         assert_eq!(timestamp, data_set.timestamp);
         assert_eq!(1, data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
 
         let other_timestamp = timestamp + Duration::seconds(1);
 
@@ -122,7 +122,7 @@ mod tests {
         data_set.add_data(data);
         assert_eq!(other_timestamp, data_set.timestamp);
         assert_eq!(1, data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
 
         let other_channel = channel + 1;
 
@@ -130,23 +130,23 @@ mod tests {
         data_set.add_data(data);
         assert_eq!(other_timestamp, data_set.timestamp);
         assert_eq!(2, data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].id_string());
 
         data_set.add_data(dgram_data.clone());
         assert_eq!(other_timestamp, data_set.timestamp);
         assert_eq!(3, data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [2].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [2].id_string());
 
         data_set.add_data(tgram_data.clone());
         assert_eq!(other_timestamp, data_set.timestamp);
         assert_eq!(4, data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [2].to_id_string());
-        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [3].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [1].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [2].id_string());
+        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [3].id_string());
     }
 
     #[test]
@@ -166,9 +166,9 @@ mod tests {
 
         assert_eq!(timestamp, other_data_set.timestamp);
         assert_eq!(3, other_data_set.as_data_slice().len());
-        assert_eq!("11_0010_7E11_10_0100", other_data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("11_0000_7E11_20_0500_0000", other_data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("11_7771_2011_30_25", other_data_set.as_data_slice() [2].to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", other_data_set.as_data_slice() [0].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", other_data_set.as_data_slice() [1].id_string());
+        assert_eq!("11_7771_2011_30_25", other_data_set.as_data_slice() [2].id_string());
     }
 
     #[test]
@@ -185,8 +185,8 @@ mod tests {
 
         assert_eq!(timestamp + Duration::seconds(30), data_set.timestamp);
         assert_eq!(2, data_set.as_data_slice().len());
-        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [1].to_id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [0].id_string());
+        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [1].id_string());
     }
 
     #[test]
@@ -205,23 +205,23 @@ mod tests {
         data_set.add_data(data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [172..]));
 
         assert_eq!(7, data_set.as_data_slice().len());
-        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [2].to_id_string());
-        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [3].to_id_string());
-        assert_eq!("11_6651_7E11_10_0200", data_set.as_data_slice() [4].to_id_string());
-        assert_eq!("11_0010_7E22_10_0100", data_set.as_data_slice() [5].to_id_string());
-        assert_eq!("11_0015_7E11_10_0100", data_set.as_data_slice() [6].to_id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [0].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [1].id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [2].id_string());
+        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [3].id_string());
+        assert_eq!("11_6651_7E11_10_0200", data_set.as_data_slice() [4].id_string());
+        assert_eq!("11_0010_7E22_10_0100", data_set.as_data_slice() [5].id_string());
+        assert_eq!("11_0015_7E11_10_0100", data_set.as_data_slice() [6].id_string());
 
         data_set.sort();
 
         assert_eq!(7, data_set.as_data_slice().len());
-        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [0].to_id_string());
-        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [1].to_id_string());
-        assert_eq!("11_0010_7E22_10_0100", data_set.as_data_slice() [2].to_id_string());
-        assert_eq!("11_0015_7E11_10_0100", data_set.as_data_slice() [3].to_id_string());
-        assert_eq!("11_6651_7E11_10_0200", data_set.as_data_slice() [4].to_id_string());
-        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [5].to_id_string());
-        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [6].to_id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [0].id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_set.as_data_slice() [1].id_string());
+        assert_eq!("11_0010_7E22_10_0100", data_set.as_data_slice() [2].id_string());
+        assert_eq!("11_0015_7E11_10_0100", data_set.as_data_slice() [3].id_string());
+        assert_eq!("11_6651_7E11_10_0200", data_set.as_data_slice() [4].id_string());
+        assert_eq!("11_7771_2011_30_25", data_set.as_data_slice() [5].id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_set.as_data_slice() [6].id_string());
     }
 }

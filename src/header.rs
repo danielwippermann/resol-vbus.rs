@@ -26,7 +26,7 @@ pub struct Header {
 impl Header {
 
     /// Creates an ID prefix for this `Header`.
-    pub fn to_id_string(&self) -> String {
+    pub fn id_string(&self) -> String {
         format!("{:02X}_{:04X}_{:04X}_{:02X}", self.channel, self.destination_address, self.source_address, self.protocol_version)
     }
 
@@ -49,7 +49,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_id_string() {
+    fn test_id_string() {
         let timestamp = UTC.timestamp(1485688933, 0);
 
         let header = Header {
@@ -60,7 +60,7 @@ mod tests {
             protocol_version: 0x16,
         };
 
-        assert_eq!("11_1213_1415_16", header.to_id_string());
+        assert_eq!("11_1213_1415_16", header.id_string());
     }
 
     #[test]

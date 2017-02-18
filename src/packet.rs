@@ -22,8 +22,8 @@ pub struct Packet {
 impl Packet {
 
     /// Creates an ID string for this `Packet`.
-    pub fn to_id_string(&self) -> String {
-        format!("{}_{:04X}", self.header.to_id_string(), self.command)
+    pub fn id_string(&self) -> String {
+        format!("{}_{:04X}", self.header.id_string(), self.command)
     }
 
 }
@@ -64,7 +64,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_id_string() {
+    fn test_id_string() {
         let timestamp = UTC.timestamp(1485688933, 0);
 
         let frame_data = [0u8; 508];
@@ -82,7 +82,7 @@ mod tests {
             frame_data: frame_data,
         };
 
-        assert_eq!("11_1213_1415_16_1718", packet.to_id_string());
+        assert_eq!("11_1213_1415_16_1718", packet.id_string());
     }
 
     #[test]

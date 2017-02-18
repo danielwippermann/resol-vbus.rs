@@ -178,53 +178,53 @@ mod tests {
     fn test_data_from_checked_bytes() {
         let data = data_from_checked_bytes(0x00, &RECORDING_1 [14..]);
         assert_eq!("2017-01-09T09:57:28.975+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("00_0010_0053_10_0100", data.to_id_string());
+        assert_eq!("00_0010_0053_10_0100", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [100..]);
         assert_eq!("2017-01-09T09:57:27.880+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_0010_7E11_10_0100", data.to_id_string());
+        assert_eq!("01_0010_7E11_10_0100", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [234..]);
         assert_eq!("2017-01-09T09:57:28.765+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_0010_7E21_10_0100", data.to_id_string());
+        assert_eq!("01_0010_7E21_10_0100", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [264..]);
         assert_eq!("2017-01-09T09:57:28.764+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_0015_7E11_10_0100", data.to_id_string());
+        assert_eq!("01_0015_7E11_10_0100", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [330..]);
         assert_eq!("2017-01-09T09:57:08.893+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_6651_7E11_10_0200", data.to_id_string());
+        assert_eq!("01_6651_7E11_10_0200", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [412..]);
         assert_eq!("2017-01-09T09:57:13.901+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_6652_7E11_10_0200", data.to_id_string());
+        assert_eq!("01_6652_7E11_10_0200", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [494..]);
         assert_eq!("2017-01-09T09:57:17.894+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_6653_7E11_10_0200", data.to_id_string());
+        assert_eq!("01_6653_7E11_10_0200", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [576..]);
         assert_eq!("2017-01-09T09:57:21.797+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_6654_7E11_10_0200", data.to_id_string());
+        assert_eq!("01_6654_7E11_10_0200", data.id_string());
 
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [658..]);
         assert_eq!("2017-01-09T09:57:26.080+00:00", data.as_header().timestamp.to_rfc3339());
-        assert_eq!("01_6655_7E11_10_0200", data.to_id_string());
+        assert_eq!("01_6655_7E11_10_0200", data.id_string());
     }
 
     #[test]
     fn test_data_from_bytes() {
         assert_eq!(None, data_from_bytes(0x00, &RECORDING_1 [0..]));
-        assert_eq!("00_0010_0053_10_0100", data_from_bytes(0x00, &RECORDING_1 [14..]).unwrap().to_id_string());
+        assert_eq!("00_0010_0053_10_0100", data_from_bytes(0x00, &RECORDING_1 [14..]).unwrap().id_string());
         assert_eq!(None, data_from_bytes(0x00, &RECORDING_1 [84..]));
-        assert_eq!("01_0010_7E11_10_0100", data_from_bytes(0x01, &RECORDING_1 [100..]).unwrap().to_id_string());
-        assert_eq!("01_0010_7E21_10_0100", data_from_bytes(0x01, &RECORDING_1 [234..]).unwrap().to_id_string());
-        assert_eq!("01_0015_7E11_10_0100", data_from_bytes(0x01, &RECORDING_1 [264..]).unwrap().to_id_string());
-        assert_eq!("01_6651_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [330..]).unwrap().to_id_string());
-        assert_eq!("01_6652_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [412..]).unwrap().to_id_string());
-        assert_eq!("01_6653_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [494..]).unwrap().to_id_string());
-        assert_eq!("01_6654_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [576..]).unwrap().to_id_string());
-        assert_eq!("01_6655_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [658..]).unwrap().to_id_string());
+        assert_eq!("01_0010_7E11_10_0100", data_from_bytes(0x01, &RECORDING_1 [100..]).unwrap().id_string());
+        assert_eq!("01_0010_7E21_10_0100", data_from_bytes(0x01, &RECORDING_1 [234..]).unwrap().id_string());
+        assert_eq!("01_0015_7E11_10_0100", data_from_bytes(0x01, &RECORDING_1 [264..]).unwrap().id_string());
+        assert_eq!("01_6651_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [330..]).unwrap().id_string());
+        assert_eq!("01_6652_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [412..]).unwrap().id_string());
+        assert_eq!("01_6653_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [494..]).unwrap().id_string());
+        assert_eq!("01_6654_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [576..]).unwrap().id_string());
+        assert_eq!("01_6655_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [658..]).unwrap().id_string());
     }
 }

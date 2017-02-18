@@ -32,11 +32,11 @@ impl Data {
     }
 
     /// Creates an ID string for the variant inside this `Data`.
-    pub fn to_id_string(&self) -> String {
+    pub fn id_string(&self) -> String {
         match *self {
-            Data::Packet(ref packet) => packet.to_id_string(),
-            Data::Datagram(ref dgram) => dgram.to_id_string(),
-            Data::Telegram(ref tgram) => tgram.to_id_string(),
+            Data::Packet(ref packet) => packet.id_string(),
+            Data::Datagram(ref dgram) => dgram.id_string(),
+            Data::Telegram(ref tgram) => tgram.id_string(),
         }
     }
 

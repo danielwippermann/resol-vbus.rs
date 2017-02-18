@@ -29,8 +29,8 @@ impl Telegram {
     }
 
     /// Creates an ID string for this `Telegram`.
-    pub fn to_id_string(&self) -> String {
-        format!("{}_{:02X}", self.header.to_id_string(), self.command)
+    pub fn id_string(&self) -> String {
+        format!("{}_{:02X}", self.header.id_string(), self.command)
     }
 
 }
@@ -99,7 +99,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_id_string() {
+    fn test_id_string() {
         let timestamp = UTC.timestamp(1485688933, 0);
 
         let frame_data = [0u8; 21];
@@ -116,7 +116,7 @@ mod tests {
             frame_data: frame_data,
         };
 
-        assert_eq!("11_1213_1415_36_17", tgram.to_id_string());
+        assert_eq!("11_1213_1415_36_17", tgram.id_string());
     }
 
     #[test]

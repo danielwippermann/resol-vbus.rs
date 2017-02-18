@@ -104,23 +104,23 @@ mod tests {
 
         let data = ldr.read_data().unwrap().unwrap();
 
-        assert_eq!("11_0010_7E11_10_0100", data.to_id_string());
+        assert_eq!("11_0010_7E11_10_0100", data.id_string());
 
         let data = ldr.read_data().unwrap().unwrap();
 
-        assert_eq!("11_0015_7E11_10_0100", data.to_id_string());
+        assert_eq!("11_0015_7E11_10_0100", data.id_string());
 
         let data = ldr.read_data().unwrap().unwrap();
 
-        assert_eq!("11_0010_7E22_10_0100", data.to_id_string());
+        assert_eq!("11_0010_7E22_10_0100", data.id_string());
 
         let data = ldr.read_data().unwrap().unwrap();
 
-        assert_eq!("11_6651_7E11_10_0200", data.to_id_string());
+        assert_eq!("11_6651_7E11_10_0200", data.id_string());
 
         let data = ldr.read_data().unwrap().unwrap();
 
-        assert_eq!("11_0000_7E11_20_0500_0000", data.to_id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data.id_string());
 
         let data = ldr.read_data().unwrap();
 

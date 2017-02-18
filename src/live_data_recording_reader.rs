@@ -203,9 +203,9 @@ mod tests {
 
         let data_slice = data_set.as_data_slice();
         assert_eq!(3, data_slice.len());
-        assert_eq!("00_0010_7E11_10_0100", data_slice [0].to_id_string());
-        assert_eq!("00_0015_7E11_10_0100", data_slice [1].to_id_string());
-        assert_eq!("00_6655_7E11_10_0200", data_slice [2].to_id_string());
+        assert_eq!("00_0010_7E11_10_0100", data_slice [0].id_string());
+        assert_eq!("00_0015_7E11_10_0100", data_slice [1].id_string());
+        assert_eq!("00_6655_7E11_10_0200", data_slice [2].id_string());
     }
 
     #[test]
@@ -213,25 +213,25 @@ mod tests {
         let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0010_7E11_10_0100", data.to_id_string());
+        assert_eq!("00_0010_7E11_10_0100", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0015_7E11_10_0100", data.to_id_string());
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_6655_7E11_10_0200", data.to_id_string());
+        assert_eq!("00_6655_7E11_10_0200", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0000_7E11_20_0500_0000", data.to_id_string());
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0010_7E11_10_0100", data.to_id_string());
+        assert_eq!("00_0010_7E11_10_0100", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0015_7E11_10_0100", data.to_id_string());
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
 
         let data = ldrr.read_data().unwrap().unwrap();
-        assert_eq!("00_0000_7E11_20_0500_0000", data.to_id_string());
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
 
         let data = ldrr.read_data().unwrap();
         assert_eq!(None, data);

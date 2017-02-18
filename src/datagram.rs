@@ -23,12 +23,12 @@ pub struct Datagram {
 impl Datagram {
 
     /// Creates an ID string for this `Datagram`.
-    pub fn to_id_string(&self) -> String {
+    pub fn id_string(&self) -> String {
         let info = match self.command {
             0x0900 => self.param16,
             _ => 0,
         };
-        format!("{}_{:04X}_{:04X}", self.header.to_id_string(), self.command, info)
+        format!("{}_{:04X}_{:04X}", self.header.id_string(), self.command, info)
     }
 
 }
@@ -52,7 +52,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_id_string() {
+    fn test_id_string() {
         let timestamp = UTC.timestamp(1485688933, 0);
 
         let dgram = Datagram {
@@ -68,7 +68,7 @@ mod tests {
             param32: 0x1b1c1d1e,
         };
 
-        assert_eq!("11_1213_1415_26_1718_0000", dgram.to_id_string());
+        assert_eq!("11_1213_1415_26_1718_0000", dgram.id_string());
 
         let dgram = Datagram {
             header: Header {
@@ -83,7 +83,7 @@ mod tests {
             param32: 0x1b1c1d1e,
         };
 
-        assert_eq!("11_1213_1415_26_0900_191A", dgram.to_id_string());
+        assert_eq!("11_1213_1415_26_0900_191A", dgram.id_string());
     }
 
     #[test]
