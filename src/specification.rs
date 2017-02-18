@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::clone::Clone;
 use std::fmt;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use chrono::{TimeZone, UTC};
 
@@ -49,10 +49,10 @@ pub struct PacketSpec {
     pub command: u16,
 
     /// The `DeviceSpec` containing information about the destination VBus device.
-    pub destination_device: Arc<DeviceSpec>,
+    pub destination_device: Rc<DeviceSpec>,
 
     /// The `DeviceSpec` containing information about the source VBus device.
-    pub source_device: Arc<DeviceSpec>,
+    pub source_device: Rc<DeviceSpec>,
 
     /// The name of the packet, containing channel, source and optionally destination names.
     pub name: String,
@@ -112,8 +112,8 @@ pub struct PacketFieldFormatter<'a> {
 pub struct Specification {
     file: SpecificationFile,
     language: Language,
-    devices: RefCell<Vec<Arc<DeviceSpec>>>,
-    packets: RefCell<Vec<Arc<PacketSpec>>>,
+    devices: RefCell<Vec<Rc<DeviceSpec>>>,
+    packets: RefCell<Vec<Rc<PacketSpec>>>,
 }
 
 
@@ -132,13 +132,13 @@ pub struct DataSetPacketFieldIterator<'a> {
 pub struct DataSetPacketField<'a> {
     data_set: &'a DataSet,
     data_index: usize,
-    packet_spec: Arc<PacketSpec>,
+    packet_spec: Rc<PacketSpec>,
     field_index: usize,
     raw_value: Option<f64>,
 }
 
 
-fn get_cached_device_spec(devices: &[Arc<DeviceSpec>], channel: u8, self_address: u16, peer_address: u16) -> Option<Arc<DeviceSpec>> {
+fn get_cached_device_spec(devices: &[Rc<DeviceSpec>], channel: u8, self_address: u16, peer_address: u16) -> Option<Rc<DeviceSpec>> {
     let result = devices.iter().find(|&device| {
         if device.channel != channel {
             false
@@ -158,7 +158,7 @@ fn get_cached_device_spec(devices: &[Arc<DeviceSpec>], channel: u8, self_address
 }
 
 
-fn get_or_create_cached_device_spec(devices: &mut Vec<Arc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16, file: &SpecificationFile, language: &Language) -> Arc<DeviceSpec> {
+fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16, file: &SpecificationFile, language: &Language) -> Rc<DeviceSpec> {
     if let Some(device) = get_cached_device_spec(devices, channel, self_address, peer_address) {
         return device;
     }
@@ -205,13 +205,13 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Arc<DeviceSpec>>, channel:
         name: name,
     };
 
-    devices.push(Arc::new(device));
+    devices.push(Rc::new(device));
 
     get_cached_device_spec(devices, channel, self_address, peer_address).unwrap()
 }
 
 
-fn get_cached_packet_spec(packets: &[Arc<PacketSpec>], channel: u8, destination_address: u16, source_address: u16, command: u16) -> Option<Arc<PacketSpec>> {
+fn get_cached_packet_spec(packets: &[Rc<PacketSpec>], channel: u8, destination_address: u16, source_address: u16, command: u16) -> Option<Rc<PacketSpec>> {
     let result = packets.iter().find(|&packet| {
         if packet.channel != channel {
             false
@@ -233,7 +233,7 @@ fn get_cached_packet_spec(packets: &[Arc<PacketSpec>], channel: u8, destination_
 }
 
 
-fn get_or_create_cached_packet_spec(packets: &mut Vec<Arc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16, devices: &mut Vec<Arc<DeviceSpec>>, file: &SpecificationFile, language: &Language) -> Arc<PacketSpec> {
+fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16, devices: &mut Vec<Rc<DeviceSpec>>, file: &SpecificationFile, language: &Language) -> Rc<PacketSpec> {
     if let Some(packet) = get_cached_packet_spec(packets, channel, destination_address, source_address, command) {
         return packet;
     }
@@ -294,7 +294,7 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Arc<PacketSpec>>, channel:
         fields: fields,
     };
 
-    packets.push(Arc::new(packet));
+    packets.push(Rc::new(packet));
 
     get_cached_packet_spec(packets, channel, destination_address, source_address, command).unwrap()
 }
@@ -343,13 +343,13 @@ impl Specification {
     }
 
     /// Get a `DeviceSpec`.
-    pub fn get_device_spec(&self, channel: u8, self_address: u16, peer_address: u16) -> Arc<DeviceSpec> {
+    pub fn get_device_spec(&self, channel: u8, self_address: u16, peer_address: u16) -> Rc<DeviceSpec> {
         let mut devices = self.devices.borrow_mut();
         get_or_create_cached_device_spec(&mut devices, channel, self_address, peer_address, &self.file, &self.language)
     }
 
     /// Get a `PacketSpec`.
-    pub fn get_packet_spec(&self, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Arc<PacketSpec> {
+    pub fn get_packet_spec(&self, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Rc<PacketSpec> {
         let mut devices = self.devices.borrow_mut();
         let mut packets = self.packets.borrow_mut();
         get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, &self.language)
