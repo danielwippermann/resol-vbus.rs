@@ -1,3 +1,5 @@
+//! This module provides the `Specification` and its associated types to allow interpretation
+//! of the fields contained within the `frame_data` payload of `Packet` values.
 use std::cell::RefCell;
 use std::clone::Clone;
 use std::fmt;

@@ -188,8 +188,8 @@ pub use live_data_recording_reader::LiveDataRecordingReader;
 pub mod specification_file;
 pub use specification_file::{Language, SpecificationFile};
 
-mod specification;
-pub use specification::*;
+pub mod specification;
+pub use specification::{Specification};
 
 mod file_list_reader;
 pub use file_list_reader::FileListReader;
