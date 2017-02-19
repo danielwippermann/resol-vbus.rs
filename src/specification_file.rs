@@ -100,7 +100,7 @@ fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> 
 
 
 /// Languages supported by VSF1 specification.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Language {
     /// English language
     En,
