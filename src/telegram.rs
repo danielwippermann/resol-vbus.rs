@@ -61,6 +61,15 @@ impl Clone for Telegram {
 }
 
 
+impl AsRef<Header> for Telegram {
+
+    fn as_ref(&self) -> &Header {
+        &self.header
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};

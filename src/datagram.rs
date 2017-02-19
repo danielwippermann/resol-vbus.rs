@@ -43,6 +43,15 @@ impl Debug for Datagram {
 }
 
 
+impl AsRef<Header> for Datagram {
+
+    fn as_ref(&self) -> &Header {
+        &self.header
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};

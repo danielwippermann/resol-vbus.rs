@@ -88,6 +88,15 @@ impl Default for DataSet {
 }
 
 
+impl AsRef<[Data]> for DataSet {
+
+    fn as_ref(&self) -> &[Data] {
+        &self.set
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{Duration, TimeZone, UTC};

@@ -24,11 +24,7 @@ impl Data {
 
     /// Returns the `Header` part of the variant inside this `Data`.
     pub fn as_header(&self) -> &Header {
-        match *self {
-            Data::Packet(ref packet) => &packet.header,
-            Data::Datagram(ref dgram) => &dgram.header,
-            Data::Telegram(ref tgram) => &tgram.header,
-        }
+        self.as_ref()
     }
 
     /// Creates an ID string for the variant inside this `Data`.
@@ -182,6 +178,47 @@ impl PartialOrd for Data {
     }
 
 }
+
+
+impl From<Packet> for Data {
+
+    fn from(packet: Packet) -> Data {
+        Data::Packet(packet)
+    }
+
+}
+
+
+impl From<Datagram> for Data {
+
+    fn from(dgram: Datagram) -> Data {
+        Data::Datagram(dgram)
+    }
+
+}
+
+
+impl From<Telegram> for Data {
+
+    fn from(tgram: Telegram) -> Data {
+        Data::Telegram(tgram)
+    }
+
+}
+
+
+impl AsRef<Header> for Data {
+
+    fn as_ref(&self) -> &Header {
+        match *self {
+            Data::Packet(ref packet) => &packet.as_ref(),
+            Data::Datagram(ref dgram) => &dgram.as_ref(),
+            Data::Telegram(ref tgram) => &tgram.as_ref(),
+        }
+    }
+
+}
+
 
 #[cfg(test)]
 mod tests {

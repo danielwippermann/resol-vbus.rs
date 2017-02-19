@@ -55,6 +55,15 @@ impl Clone for Packet {
 }
 
 
+impl AsRef<Header> for Packet {
+
+    fn as_ref(&self) -> &Header {
+        &self.header
+    }
+
+}
+
+
 #[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};
