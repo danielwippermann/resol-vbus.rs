@@ -6,7 +6,6 @@ use std::rc::Rc;
 use chrono::{TimeZone, UTC};
 
 use data::Data;
-use data_set::DataSet;
 use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
 
 
@@ -119,9 +118,9 @@ pub struct Specification {
 
 /// An iterator over the fields of the `Packet` instances in a `DataSet`.
 #[derive(Debug)]
-pub struct DataSetPacketFieldIterator<'a> {
+pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]> + 'a> {
     spec: &'a Specification,
-    data_set: &'a DataSet,
+    data_set: &'a T,
     data_index: usize,
     field_index: usize,
 }
@@ -129,8 +128,8 @@ pub struct DataSetPacketFieldIterator<'a> {
 
 /// An item returned from the `DataSetPacketFieldIterator` for each field.
 #[derive(Debug)]
-pub struct DataSetPacketField<'a> {
-    data_set: &'a DataSet,
+pub struct DataSetPacketField<'a, T: AsRef<[Data]> + 'a> {
+    data_set: &'a T,
     data_index: usize,
     packet_spec: Rc<PacketSpec>,
     field_index: usize,
@@ -356,7 +355,7 @@ impl Specification {
     }
 
     /// Returns an iterator that iterates over all known packet fields in the data set.
-    pub fn fields_in_data_set<'a>(&'a self, data_set: &'a DataSet) -> DataSetPacketFieldIterator<'a> {
+    pub fn fields_in_data_set<'a, T: AsRef<[Data]> + 'a>(&'a self, data_set: &'a T) -> DataSetPacketFieldIterator<'a, T> {
         DataSetPacketFieldIterator {
             spec: self,
             data_set: data_set,
@@ -473,12 +472,12 @@ impl<'a> fmt::Display for PacketFieldFormatter<'a> {
 }
 
 
-impl<'a> Iterator for DataSetPacketFieldIterator<'a> {
-    type Item = DataSetPacketField<'a>;
+impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
+    type Item = DataSetPacketField<'a, T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let data_slice = self.data_set.as_data_slice();
-        let data_slice_len = self.data_set.as_data_slice().len();
+        let data_slice = self.data_set.as_ref();
+        let data_slice_len = data_slice.len();
 
         while self.data_index < data_slice_len {
             let data = &data_slice [self.data_index];
@@ -512,11 +511,11 @@ impl<'a> Iterator for DataSetPacketFieldIterator<'a> {
 }
 
 
-impl<'a> DataSetPacketField<'a> {
+impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the `DataSet` associated with this field.
-    pub fn data_set(&self) -> &DataSet {
-        self.data_set
+    pub fn data_set(&self) -> &[Data] {
+        self.data_set.as_ref()
     }
 
     /// Return the index of the `Data` associated with this field.
@@ -526,7 +525,7 @@ impl<'a> DataSetPacketField<'a> {
 
     /// Return the `Data` associated with this field.
     pub fn data(&self) -> &Data {
-        &self.data_set.as_data_slice() [self.data_index]
+        &self.data_set.as_ref() [self.data_index]
     }
 
     /// Return the `PacketSpec` associated with this field.
