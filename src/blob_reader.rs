@@ -21,6 +21,11 @@ impl<R: Read> BlobReader<R> {
         }
     }
 
+    /// Consumes this `BlobReader`, returning its inner `Read` value.
+    pub fn into_inner(self) -> R {
+        self.reader
+    }
+
     /// Reads additional data to the internal buffer.
     pub fn read(&mut self) -> Result<usize> {
         if self.start > 0 {
