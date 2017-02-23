@@ -193,3 +193,6 @@ pub use specification::{Specification};
 
 mod file_list_reader;
 pub use file_list_reader::FileListReader;
+
+mod tcp_connector;
+pub use tcp_connector::TcpConnector;
