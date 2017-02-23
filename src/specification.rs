@@ -302,7 +302,7 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
 
 
 /// Get the "power of 10" value for common "n"s and calculate it otherwise.
-pub fn get_power_of_ten(n: i32) -> f64 {
+pub fn power_of_ten_f64(n: i32) -> f64 {
     match n {
         -9 => 0.000_000_001,
         -8 => 0.000_000_01,
@@ -418,7 +418,7 @@ impl PacketFieldSpec {
     /// Construct a `f64` raw value from a slice of bytes.
     pub fn get_raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
         match self.get_raw_value_i64(buf) {
-            Some(raw_value) => Some(raw_value as f64 * get_power_of_ten(- self.precision)),
+            Some(raw_value) => Some(raw_value as f64 * power_of_ten_f64(- self.precision)),
             None => None
         }
     }
@@ -567,9 +567,9 @@ mod tests {
     use test_data::{RECORDING_2, SPEC_FILE_1};
 
     #[test]
-    fn test_get_power_of_10() {
+    fn test_power_of_ten_f64() {
         for n in -20..20 {
-            assert_eq!(10.0f64.powf(n as f64), get_power_of_ten(n));
+            assert_eq!(10.0f64.powf(n as f64), power_of_ten_f64(n));
         }
     }
 
