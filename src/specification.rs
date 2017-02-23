@@ -301,7 +301,25 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
 }
 
 
-/// Get the "power of 10" value for common "n"s and calculate it otherwise.
+/// Get the "power of 10" `i64` value for common "n"s and calculate it otherwise.
+pub fn power_of_ten_i64(n: u32) -> i64 {
+    match n {
+        0 => 1,
+        1 => 10,
+        2 => 100,
+        3 => 1_000,
+        4 => 10_000,
+        5 => 100_000,
+        6 => 1_000_000,
+        7 => 10_000_000,
+        8 => 100_000_000,
+        9 => 1_000_000_000,
+        _ => 10i64.pow(n),
+    }
+}
+
+
+/// Get the "power of 10" `f64` value for common "n"s and calculate it otherwise.
 pub fn power_of_ten_f64(n: i32) -> f64 {
     match n {
         -9 => 0.000_000_001,
@@ -565,6 +583,13 @@ mod tests {
     use super::*;
 
     use test_data::{RECORDING_2, SPEC_FILE_1};
+
+    #[test]
+    fn test_power_of_ten_i64() {
+        for n in 0..19 {
+            assert_eq!(10i64.pow(n), power_of_ten_i64(n));
+        }
+    }
 
     #[test]
     fn test_power_of_ten_f64() {
