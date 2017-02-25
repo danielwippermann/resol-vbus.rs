@@ -103,7 +103,7 @@
 //!
 //!
 //! fn main() {
-//!     let vsf_filename = "vbus_specification.vsf";
+//!     let vsf_filename = "res/vbus_specification.vsf";
 //!
 //!     let file_list = std::env::args().skip(1).map(|arg| arg.to_owned()).collect::<Vec<_>>();
 //!
