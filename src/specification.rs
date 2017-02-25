@@ -167,7 +167,7 @@ fn get_cached_device_spec(devices: &[Rc<DeviceSpec>], channel: u8, self_address:
     });
 
     match result {
-        Some(device) => Some((*device).clone()),
+        Some(device) => Some(device.clone()),
         None => None,
     }
 }
