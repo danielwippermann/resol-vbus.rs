@@ -380,9 +380,9 @@ impl SpecificationFile {
     }
 
     /// Get localized text by its index and language.
-    pub fn localized_text_by_index(&self, idx: &LocalizedTextIndex, language: &Language) -> &str {
+    pub fn localized_text_by_index(&self, idx: &LocalizedTextIndex, language: Language) -> &str {
         let localized_text = &self.localized_texts [idx.0 as usize];
-        let text_index = match *language {
+        let text_index = match language {
             Language::En => &localized_text.text_index_en,
             Language::De => &localized_text.text_index_de,
             Language::Fr => &localized_text.text_index_fr,
@@ -909,11 +909,11 @@ mod tests {
         let mut localized_text_index = 0;
 
         let mut check_next_localized_text = |ref_text_en, ref_text_de, ref_text_fr| {
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), &Language::En);
+            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::En);
             assert_eq!(ref_text_en, text);
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), &Language::De);
+            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::De);
             assert_eq!(ref_text_de, text);
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), &Language::Fr);
+            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::Fr);
             assert_eq!(ref_text_fr, text);
             localized_text_index += 1;
         };
@@ -1035,7 +1035,7 @@ mod tests {
         assert_eq!(0xFFFF, dt.self_mask);
         assert_eq!(0x0000, dt.peer_address);
         assert_eq!(0x0000, dt.peer_mask);
-        assert_eq!("DFA", spec_file.localized_text_by_index(&dt.name_localized_text_index, &Language::En));
+        assert_eq!("DFA", spec_file.localized_text_by_index(&dt.name_localized_text_index, Language::En));
 
         assert_eq!(2, spec_file.packet_templates.len());
 
@@ -1057,9 +1057,9 @@ mod tests {
 
         let ptf = &spec_file.packet_templates [0].fields [0];
         assert_eq!("000_4_0", spec_file.text_by_index(&ptf.id_text_index));
-        assert_eq!("Heat quantity", spec_file.localized_text_by_index(&ptf.name_localized_text_index, &Language::En));
-        assert_eq!("Wärmemenge", spec_file.localized_text_by_index(&ptf.name_localized_text_index, &Language::De));
-        assert_eq!("Quantité de chaleur", spec_file.localized_text_by_index(&ptf.name_localized_text_index, &Language::Fr));
+        assert_eq!("Heat quantity", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::En));
+        assert_eq!("Wärmemenge", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::De));
+        assert_eq!("Quantité de chaleur", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::Fr));
         assert_eq!(18, ptf.unit_id.0);
         assert_eq!(0, ptf.precision);
         assert_eq!(1, ptf.type_id.0);

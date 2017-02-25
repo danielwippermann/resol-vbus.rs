@@ -159,7 +159,7 @@ fn get_cached_device_spec(devices: &[Rc<DeviceSpec>], channel: u8, self_address:
 }
 
 
-fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16, file: &SpecificationFile, language: &Language) -> Rc<DeviceSpec> {
+fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16, file: &SpecificationFile, language: Language) -> Rc<DeviceSpec> {
     if let Some(device) = get_cached_device_spec(devices, channel, self_address, peer_address) {
         return device;
     }
@@ -182,7 +182,7 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: 
 
     let name = match device_template {
         None => {
-            match *language {
+            match language {
                 Language::En => format!("Unknown device 0x{:04X}", self_address),
                 Language::De => format!("Unbekanntes Gerät 0x{:04X}", self_address),
                 Language::Fr => format!("Unknown device 0x{:04X}", self_address),  // FIXME(daniel): missing translation
@@ -234,7 +234,7 @@ fn get_cached_packet_spec(packets: &[Rc<PacketSpec>], channel: u8, destination_a
 }
 
 
-fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16, devices: &mut Vec<Rc<DeviceSpec>>, file: &SpecificationFile, language: &Language) -> Rc<PacketSpec> {
+fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16, devices: &mut Vec<Rc<DeviceSpec>>, file: &SpecificationFile, language: Language) -> Rc<PacketSpec> {
     if let Some(packet) = get_cached_packet_spec(packets, channel, destination_address, source_address, command) {
         return packet;
     }
@@ -271,7 +271,7 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
                     field_id: field_id,
                     packet_field_id: packet_field_id,
                     name: field_name,
-                    unit_id: field.unit_id.clone(),
+                    unit_id: field.unit_id,
                     unit_family: unit_family,
                     unit_code: unit_code,
                     unit_text: unit_text,
@@ -364,14 +364,14 @@ impl Specification {
     /// Get a `DeviceSpec`.
     pub fn get_device_spec(&self, channel: u8, self_address: u16, peer_address: u16) -> Rc<DeviceSpec> {
         let mut devices = self.devices.borrow_mut();
-        get_or_create_cached_device_spec(&mut devices, channel, self_address, peer_address, &self.file, &self.language)
+        get_or_create_cached_device_spec(&mut devices, channel, self_address, peer_address, &self.file, self.language)
     }
 
     /// Get a `PacketSpec`.
     pub fn get_packet_spec(&self, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Rc<PacketSpec> {
         let mut devices = self.devices.borrow_mut();
         let mut packets = self.packets.borrow_mut();
-        get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, &self.language)
+        get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, self.language)
     }
 
     /// Returns an iterator that iterates over all known packet fields in the data set.
