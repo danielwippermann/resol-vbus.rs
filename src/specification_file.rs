@@ -100,7 +100,7 @@ fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> 
 
 
 /// Languages supported by VSF1 specification.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
     /// English language
     En,
@@ -114,7 +114,7 @@ pub enum Language {
 
 
 /// A numeric reference to a `Text`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct TextIndex(i32);
 
 
@@ -133,17 +133,17 @@ pub struct LocalizedText {
 
 
 /// A numeric reference to a `LocalizedText` instance.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct LocalizedTextIndex(i32);
 
 
 /// A numeric reference to an `UnitFamily` instance.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnitFamilyId(pub i32);
 
 
 /// One of the unit families supported by the VSF1 specification.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum UnitFamily {
     /// Not associated with a unit family.
     None,
@@ -172,7 +172,7 @@ pub enum UnitFamily {
 
 
 /// A numeric reference to an `Unit` instance.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnitId(pub i32);
 
 
@@ -237,7 +237,7 @@ pub struct PacketTemplate {
 
 
 /// A type to describe different data types within the packet fields.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Type {
     /// Floating-point number, supporting precision and an optional unit.
     Number,
@@ -254,7 +254,7 @@ pub enum Type {
 
 
 /// A numeric reference to a `Type` instance.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TypeId(pub i32);
 
 
