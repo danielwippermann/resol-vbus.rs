@@ -102,8 +102,8 @@ pub struct PacketFieldSpec {
 #[derive(Debug)]
 pub struct PacketFieldFormatter<'a> {
     typ: Type,
-    precision: usize,
-    raw_value: Option<f64>,
+    precision: i32,
+    raw_value: Option<i64>,
     unit_text: &'a str,
 }
 
@@ -135,7 +135,7 @@ pub struct DataSetPacketField<'a, T: AsRef<[Data]> + 'a> {
     data_index: usize,
     packet_spec: Rc<PacketSpec>,
     field_index: usize,
-    raw_value: Option<f64>,
+    raw_value: Option<i64>,
 }
 
 
@@ -442,15 +442,15 @@ impl PacketFieldSpec {
     }
 
     /// Format a raw value into its textual representation.
-    pub fn fmt_raw_value(&self, raw_value: Option<f64>, append_unit: bool) -> PacketFieldFormatter {
+    pub fn fmt_raw_value(&self, raw_value: Option<i64>, append_unit: bool) -> PacketFieldFormatter {
         let unit_text = if append_unit {
             &self.unit_text
         } else {
             ""
         };
         PacketFieldFormatter {
-            typ: self.typ.clone(),
-            precision: self.precision as usize,
+            typ: self.typ,
+            precision: self.precision,
             raw_value: raw_value,
             unit_text: unit_text,
         }
@@ -510,7 +510,7 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
                     let frame_data = &packet.frame_data [0..packet.frame_count as usize * 4];
 
                     let field_spec = &packet_spec.fields [field_index];
-                    let raw_value = field_spec.get_raw_value_f64(frame_data);
+                    let raw_value = field_spec.get_raw_value_i64(frame_data);
 
                     return Some(DataSetPacketField {
                         data_set: self.data_set,
@@ -564,8 +564,16 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     }
 
     /// Return the raw value associated with this field.
-    pub fn raw_value(&self) -> &Option<f64> {
+    pub fn raw_value_i64(&self) -> &Option<i64> {
         &self.raw_value
+    }
+
+    /// Return the raw value associated with this field.
+    pub fn raw_value_f64(&self) -> Option<f64> {
+        match self.raw_value {
+            Some(v) => Some(v as f64 * power_of_ten_f64(-self.field_spec().precision)),
+            None => None,
+        }
     }
 
     /// Format the raw value associated with this field.
@@ -812,34 +820,34 @@ mod tests {
         };
 
         let field_spec = fake_field_spec(0, Type::Number, "don't append unit");
-        assert_eq!("12346", fmt_raw_value(&field_spec, 12345.6789, false));
+        assert_eq!("12346", fmt_raw_value(&field_spec, 12346, false));
 
         let field_spec = fake_field_spec(0, Type::Number, " unit");
-        assert_eq!("12346 unit", fmt_raw_value(&field_spec, 12345.6789, true));
+        assert_eq!("12346 unit", fmt_raw_value(&field_spec, 12346, true));
 
         let field_spec = fake_field_spec(1, Type::Number, "don't append unit");
-        assert_eq!("12345.7", fmt_raw_value(&field_spec, 12345.6789, false));
+        assert_eq!("12345.7", fmt_raw_value(&field_spec, 123457, false));
 
         let field_spec = fake_field_spec(2, Type::Number, "don't append unit");
-        assert_eq!("12345.68", fmt_raw_value(&field_spec, 12345.6789, false));
+        assert_eq!("12345.68", fmt_raw_value(&field_spec, 1234568, false));
 
         let field_spec = fake_field_spec(3, Type::Number, "don't append unit");
-        assert_eq!("12345.679", fmt_raw_value(&field_spec, 12345.6789, false));
+        assert_eq!("12345.679", fmt_raw_value(&field_spec, 12345679, false));
 
         let field_spec = fake_field_spec(4, Type::Number, "don't append unit");
-        assert_eq!("12345.6789", fmt_raw_value(&field_spec, 12345.6789, false));
+        assert_eq!("12345.6789", fmt_raw_value(&field_spec, 123456789, false));
 
         let field_spec = fake_field_spec(10, Type::Number, "don't append unit");
-        assert_eq!("1.2345678900", fmt_raw_value(&field_spec, 1.23456789, false));
+        assert_eq!("1.2345678900", fmt_raw_value(&field_spec, 12345678900, false));
 
         let field_spec = fake_field_spec(10, Type::Time, "don't append unit");
-        assert_eq!("12:01", fmt_raw_value(&field_spec, 721.0, true));
+        assert_eq!("12:01", fmt_raw_value(&field_spec, 721, true));
 
         let field_spec = fake_field_spec(10, Type::WeekTime, "don't append unit");
-        assert_eq!("Thu,12:01", fmt_raw_value(&field_spec, 3.0 * 1440.0 + 721.0, true));
+        assert_eq!("Thu,12:01", fmt_raw_value(&field_spec, 3 * 1440 + 721, true));
 
         let field_spec = fake_field_spec(10, Type::DateTime, "don't append unit");
-        assert_eq!("2013-12-22 15:17:42", fmt_raw_value(&field_spec, 409418262.0, true));
+        assert_eq!("2013-12-22 15:17:42", fmt_raw_value(&field_spec, 409418262, true));
     }
 
     #[test]
@@ -862,7 +870,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(0, field.field_index());
         assert_eq!("000_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
@@ -872,7 +880,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(1, field.field_index());
         assert_eq!("008_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
@@ -882,7 +890,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(2, field.field_index());
         assert_eq!("012_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
@@ -892,7 +900,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(3, field.field_index());
         assert_eq!("020_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
@@ -902,7 +910,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(4, field.field_index());
         assert_eq!("016_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
 
@@ -912,7 +920,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(5, field.field_index());
         assert_eq!("024_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
 
@@ -922,7 +930,7 @@ mod tests {
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(6, field.field_index());
         assert_eq!("028_4_0", field.field_spec().field_id);
-        assert_eq!(Some(0f64), *field.raw_value());
+        assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
     }
