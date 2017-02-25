@@ -95,12 +95,26 @@ pub struct PacketFieldSpec {
 
     /// The parts the field consists of.
     pub parts: Vec<PacketTemplateFieldPart>,
+
+    language: Language,
+}
+
+
+/// A helper type for formatting raw values.
+#[derive(Debug)]
+pub struct RawValueFormatter<'a> {
+    language: Language,
+    typ: Type,
+    precision: i32,
+    raw_value: i64,
+    unit_text: &'a str,
 }
 
 
 /// A helper type for formatting raw values.
 #[derive(Debug)]
 pub struct PacketFieldFormatter<'a> {
+    language: Language,
     typ: Type,
     precision: i32,
     raw_value: Option<i64>,
@@ -278,6 +292,7 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
                     precision: field.precision,
                     typ: typ,
                     parts: field.parts.clone(),
+                    language: language,
                 }
             }).collect()
         },
@@ -449,6 +464,7 @@ impl PacketFieldSpec {
             ""
         };
         PacketFieldFormatter {
+            language: self.language,
             typ: self.typ,
             precision: self.precision,
             raw_value: raw_value,
@@ -459,31 +475,118 @@ impl PacketFieldSpec {
 }
 
 
+const WEEKDAYS_EN: [&'static str; 7] = [
+    "Mo",
+    "Tu",
+    "We",
+    "Th",
+    "Fr",
+    "Sa",
+    "Su",
+];
+
+
+const WEEKDAYS_DE: [&'static str; 7] = [
+    "Mo",
+    "Di",
+    "Mi",
+    "Do",
+    "Fr",
+    "Sa",
+    "So",
+];
+
+
+const WEEKDAYS_FR: [&'static str; 7] = [
+    "Lu",
+    "Ma",
+    "Me",
+    "Je",
+    "Ve",
+    "Sa",
+    "Di",
+];
+
+
+impl<'a> RawValueFormatter<'a> {
+
+    /// Construct a `RawValueFormatter` to help format a raw value into its textual representation.
+    pub fn new(language: Language, typ: Type, precision: i32, raw_value: i64, unit_text: &'a str) -> RawValueFormatter<'a> {
+        RawValueFormatter {
+            language: language,
+            typ: typ,
+            precision: precision,
+            raw_value: raw_value,
+            unit_text: unit_text,
+        }
+    }
+
+}
+
+
+impl<'a> fmt::Display for RawValueFormatter<'a> {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.typ {
+            Type::Number => {
+                if self.precision > 0 {
+                    let sign = if self.raw_value < 0 {
+                        "-"
+                    } else {
+                        ""
+                    };
+                    let raw_value = self.raw_value.abs();
+                    let factor = power_of_ten_i64(self.precision as u32);
+                    let left_part = raw_value / factor;
+                    let right_part = raw_value % factor;
+                    let separator = match self.language {
+                        Language::En => ".",
+                        Language::De | Language::Fr => ",",
+                    };
+
+                    write!(f, "{}{}{}{:.*}{}", sign, left_part, separator, self.precision as usize, right_part, self.unit_text)
+                } else {
+                    write!(f, "{}{}", self.raw_value, self.unit_text)
+                }
+            }
+            Type::Time => {
+                let hours = self.raw_value / 60;
+                let minutes = self.raw_value % 60;
+                write!(f, "{:02}:{:02}", hours, minutes)
+            }
+            Type::WeekTime => {
+                let weekday_idx = ((self.raw_value / 1440) % 7) as usize;
+                let hours = (self.raw_value / 60) % 24;
+                let minutes = self.raw_value % 60;
+                match self.language {
+                    Language::En => write!(f, "{},{:02}:{:02}", WEEKDAYS_EN [weekday_idx], hours, minutes),
+                    Language::De => write!(f, "{},{:02}:{:02}", WEEKDAYS_DE [weekday_idx], hours, minutes),
+                    Language::Fr => write!(f, "{},{:02}:{:02}", WEEKDAYS_FR [weekday_idx], hours, minutes),
+                }
+            }
+            Type::DateTime => {
+                let timestamp = UTC.timestamp(self.raw_value + 978307200, 0);
+                match self.language {
+                    Language::En | Language::Fr => {
+                        write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))
+                    }
+                    Language::De => {
+                        write!(f, "{}", timestamp.format("%d.%m.%Y %H:%M:%S"))
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+
 impl<'a> fmt::Display for PacketFieldFormatter<'a> {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(raw_value) = self.raw_value {
-            match self.typ {
-                Type::Number => {
-                    write!(f, "{:.*}{}", self.precision, raw_value, self.unit_text)
-                }
-                Type::Time => {
-                    let raw_value = raw_value.round() as i64;
-                    let hours = raw_value / 60;
-                    let minutes = raw_value % 60;
-                    write!(f, "{:02}:{:02}", hours, minutes)
-                }
-                Type::WeekTime => {
-                    let raw_value = raw_value.round() as i64;
-                    let timestamp = UTC.timestamp(raw_value * 60 + 4 * 86400, 0);
-                    write!(f, "{}", timestamp.format("%a,%H:%M"))
-                }
-                Type::DateTime => {
-                    let raw_value = raw_value.round() as i64;
-                    let timestamp = UTC.timestamp(raw_value + 978307200, 0);
-                    write!(f, "{}", timestamp.format("%Y-%m-%d %H:%M:%S"))
-                }
-            }
+            let formatter = RawValueFormatter::new(self.language, self.typ, self.precision, raw_value, self.unit_text);
+            formatter.fmt(f)
         } else {
             Ok(())
         }
@@ -604,6 +707,39 @@ mod tests {
         for n in -20..20 {
             assert_eq!(10.0f64.powf(n as f64), power_of_ten_f64(n));
         }
+    }
+
+    #[test]
+    fn test_raw_value_formatter() {
+        use specification_file::Language::*;
+        use specification_file::Type::*;
+
+        let fmt_to_string = |language, typ, prec, value, unit| {
+            let formatter = RawValueFormatter::new(language, typ, prec, value, unit);
+            format!("{}", formatter)
+        };
+
+        assert_eq!("12346", fmt_to_string(En, Number, 0, 12346, ""));
+        assert_eq!("12346 unit", fmt_to_string(En, Number, 0, 12346, " unit"));
+        assert_eq!("12345.7", fmt_to_string(En, Number, 1, 123457, ""));
+        assert_eq!("12345.68", fmt_to_string(En, Number, 2, 1234568, ""));
+        assert_eq!("12345.679", fmt_to_string(En, Number, 3, 12345679, ""));
+        assert_eq!("12345.6789", fmt_to_string(En, Number, 4, 123456789, ""));
+        assert_eq!("1.2345678900", fmt_to_string(En, Number, 10, 12345678900, ""));
+        assert_eq!("1,2345678900", fmt_to_string(De, Number, 10, 12345678900, ""));
+        assert_eq!("1,2345678900", fmt_to_string(Fr, Number, 10, 12345678900, ""));
+
+        assert_eq!("12:01", fmt_to_string(En, Time, 10, 721, " ignore this unit"));
+        assert_eq!("12:01", fmt_to_string(De, Time, 10, 721, " ignore this unit"));
+        assert_eq!("12:01", fmt_to_string(Fr, Time, 10, 721, " ignore this unit"));
+
+        assert_eq!("Th,12:01", fmt_to_string(En, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
+        assert_eq!("Do,12:01", fmt_to_string(De, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
+        assert_eq!("Je,12:01", fmt_to_string(Fr, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
+
+        assert_eq!("22/12/2013 15:17:42", fmt_to_string(En, DateTime, 10, 409418262, " ignore this unit"));
+        assert_eq!("22.12.2013 15:17:42", fmt_to_string(De, DateTime, 10, 409418262, " ignore this unit"));
+        assert_eq!("22/12/2013 15:17:42", fmt_to_string(Fr, DateTime, 10, 409418262, " ignore this unit"));
     }
 
     #[test]
@@ -811,6 +947,7 @@ mod tests {
                 precision: precision,
                 typ: typ,
                 parts: Vec::new(),
+                language: Language::En,
             }
         };
 
@@ -844,10 +981,10 @@ mod tests {
         assert_eq!("12:01", fmt_raw_value(&field_spec, 721, true));
 
         let field_spec = fake_field_spec(10, Type::WeekTime, "don't append unit");
-        assert_eq!("Thu,12:01", fmt_raw_value(&field_spec, 3 * 1440 + 721, true));
+        assert_eq!("Th,12:01", fmt_raw_value(&field_spec, 3 * 1440 + 721, true));
 
         let field_spec = fake_field_spec(10, Type::DateTime, "don't append unit");
-        assert_eq!("2013-12-22 15:17:42", fmt_raw_value(&field_spec, 409418262, true));
+        assert_eq!("22/12/2013 15:17:42", fmt_raw_value(&field_spec, 409418262, true));
     }
 
     #[test]
