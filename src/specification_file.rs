@@ -373,6 +373,11 @@ impl SpecificationFile {
         }
     }
 
+    /// Construct a new `SpecificationFile` from the embedded default VSF data.
+    pub fn new_default() -> SpecificationFile {
+        Self::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    }
+
     /// Get text by its index.
     pub fn text_by_index(&self, idx: &TextIndex) -> &str {
         let text = &self.texts [idx.0 as usize];
@@ -1095,5 +1100,10 @@ mod tests {
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
         check_spec_file_fixture(&spec_file);
+    }
+
+    #[test]
+    fn test_new_default() {
+        let _spec_file = SpecificationFile::new_default();
     }
 }
