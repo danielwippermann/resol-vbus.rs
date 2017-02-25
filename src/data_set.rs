@@ -71,6 +71,18 @@ impl DataSet {
         self.set.retain(|data| data.as_header().timestamp >= min_timestamp);
     }
 
+    /// Find all `Packet` values and set their `frame_count` to zero effectively hiding
+    /// their `frame_data` payload.
+    pub fn clear_all_packets(&mut self) {
+        for data in self.set.iter_mut() {
+            if let Data::Packet(ref mut packet) = *data {
+                if packet.frame_count > 0 {
+                    packet.frame_count = 0;
+                }
+            }
+        }
+    }
+
     /// Find all `Packet` values with timestamps older than `min_timestamp` and set their
     /// `frame_count` to zero effectively hiding their `frame_data` payload.
     pub fn clear_packets_older_than(&mut self, min_timestamp: DateTime<UTC>) {
