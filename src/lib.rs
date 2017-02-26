@@ -179,6 +179,8 @@ pub use live_data_writer::LiveDataWriter;
 
 pub mod recording_decoder;
 
+pub mod recording_encoder;
+
 mod recording_reader;
 pub use recording_reader::RecordingReader;
 
