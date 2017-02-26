@@ -1,3 +1,5 @@
+use std::slice::{Iter, IterMut};
+
 use chrono::{DateTime, UTC};
 
 use data::Data;
@@ -93,6 +95,16 @@ impl DataSet {
                 }
             }
         }
+    }
+
+    /// Returns an iterator over the `Data` values.
+    pub fn iter(&self) -> Iter<Data> {
+        self.set.iter()
+    }
+
+    /// Returns an iterator over the `Data` values.
+    pub fn iter_mut(&mut self) -> IterMut<Data> {
+        self.set.iter_mut()
     }
 
     /// Sort the `Data` objects contained in this `DataSet`.
