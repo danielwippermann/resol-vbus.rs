@@ -184,6 +184,9 @@ pub mod recording_encoder;
 mod recording_reader;
 pub use recording_reader::RecordingReader;
 
+mod recording_writer;
+pub use recording_writer::RecordingWriter;
+
 mod live_data_recording_reader;
 pub use live_data_recording_reader::LiveDataRecordingReader;
 
