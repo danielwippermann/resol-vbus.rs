@@ -7,6 +7,7 @@ use chrono::{DateTime, TimeZone, UTC};
 use stream_blob_length::StreamBlobLength::{self, BlobLength, Partial, Malformed};
 use header::Header;
 use packet::Packet;
+use datagram::Datagram;
 use data::Data;
 
 
@@ -75,6 +76,23 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
             frame_count: frame_count,
             frame_data: frame_data,
         })
+    } else if major == 0x20 {
+        let command = LittleEndian::read_u16(&buf [20..22]);
+        let param16 = LittleEndian::read_i16(&buf [26..28]);
+        let param32 = LittleEndian::read_i32(&buf [28..32]);
+
+        Data::Datagram(Datagram {
+            header: Header {
+                timestamp: timestamp,
+                channel: channel,
+                destination_address: destination_address,
+                source_address: source_address,
+                protocol_version: protocol_version,
+            },
+            command: command,
+            param16: param16,
+            param32: param32,
+        })
     } else {
         panic!("Unhandled protocol version {}", protocol_version);
     }
@@ -104,6 +122,12 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                             Some(data_from_checked_bytes(channel, buf))
                         }
                     }
+                } else if major == 0x20 {
+                    if length < 32 {
+                        None
+                    } else {
+                        Some(data_from_checked_bytes(channel, buf))
+                    }
                 } else {
                     None
                 }
@@ -118,7 +142,7 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
 mod tests {
     use super::*;
 
-    use test_data::{RECORDING_1};
+    use test_data::{RECORDING_1, RECORDING_3};
 
     #[test]
     fn test_length_from_bytes() {
@@ -142,6 +166,15 @@ mod tests {
         assert_eq!(BlobLength(82), length_from_bytes(&RECORDING_1 [576..]));
         assert_eq!(BlobLength(82), length_from_bytes(&RECORDING_1 [658..]));
         assert_eq!(740, RECORDING_1.len());
+
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [0..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [32..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [64..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [96..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [128..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [160..]));
+        assert_eq!(BlobLength(32), length_from_bytes(&RECORDING_3 [192..]));
+        assert_eq!(224, RECORDING_3.len());
     }
 
     #[test]
@@ -211,6 +244,34 @@ mod tests {
         let data = data_from_checked_bytes(0x01, &RECORDING_1 [658..]);
         assert_eq!("2017-01-09T09:57:26.080+00:00", data.as_header().timestamp.to_rfc3339());
         assert_eq!("01_6655_7E11_10_0200", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [0..32]);
+        assert_eq!("2017-02-20T09:52:11.644+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [32..64]);
+        assert_eq!("2017-02-20T10:38:11.793+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [64..96]);
+        assert_eq!("2017-02-20T11:39:42.753+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_0052", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [96..128]);
+        assert_eq!("2017-02-20T11:40:27.573+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_0036", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [128..160]);
+        assert_eq!("2017-02-20T11:40:34.934+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_0042", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [160..192]);
+        assert_eq!("2017-02-20T11:50:06.273+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &RECORDING_3 [192..224]);
+        assert_eq!("2017-02-20T12:56:01.229+00:00", data.as_header().timestamp.to_rfc3339());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data.id_string());
     }
 
     #[test]
@@ -226,5 +287,13 @@ mod tests {
         assert_eq!("01_6653_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [494..]).unwrap().id_string());
         assert_eq!("01_6654_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [576..]).unwrap().id_string());
         assert_eq!("01_6655_7E11_10_0200", data_from_bytes(0x01, &RECORDING_1 [658..]).unwrap().id_string());
+
+        assert_eq!("01_0000_7E11_20_0900_18F8", data_from_bytes(0x01, &RECORDING_3 [0..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data_from_bytes(0x01, &RECORDING_3 [32..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_0052", data_from_bytes(0x01, &RECORDING_3 [64..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_0036", data_from_bytes(0x01, &RECORDING_3 [96..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_0042", data_from_bytes(0x01, &RECORDING_3 [128..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data_from_bytes(0x01, &RECORDING_3 [160..]).unwrap().id_string());
+        assert_eq!("01_0000_7E11_20_0900_18F8", data_from_bytes(0x01, &RECORDING_3 [192..]).unwrap().id_string());
     }
 }
