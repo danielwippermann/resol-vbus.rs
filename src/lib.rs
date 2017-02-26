@@ -190,6 +190,9 @@ pub use recording_writer::RecordingWriter;
 mod live_data_recording_reader;
 pub use live_data_recording_reader::LiveDataRecordingReader;
 
+mod live_data_recording_writer;
+pub use live_data_recording_writer::LiveDataRecordingWriter;
+
 pub mod specification_file;
 pub use specification_file::{Language, SpecificationFile};
 
