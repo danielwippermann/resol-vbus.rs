@@ -2,7 +2,7 @@
 //! representation according to the VBus Recording File Format.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, TimeZone, UTC};
 
 use data::Data;
 use header::Header;
@@ -39,8 +39,8 @@ pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<UTC>, buf: &m
 
 
 /// Stores a "VBus channel marker" record in the provided byte slice.
-pub fn bytes_from_channel(timestamp: DateTime<UTC>, channel: u8, buf: &mut [u8]) {
-    bytes_from_record(0x77, 16, timestamp, buf);
+pub fn bytes_from_channel(channel: u8, buf: &mut [u8]) {
+    bytes_from_record(0x77, 16, UTC.timestamp(0, 0), buf);
     buf [14] = channel;
     buf [15] = 0;
 }
@@ -140,12 +140,10 @@ mod tests {
 
     #[test]
     fn test_bytes_from_channel() {
-        let timestamp = UTC.timestamp(1485688933, 0);
-
         let mut buf = [0u8; 16];
 
-        bytes_from_channel(timestamp, 0x11, &mut buf);
-        assert_eq!("a57710001000880af6e9590100001100", to_hex_string(&buf));
+        bytes_from_channel(0x11, &mut buf);
+        assert_eq!("a5771000100000000000000000001100", to_hex_string(&buf));
     }
 
     #[test]
