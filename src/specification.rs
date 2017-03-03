@@ -5,7 +5,7 @@ use std::clone::Clone;
 use std::fmt;
 use std::rc::Rc;
 
-use chrono::{TimeZone, UTC};
+use chrono::{DateTime, TimeZone, UTC};
 
 use data::Data;
 use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
@@ -396,6 +396,17 @@ impl Specification {
             data_set: data_set,
             data_index: 0,
             field_index: 0,
+        }
+    }
+
+    /// Format a timestamp.
+    pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: DateTime<Tz>) -> RawValueFormatter {
+        RawValueFormatter {
+            language: self.language,
+            typ: Type::DateTime,
+            precision: 0,
+            raw_value: timestamp.timestamp() - 978307200,
+            unit_text: "",
         }
     }
 
