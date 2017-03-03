@@ -21,6 +21,11 @@ pub struct Packet {
 
 impl Packet {
 
+    /// Creates a tuple containing identifiable information about this packet.
+    pub fn packet_id_tuple(&self) -> (u8, u16, u16, u16) {
+        (self.header.channel, self.header.destination_address, self.header.source_address, self.command)
+    }
+
     /// Creates an ID string for this `Packet`.
     pub fn id_string(&self) -> String {
         format!("{}_{:04X}", self.header.id_string(), self.command)
