@@ -426,7 +426,7 @@ impl PacketSpec {
 impl PacketFieldSpec {
 
     /// Construct an `i64` raw value from a slice of bytes.
-    pub fn get_raw_value_i64(&self, buf: &[u8]) -> Option<i64> {
+    pub fn raw_value_i64(&self, buf: &[u8]) -> Option<i64> {
         let length = buf.len();
 
         let mut valid = false;
@@ -460,8 +460,8 @@ impl PacketFieldSpec {
     }
 
     /// Construct a `f64` raw value from a slice of bytes.
-    pub fn get_raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
-        match self.get_raw_value_i64(buf) {
+    pub fn raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
+        match self.raw_value_i64(buf) {
             Some(raw_value) => Some(raw_value as f64 * power_of_ten_f64(- self.precision)),
             None => None
         }
@@ -624,7 +624,7 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
                     let frame_data = &packet.frame_data [0..packet.frame_count as usize * 4];
 
                     let field_spec = &packet_spec.fields [field_index];
-                    let raw_value = field_spec.get_raw_value_i64(frame_data);
+                    let raw_value = field_spec.raw_value_i64(frame_data);
 
                     return Some(DataSetPacketField {
                         data_set: self.data_set,
@@ -895,7 +895,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_raw_value_i64() {
+    fn test_raw_value_i64() {
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
         let spec = Specification::from_file(spec_file, Language::En);
@@ -910,17 +910,17 @@ mod tests {
             0x48, 0xDD, 0xFF, 0xFF,
         ];
 
-        assert_eq!(Some(0x12345678), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_i64(buf));
-        assert_eq!(Some(8888), packet_spec.get_field_spec("004_4_0").unwrap().get_raw_value_i64(buf));
-        assert_eq!(Some(-8888), packet_spec.get_field_spec("008_4_0").unwrap().get_raw_value_i64(buf));
-        assert_eq!(Some(0x345678), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_i64(&buf [0..3]));
-        assert_eq!(Some(0x5678), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_i64(&buf [0..2]));
-        assert_eq!(Some(0x78), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_i64(&buf [0..1]));
-        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_i64(&buf [0..0]));
+        assert_eq!(Some(0x12345678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(buf));
+        assert_eq!(Some(8888), packet_spec.get_field_spec("004_4_0").unwrap().raw_value_i64(buf));
+        assert_eq!(Some(-8888), packet_spec.get_field_spec("008_4_0").unwrap().raw_value_i64(buf));
+        assert_eq!(Some(0x345678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..3]));
+        assert_eq!(Some(0x5678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..2]));
+        assert_eq!(Some(0x78), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..1]));
+        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..0]));
     }
 
     #[test]
-    fn test_get_raw_value_f64() {
+    fn test_raw_value_f64() {
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
         let spec = Specification::from_file(spec_file, Language::En);
@@ -935,13 +935,13 @@ mod tests {
             0x48, 0xDD, 0xFF, 0xFF,
         ];
 
-        assert_eq!(Some(0x12345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_f64(buf));
-        assert_eq!(Some(888.8000000000001), packet_spec.get_field_spec("004_4_0").unwrap().get_raw_value_f64(buf));
-        assert_eq!(Some(-888.8000000000001), packet_spec.get_field_spec("008_4_0").unwrap().get_raw_value_f64(buf));
-        assert_eq!(Some(0x345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_f64(&buf [0..3]));
-        assert_eq!(Some(0x5678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_f64(&buf [0..2]));
-        assert_eq!(Some(0x78 as f64), packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_f64(&buf [0..1]));
-        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().get_raw_value_f64(&buf [0..0]));
+        assert_eq!(Some(0x12345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(buf));
+        assert_eq!(Some(888.8000000000001), packet_spec.get_field_spec("004_4_0").unwrap().raw_value_f64(buf));
+        assert_eq!(Some(-888.8000000000001), packet_spec.get_field_spec("008_4_0").unwrap().raw_value_f64(buf));
+        assert_eq!(Some(0x345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..3]));
+        assert_eq!(Some(0x5678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..2]));
+        assert_eq!(Some(0x78 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..1]));
+        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..0]));
     }
 
     #[test]
