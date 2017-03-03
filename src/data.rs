@@ -75,6 +75,30 @@ impl Data {
         self.as_ref()
     }
 
+    /// Returns the `Packet` value.
+    pub fn as_packet(&self) -> &Packet {
+        match *self {
+            Data::Packet(ref packet) => packet,
+            _ => panic!("called `Data::as_packet` for a non-`Packet` value: {:?}", self),
+        }
+    }
+
+    /// Returns the `Datagram` value.
+    pub fn as_datagram(&self) -> &Datagram {
+        match *self {
+            Data::Datagram(ref datagram) => datagram,
+            _ => panic!("called `Data::as_datagram` for a non-`Datagram` value: {:?}", self),
+        }
+    }
+
+    /// Returns the `Telegram` value.
+    pub fn as_telegram(&self) -> &Telegram {
+        match *self {
+            Data::Telegram(ref telegram) => telegram,
+            _ => panic!("called `Data::as_telegram` for a non-`Telegram` value: {:?}", self),
+        }
+    }
+
     /// Creates an ID string for the variant inside this `Data`.
     pub fn id_string(&self) -> String {
         match *self {
