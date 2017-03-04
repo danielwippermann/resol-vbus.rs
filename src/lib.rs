@@ -150,7 +150,7 @@ mod blob_reader;
 pub use blob_reader::BlobReader;
 
 mod header;
-pub use header::Header;
+pub use header::{Header, IdHash, id_hash};
 
 mod packet;
 pub use packet::Packet;
