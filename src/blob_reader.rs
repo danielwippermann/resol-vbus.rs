@@ -2,6 +2,43 @@ use std::io::{Read, Result};
 
 
 /// A buffering reader that allows to borrow the internal buffer.
+///
+/// The `BlobReader` behaves like a `std::io::BufReader` with the addition that the internal buffer
+/// grows if necessary.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use std::fs::File;
+///
+/// use resol_vbus::{BlobReader, StreamBlobLength};
+/// use resol_vbus::recording_decoder::{length_from_bytes};
+///
+/// let file = File::open("20161202_packets.vbus").unwrap();
+/// let mut br = BlobReader::new(file);
+///
+/// loop {
+///     match length_from_bytes(br.as_bytes()) {
+///         StreamBlobLength::BlobLength(size) => {
+///             // do something with the data
+///
+///             // afterwards consume it
+///             br.consume(size);
+///         }
+///         StreamBlobLength::Malformed => {
+///             // just consume the current starting byte, perhaps a valid blob is hidden behind it
+///             br.consume(1);
+///         }
+///         StreamBlobLength::Partial => {
+///             // internal buffer is either empty or contains the valid start of a blob, read more
+///             // data
+///             if br.read().unwrap() == 0 {
+///                 break;
+///             }
+///         }
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct BlobReader<R: Read> {
     reader: R,

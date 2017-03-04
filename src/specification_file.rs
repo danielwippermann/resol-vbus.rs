@@ -439,7 +439,7 @@ impl SpecificationFile {
         })
     }
 
-    /// Find a `PacketTemplate` matching the self and peer addresses as well as the command.
+    /// Find a `PacketTemplate` matching the destination and source addresses as well as the command.
     pub fn find_packet_template(&self, destination_address: u16, source_address: u16, command: u16) -> Option<&PacketTemplate> {
         self.packet_templates.iter().find(|&packet_template| {
             if ((packet_template.destination_address ^ destination_address) & packet_template.destination_mask) != 0 {

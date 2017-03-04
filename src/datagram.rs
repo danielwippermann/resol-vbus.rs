@@ -6,6 +6,20 @@ use header::Header;
 
 
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
+///
+/// Datagrams are used to issue simple commands with limited amount of payload (like e.g. getting
+/// or setting a parameter).
+///
+/// ## The "identity" of `Datagram` values
+///
+/// As described in [the corresponding section of the `Header` struct][1] VBus data types use
+/// some of their fields as part of their "identity". In addition to the fields used by the
+/// `Header` type the `Datagram` type also respects the `command` and (under some conditions) the
+/// `param16` fields. That means that two `Datagram` with differing `timestamp`, `param32` and
+/// (under some conditions) `param16` fields are still considered "identical", if the other fields
+/// match.
+///
+/// [1]: struct.Header.html#the-identity-of-header-values
 #[derive(Clone)]
 pub struct Datagram {
     /// The shared `Header` of all VBus protocol types.
@@ -24,7 +38,52 @@ pub struct Datagram {
 
 impl Datagram {
 
-    /// Creates an ID string for this `Datagram`.
+    /// Creates an identification string for this `Datagram`.
+    ///
+    /// The string contains all fields that count towards the "identity" of the `Datagram`:
+    ///
+    /// - `channel`
+    /// - `destination_address`
+    /// - `source_address`
+    /// - `protocol_version`
+    /// - `command`
+    /// - `param16` (if `command` equals 0x0900)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Header, Datagram};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let dgram1 = Datagram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x26,
+    ///     },
+    ///     command: 0x1718,
+    ///     param16: 0x191a,
+    ///     param32: 0x1b1c1d1e,
+    /// };
+    ///
+    /// let dgram2 = Datagram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x26,
+    ///     },
+    ///     command: 0x0900,
+    ///     param16: 0x191a,
+    ///     param32: 0x1b1c1d1e,
+    /// };
+    ///
+    /// assert_eq!("11_1213_1415_26_1718_0000", dgram1.id_string());
+    /// assert_eq!("11_1213_1415_26_0900_191A", dgram2.id_string());
+    /// ```
     pub fn id_string(&self) -> String {
         let info = match self.command {
             0x0900 => self.param16,
@@ -38,6 +97,38 @@ impl Datagram {
 
 impl IdHash for Datagram {
 
+    /// Returns an identification hash for this `Datagram`.
+    ///
+    /// The hash contains all fields that count towards the "identity" of the `Datagram`:
+    ///
+    /// - `channel`
+    /// - `destination_address`
+    /// - `source_address`
+    /// - `protocol_version`
+    /// - `command`
+    /// - `param16` (if `command` equals 0x0900)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Header, Datagram, id_hash};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let dgram = Datagram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x26,
+    ///     },
+    ///     command: 0x1718,
+    ///     param16: 0x191a,
+    ///     param32: 0x1b1c1d1e,
+    /// };
+    ///
+    /// assert_eq!(2264775891674525017, id_hash(&dgram));
+    /// ```
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         let info = match self.command {
             0x0900 => self.param16,
@@ -77,50 +168,14 @@ impl AsRef<Header> for Datagram {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
-
+    use utils::utc_timestamp;
     use header::Header;
 
     use super::*;
 
     #[test]
-    fn test_id_string() {
-        let timestamp = UTC.timestamp(1485688933, 0);
-
-        let dgram = Datagram {
-            header: Header {
-                timestamp: timestamp,
-                channel: 0x11,
-                destination_address: 0x1213,
-                source_address: 0x1415,
-                protocol_version: 0x26,
-            },
-            command: 0x1718,
-            param16: 0x191a,
-            param32: 0x1b1c1d1e,
-        };
-
-        assert_eq!("11_1213_1415_26_1718_0000", dgram.id_string());
-
-        let dgram = Datagram {
-            header: Header {
-                timestamp: timestamp,
-                channel: 0x11,
-                destination_address: 0x1213,
-                source_address: 0x1415,
-                protocol_version: 0x26,
-            },
-            command: 0x0900,
-            param16: 0x191a,
-            param32: 0x1b1c1d1e,
-        };
-
-        assert_eq!("11_1213_1415_26_0900_191A", dgram.id_string());
-    }
-
-    #[test]
     fn test_debug_fmt() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
 
         let dgram = Datagram {
             header: Header {
