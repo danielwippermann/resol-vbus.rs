@@ -65,7 +65,13 @@ pub fn id_hash<H: IdHash>(h: &H) -> u64 {
 impl Debug for Header {
 
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_fmt(format_args!("Header {{ timestamp: {:?}, channel: 0x{:02X}, destination_address: 0x{:04X}, source_address: 0x{:04X}, protocol_version: 0x{:02X} }}", self.timestamp, self.channel, self.destination_address, self.source_address, self.protocol_version))
+        f.debug_struct("Header")
+            .field("timestamp", &self.timestamp)
+            .field("channel", &format_args!("0x{:02X}", self.channel))
+            .field("destination_address", &format_args!("0x{:04X}", self.destination_address))
+            .field("source_address", &format_args!("0x{:04X}", self.source_address))
+            .field("protocol_version", &format_args!("0x{:02X}", self.protocol_version))
+            .finish()
     }
 
 }

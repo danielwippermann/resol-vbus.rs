@@ -50,7 +50,11 @@ impl IdHash for Telegram {
 impl Debug for Telegram {
 
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_fmt(format_args!("Telegram {{ header: {:?}, command: 0x{:02X}, frame_data: ... }}", self.header, self.command))
+        f.debug_struct("Telegram")
+            .field("header", &self.header)
+            .field("command", &format_args!("0x{:02X}", self.command))
+            .field("frame_data", &format_args!("..."))
+            .finish()
     }
 
 }

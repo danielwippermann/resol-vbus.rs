@@ -54,7 +54,12 @@ impl IdHash for Datagram {
 impl Debug for Datagram {
 
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_fmt(format_args!("Datagram {{ header: {:?}, command: 0x{:04X}, param16: 0x{:04X}, param32: 0x{:08X} ({}) }}", self.header, self.command, self.param16, self.param32, self.param32))
+        f.debug_struct("Datagram")
+            .field("header", &self.header)
+            .field("command", &format_args!("0x{:04X}", self.command))
+            .field("param16", &format_args!("0x{:04X}", self.param16))
+            .field("param32", &format_args!("0x{:08X} ({})", self.param32, self.param32))
+            .finish()
     }
 
 }

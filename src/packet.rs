@@ -48,7 +48,12 @@ impl IdHash for Packet {
 impl Debug for Packet {
 
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_fmt(format_args!("Packet {{ header: {:?}, command: 0x{:04X}, frame_count: 0x{:02X}, frame_data: ... }}", self.header, self.command, self.frame_count))
+        f.debug_struct("Packet")
+            .field("header", &self.header)
+            .field("command", &format_args!("0x{:04X}", self.command))
+            .field("frame_count", &format_args!("0x{:02X}", self.frame_count))
+            .field("frame_data", &format_args!("..."))
+            .finish()
     }
 
 }
