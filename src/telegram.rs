@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Error, Formatter};
+use std::hash::{Hash, Hasher};
 
-use header::Header;
+use header::{IdHash, Header};
 
 
 /// The `Telegram` type stores information according to the VBus protocol version 3.x.
@@ -31,6 +32,17 @@ impl Telegram {
     /// Creates an ID string for this `Telegram`.
     pub fn id_string(&self) -> String {
         format!("{}_{:02X}", self.header.id_string(), self.command)
+    }
+
+}
+
+
+impl IdHash for Telegram {
+
+    /// Creates an ID hash for this `Telegram`.
+    fn id_hash<H: Hasher>(&self, h: &mut H) {
+        self.header.id_hash(h);
+        self.command.hash(h);
     }
 
 }
@@ -74,7 +86,7 @@ impl AsRef<Header> for Telegram {
 mod tests {
     use chrono::{TimeZone, UTC};
 
-    use header::Header;
+    use header::{Header, id_hash};
 
     use super::*;
 
@@ -149,5 +161,28 @@ mod tests {
         let result = format!("{:?}", tgram);
 
         assert_eq!("Telegram { header: Header { timestamp: 2017-01-29T11:22:13Z, channel: 0x11, destination_address: 0x1213, source_address: 0x1415, protocol_version: 0x26 }, command: 0x17, frame_data: ... }", result);
+    }
+
+    #[test]
+    fn test_id_hash() {
+        let timestamp = UTC.timestamp(1485688933, 0);
+
+        let frame_data = [0u8; 21];
+
+        let tgram = Telegram {
+            header: Header {
+                timestamp: timestamp,
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x26,
+            },
+            command: 0x17,
+            frame_data: frame_data,
+        };
+
+        let result = id_hash(&tgram);
+
+        assert_eq!(1015100152033278593, result);
     }
 }
