@@ -4,7 +4,7 @@ use std::slice::{Iter, IterMut};
 
 use chrono::{DateTime, UTC};
 
-use header::IdHash;
+use id_hash::IdHash;
 use data::Data;
 
 
@@ -156,7 +156,7 @@ impl AsRef<[Data]> for DataSet {
 mod tests {
     use chrono::{Duration, TimeZone, UTC};
 
-    use header::id_hash;
+    use id_hash::id_hash;
     use live_data_decoder::data_from_checked_bytes;
 
     use super::*;

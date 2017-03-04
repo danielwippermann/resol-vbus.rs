@@ -1,15 +1,9 @@
-use std::collections::hash_map::DefaultHasher;
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::{Hash, Hasher};
 
 use chrono::{DateTime, UTC};
 
-
-/// A trait to generate an identification hash for any of the VBus data types.
-pub trait IdHash {
-    /// Creates an identification hash for this VBus data type.
-    fn id_hash<H: Hasher>(&self, h: &mut H);
-}
+use id_hash::IdHash;
 
 
 /// All VBus data types consist of a `Header` element.
@@ -51,14 +45,6 @@ impl IdHash for Header {
         self.protocol_version.hash(h);
     }
 
-}
-
-
-/// Calculate the ID hash for a given VBus `Data` value.
-pub fn id_hash<H: IdHash>(h: &H) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    h.id_hash(&mut hasher);
-    hasher.finish()
 }
 
 
@@ -113,22 +99,5 @@ mod tests {
         let result = format!("{:?}", header);
 
         assert_eq!("Header { timestamp: 2017-01-29T11:22:13Z, channel: 0x11, destination_address: 0x1213, source_address: 0x1415, protocol_version: 0x16 }", result);
-    }
-
-    #[test]
-    fn test_id_hash() {
-        let timestamp = UTC.timestamp(1485688933, 0);
-
-        let header = Header {
-            timestamp: timestamp,
-            channel: 0x11,
-            destination_address: 0x1213,
-            source_address: 0x1415,
-            protocol_version: 0x16,
-        };
-
-        let result = id_hash(&header);
-
-        assert_eq!(8369676560183260683, result);
     }
 }

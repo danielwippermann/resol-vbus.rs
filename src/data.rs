@@ -1,7 +1,8 @@
 use std::cmp::Ordering::{self, Less, Equal, Greater};
 use std::hash::{Hasher};
 
-use header::{IdHash, Header};
+use id_hash::IdHash;
+use header::Header;
 use packet::Packet;
 use datagram::Datagram;
 use telegram::Telegram;
@@ -310,7 +311,7 @@ impl AsRef<Header> for Data {
 mod tests {
     use chrono::{TimeZone, UTC};
 
-    use header::id_hash;
+    use id_hash::id_hash;
     use live_data_decoder::data_from_checked_bytes;
 
     use super::*;

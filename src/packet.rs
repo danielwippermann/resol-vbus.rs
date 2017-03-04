@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::{Hash, Hasher};
 
-use header::{IdHash, Header};
+use id_hash::IdHash;
+use header::Header;
 
 
 /// The `Packet` type stores information according to the VBus protocol version 1.x.
@@ -89,7 +90,7 @@ impl AsRef<Header> for Packet {
 mod tests {
     use chrono::{TimeZone, UTC};
 
-    use header::{Header, id_hash};
+    use header::Header;
 
     use super::*;
 
@@ -137,29 +138,5 @@ mod tests {
         let result = format!("{:?}", packet);
 
         assert_eq!("Packet { header: Header { timestamp: 2017-01-29T11:22:13Z, channel: 0x11, destination_address: 0x1213, source_address: 0x1415, protocol_version: 0x16 }, command: 0x1718, frame_count: 0x19, frame_data: ... }", result);
-    }
-
-    #[test]
-    fn test_id_hash() {
-        let timestamp = UTC.timestamp(1485688933, 0);
-
-        let frame_data = [0u8; 508];
-
-        let packet = Packet {
-            header: Header {
-                timestamp: timestamp,
-                channel: 0x11,
-                destination_address: 0x1213,
-                source_address: 0x1415,
-                protocol_version: 0x16,
-            },
-            command: 0x1718,
-            frame_count: 0x19,
-            frame_data: frame_data,
-        };
-
-        let result = id_hash(&packet);
-
-        assert_eq!(2215810099849021132, result);
     }
 }

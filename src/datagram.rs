@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::{Hash, Hasher};
 
-use header::{IdHash, Header};
+use id_hash::IdHash;
+use header::Header;
 
 
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
@@ -78,7 +79,7 @@ impl AsRef<Header> for Datagram {
 mod tests {
     use chrono::{TimeZone, UTC};
 
-    use header::{Header, id_hash};
+    use header::Header;
 
     use super::*;
 
@@ -137,27 +138,5 @@ mod tests {
         let result = format!("{:?}", dgram);
 
         assert_eq!("Datagram { header: Header { timestamp: 2017-01-29T11:22:13Z, channel: 0x11, destination_address: 0x1213, source_address: 0x1415, protocol_version: 0x26 }, command: 0x1718, param16: 0x191A, param32: 0x1B1C1D1E (454827294) }", result);
-    }
-
-    #[test]
-    fn test_id_hash() {
-        let timestamp = UTC.timestamp(1485688933, 0);
-
-        let dgram = Datagram {
-            header: Header {
-                timestamp: timestamp,
-                channel: 0x11,
-                destination_address: 0x1213,
-                source_address: 0x1415,
-                protocol_version: 0x26,
-            },
-            command: 0x1718,
-            param16: 0x191a,
-            param32: 0x1b1c1d1e,
-        };
-
-        let result = id_hash(&dgram);
-
-        assert_eq!(2264775891674525017, result);
     }
 }

@@ -196,8 +196,11 @@ pub use stream_blob_length::StreamBlobLength;
 mod blob_reader;
 pub use blob_reader::BlobReader;
 
+mod id_hash;
+pub use id_hash::{IdHash, id_hash};
+
 mod header;
-pub use header::{Header, IdHash, id_hash};
+pub use header::Header;
 
 mod packet;
 pub use packet::Packet;
