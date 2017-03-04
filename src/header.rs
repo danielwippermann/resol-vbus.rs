@@ -7,7 +7,7 @@ use chrono::{DateTime, UTC};
 
 /// A trait to generate an identification hash for any of the VBus data types.
 pub trait IdHash {
-    /// Creates an ID hash for this `Header`.
+    /// Creates an identification hash for this VBus data type.
     fn id_hash<H: Hasher>(&self, h: &mut H);
 }
 
@@ -44,7 +44,6 @@ impl Header {
 
 impl IdHash for Header {
 
-    /// Creates an ID hash for this `Header`.
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         self.channel.hash(h);
         self.destination_address.hash(h);

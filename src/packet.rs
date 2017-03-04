@@ -37,7 +37,6 @@ impl Packet {
 
 impl IdHash for Packet {
 
-    /// Creates an ID hash for this `Packet`.
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         self.header.id_hash(h);
         self.command.hash(h);

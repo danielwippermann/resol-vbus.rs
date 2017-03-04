@@ -114,7 +114,6 @@ impl Data {
 
 impl IdHash for Data {
 
-    /// Creates an ID hash for this `Telegram`.
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         match *self {
             Data::Packet(ref packet) => packet.id_hash(h),

@@ -37,7 +37,6 @@ impl Datagram {
 
 impl IdHash for Datagram {
 
-    /// Creates an ID hash for this `Datagram`.
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         let info = match self.command {
             0x0900 => self.param16,
