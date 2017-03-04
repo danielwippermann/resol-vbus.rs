@@ -1,8 +1,10 @@
 use std::cmp::Ordering;
+use std::hash::{Hasher};
 use std::slice::{Iter, IterMut};
 
 use chrono::{DateTime, UTC};
 
+use header::IdHash;
 use data::Data;
 
 
@@ -121,6 +123,17 @@ impl DataSet {
 }
 
 
+impl IdHash for DataSet {
+
+    fn id_hash<H: Hasher>(&self, h: &mut H) {
+        for data in self.set.iter() {
+            data.id_hash(h);
+        }
+    }
+
+}
+
+
 impl Default for DataSet {
 
     fn default() -> DataSet {
@@ -143,6 +156,7 @@ impl AsRef<[Data]> for DataSet {
 mod tests {
     use chrono::{Duration, TimeZone, UTC};
 
+    use header::id_hash;
     use live_data_decoder::data_from_checked_bytes;
 
     use super::*;
@@ -340,5 +354,21 @@ mod tests {
         assert_eq!("11_6651_7E11_10_0200", data_set.as_data_slice() [4].id_string());
         assert_eq!("11_0000_7E11_20_0500_0000", data_set.as_data_slice() [5].id_string());
         assert_eq!("11_0010_7E22_10_0100", data_set.as_data_slice() [6].id_string());
+    }
+
+    #[test]
+    fn test_id_hash() {
+        let timestamp = UTC.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.add_data(data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]));
+        data_set.add_data(data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]));
+        data_set.add_data(data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]));
+
+        let result = id_hash(&data_set);
+
+        assert_eq!(13725728793204414233, result);
     }
 }

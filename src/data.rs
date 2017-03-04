@@ -1,6 +1,7 @@
 use std::cmp::Ordering::{self, Less, Equal, Greater};
+use std::hash::{Hasher};
 
-use header::Header;
+use header::{IdHash, Header};
 use packet::Packet;
 use datagram::Datagram;
 use telegram::Telegram;
@@ -105,6 +106,20 @@ impl Data {
             Data::Packet(ref packet) => packet.id_string(),
             Data::Datagram(ref dgram) => dgram.id_string(),
             Data::Telegram(ref tgram) => tgram.id_string(),
+        }
+    }
+
+}
+
+
+impl IdHash for Data {
+
+    /// Creates an ID hash for this `Telegram`.
+    fn id_hash<H: Hasher>(&self, h: &mut H) {
+        match *self {
+            Data::Packet(ref packet) => packet.id_hash(h),
+            Data::Datagram(ref dgram) => dgram.id_hash(h),
+            Data::Telegram(ref tgram) => tgram.id_hash(h),
         }
     }
 
@@ -296,6 +311,7 @@ impl AsRef<Header> for Data {
 mod tests {
     use chrono::{TimeZone, UTC};
 
+    use header::id_hash;
     use live_data_decoder::data_from_checked_bytes;
 
     use super::*;
@@ -744,5 +760,26 @@ mod tests {
         let mut other = tgram.clone();
         other.frame_data [0] ^= 1;
         assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
+    }
+
+    #[test]
+    fn test_id_hash() {
+        let timestamp = UTC.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+
+        let result = id_hash(&data);
+        assert_eq!(541127499104566154, result);
+
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+
+        let result = id_hash(&data);
+        assert_eq!(6066488998843577430, result);
+
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+
+        let result = id_hash(&data);
+        assert_eq!(2688669052981416192, result);
     }
 }
