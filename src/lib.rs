@@ -45,6 +45,53 @@
 //!
 //! ## Examples
 //!
+//! ### Recorder of live VBus data into a persistent file format
+//!
+//! ```rust,no_run
+//! //! A recorder of live VBus data into the binary recorded VBus file format.
+//! extern crate resol_vbus;
+//!
+//!
+//! use std::fs::File;
+//! use std::net::TcpStream;
+//!
+//! use resol_vbus::*;
+//!
+//!
+//!
+//! fn main() {
+//!     // Create a TCP connection to the DL2
+//!     let stream = TcpStream::connect("192.168.178.101:7053").expect("Unable to connect to DL2");
+//!
+//!     // Use a `TcpConnector` to perform the login handshake into the DL2
+//!     let mut connector = TcpConnector::new(stream);
+//!     connector.password = "vbus".to_owned();
+//!     connector.connect().expect("Unable to connect to DL2");
+//!
+//!     // Get back the original TCP connection and hand it to a `LiveDataReader`
+//!     let stream = connector.into_inner();
+//!     let mut ldr = LiveDataReader::new(0, stream);
+//!
+//!     // Create an recording file and hand it to a `RecordingWriter`
+//!     let file = File::create("test.vbus").expect("Unable to create output file");
+//!     let mut rw = RecordingWriter::new(file);
+//!
+//!     // Read VBus `Data` values from the `LiveDataReader`
+//!     while let Some(data) = ldr.read_data().expect("Unable to read data") {
+//!         println!("{}", data.id_string());
+//!
+//!         // Add `Data` value into `DataSet` to be stored
+//!         let mut data_set = DataSet::new();
+//!         data_set.timestamp = data.as_ref().timestamp;
+//!         data_set.add_data(data);
+//!
+//!         // Write the `DataSet` into the `RecordingWriter` for permanent storage
+//!         rw.write_data_set(&data_set).expect("Unable to write data set");
+//!     }
+//! }
+//! ```
+//!
+//!
 //! ### Converter for recorded VBus data to CSV.
 //!
 //! ```rust
