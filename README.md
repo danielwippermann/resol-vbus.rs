@@ -13,7 +13,7 @@ First, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-resol-vbus = "0.1"
+resol-vbus = "0.2"
 ```
 
 Next, add this to your crate:
