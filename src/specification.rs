@@ -12,6 +12,21 @@ use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, 
 
 
 /// Contains information about a VBus device.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{SpecificationFile, Specification, Language};
+///
+/// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+///
+/// let device_spec = spec.get_device_spec(0x00, 0x7E11, 0x0010);
+/// assert_eq!("00_7E11", device_spec.device_id);
+/// assert_eq!(0, device_spec.channel);
+/// assert_eq!(0x7E11, device_spec.self_address);
+/// assert_eq!(None, device_spec.peer_address);
+/// assert_eq!("DeltaSol MX [Regler]", device_spec.name);
+/// ```
 #[derive(Debug)]
 pub struct DeviceSpec {
     /// A device identifier.
@@ -32,6 +47,24 @@ pub struct DeviceSpec {
 
 
 /// Contains information about a VBus packet and its fields.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{SpecificationFile, Specification, Language};
+///
+/// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+///
+/// let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+/// assert_eq!("00_0010_7E11_10_0100", packet_spec.packet_id);
+/// assert_eq!(0, packet_spec.channel);
+/// assert_eq!(0x0010, packet_spec.destination_address);
+/// assert_eq!(0x7E11, packet_spec.source_address);
+/// assert_eq!(0x0100, packet_spec.command);
+/// assert_eq!("DFA", packet_spec.destination_device.name);
+/// assert_eq!("DeltaSol MX [Regler]", packet_spec.source_device.name);
+/// assert_eq!("DeltaSol MX [Regler]", packet_spec.name);
+/// ```
 #[derive(Debug)]
 pub struct PacketSpec {
     /// A packet identifier.
@@ -64,6 +97,28 @@ pub struct PacketSpec {
 
 
 /// Contains information about a VBus packet field.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{SpecificationFile, Specification, Language};
+/// use resol_vbus::specification_file::{UnitFamily, Type};
+///
+/// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+///
+/// let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+/// let packet_field_spec = &packet_spec.fields [0];
+///
+/// assert_eq!("000_2_0", packet_field_spec.field_id);
+/// assert_eq!("00_0010_7E11_10_0100_000_2_0", packet_field_spec.packet_field_id);
+/// assert_eq!("Temperatur Sensor 1", packet_field_spec.name);
+/// assert_eq!(62, packet_field_spec.unit_id.0);
+/// assert_eq!(UnitFamily::Temperature, packet_field_spec.unit_family);
+/// assert_eq!("DegreesCelsius", packet_field_spec.unit_code);
+/// assert_eq!(" °C", packet_field_spec.unit_text);
+/// assert_eq!(1, packet_field_spec.precision);
+/// assert_eq!(Type::Number, packet_field_spec.typ);
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct PacketFieldSpec {
     /// A field identifier.
@@ -123,6 +178,21 @@ pub struct PacketFieldFormatter<'a> {
 
 
 /// The `Specification` type contains information about known devices and packets.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{SpecificationFile, Specification, Language};
+///
+/// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+///
+/// let device_spec = spec.get_device_spec(0x00, 0x7E11, 0x0010);
+/// assert_eq!("00_7E11", device_spec.device_id);
+/// assert_eq!(0, device_spec.channel);
+/// assert_eq!(0x7E11, device_spec.self_address);
+/// assert_eq!(None, device_spec.peer_address);
+/// assert_eq!("DeltaSol MX [Regler]", device_spec.name);
+/// ```
 #[derive(Debug)]
 pub struct Specification {
     file: SpecificationFile,
@@ -133,6 +203,27 @@ pub struct Specification {
 
 
 /// An iterator over the fields of the `Packet` instances in a `DataSet`.
+///
+/// The function `Specification::fields_in_data_set` returns this iterator.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{Specification, DataSet};
+///
+/// # #[allow(dead_code)]
+/// fn print_fields(spec: &Specification, data_set: &DataSet) {
+///     let mut last_data_index = None;
+///     for field in spec.fields_in_data_set(data_set) {
+///         let current_data_index = Some(field.data_index());
+///         if last_data_index != current_data_index {
+///             last_data_index = current_data_index;
+///             println!("- {}: {}", field.packet_spec().packet_id, field.packet_spec().name);
+///         }
+///         println!("    - {}: {}", field.field_spec().field_id, field.field_spec().name);
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]> + 'a> {
     spec: &'a Specification,
@@ -364,6 +455,17 @@ pub fn power_of_ten_f64(n: i32) -> f64 {
 impl Specification {
 
     /// Construct a `Specification` from a `SpecificationFile` and a `Language`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+    ///
+    /// // work with the spec...
+    /// # drop(spec);
+    /// ```
     pub fn from_file(file: SpecificationFile, language: Language) -> Specification {
         let devices = RefCell::new(Vec::new());
         let packets = RefCell::new(Vec::new());
@@ -377,12 +479,45 @@ impl Specification {
     }
 
     /// Get a `DeviceSpec`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+    ///
+    /// let device_spec = spec.get_device_spec(0x00, 0x7E11, 0x0010);
+    /// assert_eq!("00_7E11", device_spec.device_id);
+    /// assert_eq!(0, device_spec.channel);
+    /// assert_eq!(0x7E11, device_spec.self_address);
+    /// assert_eq!(None, device_spec.peer_address);
+    /// assert_eq!("DeltaSol MX [Regler]", device_spec.name);
+    /// ```
     pub fn get_device_spec(&self, channel: u8, self_address: u16, peer_address: u16) -> Rc<DeviceSpec> {
         let mut devices = self.devices.borrow_mut();
         get_or_create_cached_device_spec(&mut devices, channel, self_address, peer_address, &self.file, self.language)
     }
 
     /// Get a `PacketSpec`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+    ///
+    /// let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+    /// assert_eq!("00_0010_7E11_10_0100", packet_spec.packet_id);
+    /// assert_eq!(0, packet_spec.channel);
+    /// assert_eq!(0x0010, packet_spec.destination_address);
+    /// assert_eq!(0x7E11, packet_spec.source_address);
+    /// assert_eq!(0x0100, packet_spec.command);
+    /// assert_eq!("DFA", packet_spec.destination_device.name);
+    /// assert_eq!("DeltaSol MX [Regler]", packet_spec.source_device.name);
+    /// assert_eq!("DeltaSol MX [Regler]", packet_spec.name);
+    /// ```
     pub fn get_packet_spec(&self, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Rc<PacketSpec> {
         let mut devices = self.devices.borrow_mut();
         let mut packets = self.packets.borrow_mut();
@@ -390,6 +525,25 @@ impl Specification {
     }
 
     /// Returns an iterator that iterates over all known packet fields in the data set.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Specification, DataSet};
+    ///
+    /// # #[allow(dead_code)]
+    /// fn print_fields(spec: &Specification, data_set: &DataSet) {
+    ///     let mut last_data_index = None;
+    ///     for field in spec.fields_in_data_set(data_set) {
+    ///         let current_data_index = Some(field.data_index());
+    ///         if last_data_index != current_data_index {
+    ///             last_data_index = current_data_index;
+    ///             println!("- {}: {}", field.packet_spec().packet_id, field.packet_spec().name);
+    ///         }
+    ///         println!("    - {}: {}", field.field_spec().field_id, field.field_spec().name);
+    ///     }
+    /// }
+    /// ```
     pub fn fields_in_data_set<'a, T: AsRef<[Data]> + 'a>(&'a self, data_set: &'a T) -> DataSetPacketFieldIterator<'a, T> {
         DataSetPacketFieldIterator {
             spec: self,
@@ -400,6 +554,23 @@ impl Specification {
     }
 
     /// Format a timestamp.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let fmt_localized_timestamp = |language| {
+    ///     let spec = Specification::from_file(SpecificationFile::new_default(), language);
+    ///
+    ///     format!("{}", spec.fmt_timestamp(utc_timestamp(1485688933)))
+    /// };
+    ///
+    /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::En));
+    /// assert_eq!("29.01.2017 11:22:13", fmt_localized_timestamp(Language::De));
+    /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::Fr));
+    /// ```
     pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: DateTime<Tz>) -> RawValueFormatter {
         RawValueFormatter {
             language: self.language,

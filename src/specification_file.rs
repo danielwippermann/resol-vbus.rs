@@ -1,7 +1,7 @@
 //! A module that parses the contents of a VBus Specification File Version 1 (VSF1).
 //!
 //! The VBus Specification File format is used to provide information about VBus Protocol Version
-//! 1.x `Packet`s and their frame data payload. The file contains:
+//! 1.x `Packet`s and their frame data payload.
 //!
 //! See the [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
 //! for details.
@@ -100,6 +100,27 @@ fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> 
 
 
 /// Languages supported by VSF1 specification.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{Specification, SpecificationFile, Language};
+///
+/// let get_loc_text = |language| {
+///     // Create a new `Specification` for the provided language
+///     let spec = Specification::from_file(SpecificationFile::new_default(), language);
+///
+///     // Get the `PacketSpec` for the standard info packet of the "DeltaSol MX"
+///     let packet_spec = spec.get_packet_spec(0x11, 0x0010, 0x7E11, 0x0100);
+///
+///     // Get the first `PacketFieldSpec`'s name.
+///     packet_spec.get_field_spec("000_2_0").map(|field_spec| field_spec.name.clone()).unwrap()
+/// };
+///
+/// assert_eq!("Temperature sensor 1", get_loc_text(Language::En));
+/// assert_eq!("Temperatur Sensor 1", get_loc_text(Language::De));
+/// assert_eq!("Température sonde 1", get_loc_text(Language::Fr));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
     /// English language

@@ -4,6 +4,32 @@ use std::io::{BufRead, BufReader, Error, ErrorKind, Read, Result, Write};
 
 /// The `TcpConnector` wraps a `TcpStream` to perform the handshake according to the
 /// "VBus over TCP specification".
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use std::net::TcpStream;
+///
+/// use resol_vbus::{TcpConnector, LiveDataReader};
+///
+/// // Create a TCP connection to the DL2
+/// let stream = TcpStream::connect("192.168.178.101:7053").expect("Unable to connect to DL2");
+///
+/// // Use a `TcpConnector` to perform the login handshake into the DL2
+/// let mut connector = TcpConnector::new(stream);
+/// connector.password = "vbus".to_owned();
+/// connector.connect().expect("Unable to connect to DL2");
+///
+/// // Get back the original TCP connection and hand it to a `LiveDataReader`
+/// let stream = connector.into_inner();
+/// let mut ldr = LiveDataReader::new(0, stream);
+///
+/// // Read VBus `Data` values from the `LiveDataReader`
+/// while let Some(data) = ldr.read_data().expect("Unable to read data") {
+///     // do someting with the data
+///     println!("{}", data.id_string());
+/// }
+/// ```
 #[derive(Debug)]
 pub struct TcpConnector {
     inner: TcpStream,

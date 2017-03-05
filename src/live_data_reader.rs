@@ -9,6 +9,23 @@ use live_data_decoder::{length_from_bytes, data_from_checked_bytes};
 
 
 /// Allows reading `Data` variants from a `Read` trait object.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{FileListReader, LiveDataReader};
+///
+/// let files: Vec<_> = std::env::args().skip(1).collect();
+///
+/// let flr = FileListReader::new(files);
+///
+/// let mut ldr = LiveDataReader::new(0, flr);
+///
+/// while let Some(data) = ldr.read_data().unwrap() {
+///     // process the data
+///     println!("{}", data.id_string());
+/// }
+/// ```
 #[derive(Debug)]
 pub struct LiveDataReader<R: Read> {
     channel: u8,

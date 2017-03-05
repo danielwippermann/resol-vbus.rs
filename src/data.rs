@@ -9,6 +9,29 @@ use telegram::Telegram;
 
 
 /// `Data` is a type that contains one of the supported VBus protocol data variants.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::io::{Read, Result};
+///
+/// use resol_vbus::LiveDataReader;
+///
+/// # #[allow(dead_code)]
+/// fn print_data_ids<R: Read>(r: R) -> Result<()> {
+///     let mut ldr = LiveDataReader::new(0, r);
+///
+///     while let Some(data) = ldr.read_data()? {
+///         if !data.is_packet() {
+///             continue;
+///         }
+///
+///         println!("{}: {}", data.as_header().timestamp, data.id_string());
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 #[derive(Clone, Debug)]
 pub enum Data {
     /// Contains a `Packet` conforming to VBus protocol version 1.x.
@@ -48,7 +71,11 @@ impl Data {
         }
     }
 
-    /// Returns the `Packet` value.
+    /// Returns the `Packet` value, consuming the `Data` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Packet` variant.
     pub fn into_packet(self) -> Packet {
         match self {
             Data::Packet(packet) => packet,
@@ -56,7 +83,11 @@ impl Data {
         }
     }
 
-    /// Returns the `Datagram` value.
+    /// Returns the `Datagram` value, consuming the `Data` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Datagram` variant.
     pub fn into_datagram(self) -> Datagram {
         match self {
             Data::Datagram(datagram) => datagram,
@@ -64,7 +95,11 @@ impl Data {
         }
     }
 
-    /// Returns the `Telegram` value.
+    /// Returns the `Telegram` value, consuming the `Data` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Telegram` variant.
     pub fn into_telegram(self) -> Telegram {
         match self {
             Data::Telegram(telegram) => telegram,
@@ -78,6 +113,10 @@ impl Data {
     }
 
     /// Returns the `Packet` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Packet` variant.
     pub fn as_packet(&self) -> &Packet {
         match *self {
             Data::Packet(ref packet) => packet,
@@ -86,6 +125,10 @@ impl Data {
     }
 
     /// Returns the `Datagram` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Datagram` variant.
     pub fn as_datagram(&self) -> &Datagram {
         match *self {
             Data::Datagram(ref datagram) => datagram,
@@ -94,6 +137,10 @@ impl Data {
     }
 
     /// Returns the `Telegram` value.
+    ///
+    /// # Panics
+    ///
+    /// The function panics if the `Data` value is no `Telegram` variant.
     pub fn as_telegram(&self) -> &Telegram {
         match *self {
             Data::Telegram(ref telegram) => telegram,
@@ -101,7 +148,7 @@ impl Data {
         }
     }
 
-    /// Creates an ID string for the variant inside this `Data`.
+    /// Creates an identification string for the variant inside this `Data`.
     pub fn id_string(&self) -> String {
         match *self {
             Data::Packet(ref packet) => packet.id_string(),
@@ -128,7 +175,14 @@ impl IdHash for Data {
 
 impl PartialEq for Data {
 
-    /// Compare two `Data` objects for equality in context of a `DataSet`.
+    /// Returns `true` if two `Data` values are "identical".
+    ///
+    /// Each `Data` variant has a set of fields that make up its "identity". The `PartialEq` trait
+    /// implementation checks those fields for equality and returns `true` if all of the fields
+    /// match.
+    ///
+    /// See the descriptions for the `Header`, `Packet`, `Datagram` and `Telegram` types to find
+    /// out which fields are considered in each case.
     fn eq(&self, right: &Data) -> bool {
         let left = self;
 
@@ -191,6 +245,13 @@ impl PartialEq for Data {
 
 impl PartialOrd for Data {
 
+    /// Compares two `Data` values are "identical".
+    ///
+    /// Each `Data` variant has a set of fields that make up its "identity". The `PartialOrd` trait
+    /// implementation compares those fields.
+    ///
+    /// See the descriptions for the `Header`, `Packet`, `Datagram` and `Telegram` types to find
+    /// out which fields are considered in each case.
     fn partial_cmp(&self, right: &Data) -> Option<Ordering> {
         let left = self;
 

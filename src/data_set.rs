@@ -8,10 +8,38 @@ use id_hash::IdHash;
 use data::Data;
 
 
-/// A `DataSet` contains a set of unique `Data`.
+/// A `DataSet` contains a set of unique (non-identical) `Data` values.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::io::{Read, Result};
+///
+/// use resol_vbus::{DataSet, RecordingReader};
+///
+/// # #[allow(dead_code)]
+/// fn print_data_ids<R: Read>(r: R) -> Result<()> {
+///     let mut rr = RecordingReader::new(r);
+///
+///     let mut cumultative_data_set = DataSet::new();
+///
+///     while let Some(data_set) = rr.read_data_set()? {
+///         let timestamp = data_set.timestamp;
+///
+///         cumultative_data_set.add_data_set(data_set);
+///
+///         println!("{}:", timestamp);
+///         for data in cumultative_data_set.iter() {
+///             println!("    - {}", data.id_string());
+///         }
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 #[derive(Clone, Debug)]
 pub struct DataSet {
-    /// The timestamp that corresponds to the contained set of `Data` objects.
+    /// The timestamp that corresponds to the contained set of `Data` values.
     pub timestamp: DateTime<UTC>,
     set: Vec<Data>,
 }
@@ -27,7 +55,7 @@ impl DataSet {
         }
     }
 
-    /// Construct a `DataSet` from a list of `Data` objects.
+    /// Construct a `DataSet` from a list of `Data` values.
     pub fn from_data(timestamp: DateTime<UTC>, set: Vec<Data>) -> DataSet {
         DataSet {
             timestamp: timestamp,
@@ -35,12 +63,12 @@ impl DataSet {
         }
     }
 
-    /// Return the `Data` objects contained in this `DataSet`.
+    /// Return the `Data` values contained in this `DataSet`.
     pub fn as_data_slice(&self) -> &[Data] {
         &self.set [..]
     }
 
-    /// Add a `Data` object, replacing any equivalent existing one.
+    /// Add a `Data` value, replacing any identical existing one.
     pub fn add_data(&mut self, data: Data) {
         let timestamp = data.as_header().timestamp;
 
@@ -58,7 +86,7 @@ impl DataSet {
         }
     }
 
-    /// Add all `Data` objects from one `DataSet` into another.
+    /// Add all `Data` values from one `DataSet` into another.
     pub fn add_data_set(&mut self, data_set: DataSet) {
         let timestamp = data_set.timestamp;
 
@@ -71,7 +99,7 @@ impl DataSet {
         }
     }
 
-    /// Remove `Data` with timestamps older than `min_timestamp`.
+    /// Remove `Data` values with timestamps older than `min_timestamp`.
     pub fn remove_data_older_than(&mut self, min_timestamp: DateTime<UTC>) {
         self.set.retain(|data| data.as_header().timestamp >= min_timestamp);
     }
@@ -110,12 +138,12 @@ impl DataSet {
         self.set.iter_mut()
     }
 
-    /// Sort the `Data` objects contained in this `DataSet`.
+    /// Sort the `Data` values contained in this `DataSet`.
     pub fn sort(&mut self) {
         self.set.sort_by(|l, r| { l.partial_cmp(r).unwrap() });
     }
 
-    /// Sort the `Data` objects contained in this `DataSet`.
+    /// Sort the `Data` values contained in this `DataSet`.
     pub fn sort_by<F>(&mut self, f: F) where F: FnMut(&Data, &Data) -> Ordering {
         self.set.sort_by(f);
     }

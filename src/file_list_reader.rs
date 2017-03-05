@@ -7,6 +7,29 @@ use std::path::Path;
 ///
 /// The main advantage of this type compared to multiple `chain`ed `Read` values is, that only
 /// one file is open at any given time.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::io::Read;
+///
+/// use resol_vbus::FileListReader;
+///
+/// let files: Vec<_> = std::env::args().skip(1).collect();
+///
+/// let mut flr = FileListReader::new(files);
+///
+/// let mut buf = [0u8; 4096];
+///
+/// loop {
+///     let size = flr.read(&mut buf).unwrap();
+///     if size == 0 {
+///         break;
+///     }
+///
+///     // process the data
+/// }
+/// ```
 #[derive(Debug)]
 pub struct FileListReader<T: AsRef<Path>> {
     file_list: Vec<T>,

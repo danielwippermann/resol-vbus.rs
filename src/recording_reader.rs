@@ -10,6 +10,27 @@ use recording_decoder::{length_from_bytes, timestamp_from_checked_bytes, data_fr
 
 
 /// Allows reading `Data` variants from a `Read` trait object.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{FileListReader, RecordingReader};
+///
+/// let files: Vec<_> = std::env::args().skip(1).collect();
+///
+/// let flr = FileListReader::new(files);
+///
+/// let mut rr = RecordingReader::new(flr);
+///
+/// while let Some(data_set) = rr.read_data_set().unwrap() {
+///     // process the data set
+///     println!("{}:", data_set.timestamp);
+///
+///     for data in data_set.iter() {
+///         println!("  - {}", data.id_string());
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct RecordingReader<R: Read> {
     current_channel: u8,

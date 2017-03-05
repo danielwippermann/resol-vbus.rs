@@ -12,6 +12,23 @@ use stream_blob_length::StreamBlobLength::*;
 
 
 /// A `RecordingReader` for type 0x88 live data recordings.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::{FileListReader, LiveDataRecordingReader};
+///
+/// let files: Vec<_> = std::env::args().skip(1).collect();
+///
+/// let flr = FileListReader::new(files);
+///
+/// let mut ldrr = LiveDataRecordingReader::new(flr);
+///
+/// while let Some(data) = ldrr.read_data().unwrap() {
+///     // process the data
+///     println!("{}: {}", data.as_header().timestamp, data.id_string());
+/// }
+/// ```
 #[derive(Debug)]
 pub struct LiveDataRecordingReader<T: Read> {
     reader: RecordingReader<T>,
