@@ -87,7 +87,6 @@ impl TcpConnector {
         let mut line = String::new();
 
         r.read_line(&mut line)?;
-        // println!("Response: {:?}", line);
 
         if line.starts_with('+') {
             Ok(())
@@ -99,8 +98,6 @@ impl TcpConnector {
     }
 
     fn transceive<R: Read>(&self, r: &mut BufReader<R>, output: &str) -> Result<()> {
-        // println!("Request: {:?}", output);
-
         write!(&self.inner, "{}\r\n", output)?;
 
         self.read_response(r)

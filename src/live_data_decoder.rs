@@ -27,7 +27,6 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
     } else {
         let protocol_version = buf [5];
         let major = protocol_version & 0xF0;
-        // let minor = protocol_version & 0x0F;
 
         if major == 0x10 {
             if len < 10 {

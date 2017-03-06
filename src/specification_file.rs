@@ -374,9 +374,6 @@ impl SpecificationFile {
             let data_version = LittleEndian::read_i32(&fileheader [0x08..0x0C]);
             let specification_offset = LittleEndian::read_i32(&fileheader [0x0C..0x10]) as usize;
 
-            // println!("fileheader = {:?}", fileheader);
-            // println!("checksum_a = 0x{:X}, checksum_b = 0x{:X}, total_length = {}, data_version = {}, specification_offset = {}", checksum_a, checksum_b, total_length, data_version, specification_offset);
-
             if total_length != bytes.len() {
                 Err(Error::InvalidFileHeaderTotalLength)
             } else if calc_crc16(&bytes [0x04..total_length]) != checksum_a {
