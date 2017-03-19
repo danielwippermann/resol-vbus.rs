@@ -74,6 +74,23 @@ impl Telegram {
         Telegram::frame_count_from_command(self.command)
     }
 
+    /// Return the length of the valid area of the `frame_data`.
+    pub fn valid_frame_data_len(&self) -> usize {
+        self.frame_count() as usize * 7
+    }
+
+    /// Return the valid area of the `frame_data` immutably.
+    pub fn valid_frame_data(&self) -> &[u8] {
+        let end = self.valid_frame_data_len();
+        &self.frame_data [0..end]
+    }
+
+    /// Return the valid area of the `frame_data` mutably.
+    pub fn valid_frame_data_mut(&mut self) -> &mut [u8] {
+        let end = self.valid_frame_data_len();
+        &mut self.frame_data [0..end]
+    }
+
     /// Creates an identification string for this `Telegram`.
     ///
     /// The string contains all fields that count towards the "identity" of the `Telegram`:
