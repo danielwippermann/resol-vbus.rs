@@ -46,6 +46,91 @@ pub struct Packet {
 
 impl Packet {
 
+    /// Return the length of the valid area of the `frame_data`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Header, Packet};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let packet = Packet {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x16,
+    ///     },
+    ///     command: 0x1718,
+    ///     frame_count: 0x19,
+    ///     frame_data: [0u8; 508],
+    /// };
+    ///
+    /// assert_eq!(100, packet.valid_frame_data_len());
+    /// ```
+    pub fn valid_frame_data_len(&self) -> usize {
+        self.frame_count as usize * 4
+    }
+
+    /// Return the valid area of the `frame_data` immutably.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Header, Packet};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let packet = Packet {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x16,
+    ///     },
+    ///     command: 0x1718,
+    ///     frame_count: 0x19,
+    ///     frame_data: [0u8; 508],
+    /// };
+    ///
+    /// assert_eq!(508, packet.frame_data.len());
+    /// assert_eq!(100, packet.valid_frame_data().len());
+    /// ```
+    pub fn valid_frame_data(&self) -> &[u8] {
+        let end = self.valid_frame_data_len();
+        &self.frame_data [0..end]
+    }
+
+    /// Return the valid area of the `frame_data` mutably.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Header, Packet};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let mut packet = Packet {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x16,
+    ///     },
+    ///     command: 0x1718,
+    ///     frame_count: 0x19,
+    ///     frame_data: [0u8; 508],
+    /// };
+    ///
+    /// assert_eq!(508, packet.frame_data.len());
+    /// assert_eq!(100, packet.valid_frame_data_mut().len());
+    /// ```
+    pub fn valid_frame_data_mut(&mut self) -> &mut [u8] {
+        let end = self.valid_frame_data_len();
+        &mut self.frame_data [0..end]
+    }
+
     /// Returns a tuple containing identification information about this `Packet`.
     ///
     /// The tuple contains all fields that count towards the "identity" of the `Packet` with the
