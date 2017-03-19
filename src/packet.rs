@@ -345,10 +345,10 @@ impl Packet {
         &mut self.frame_data [0..end]
     }
 
-    /// Returns a tuple containing identification information about this `Packet`.
+    /// Returns identification information about this `Packet`.
     ///
-    /// The tuple contains all fields that count towards the "identity" of the `Packet` with the
-    /// exception of the `protocol_version` (since it must be 1.0 to be a `Packet` anyway):
+    /// The result contains all fields that count towards the "identity" of the `Packet` with the
+    /// exception of the `protocol_version` (since it must be 1.x to be a `Packet` anyway):
     ///
     /// - `channel`
     /// - `destination_address`
@@ -358,7 +358,7 @@ impl Packet {
     /// # Examples
     ///
     /// ```rust
-    /// use resol_vbus::{Header, Packet};
+    /// use resol_vbus::{Header, Packet, PacketId};
     /// use resol_vbus::utils::utc_timestamp;
     ///
     /// let packet = Packet {
@@ -374,10 +374,10 @@ impl Packet {
     ///     frame_data: [0u8; 508],
     /// };
     ///
-    /// assert_eq!((0x11, 0x1213, 0x1415, 0x1718), packet.packet_id_tuple());
+    /// assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), packet.packet_id());
     /// ```
-    pub fn packet_id_tuple(&self) -> (u8, u16, u16, u16) {
-        (self.header.channel, self.header.destination_address, self.header.source_address, self.command)
+    pub fn packet_id(&self) -> PacketId {
+        PacketId(self.header.channel, self.header.destination_address, self.header.source_address, self.command)
     }
 
     /// Creates an identification string for this `Packet`.
