@@ -63,6 +63,11 @@ impl DataSet {
         }
     }
 
+    /// Return the amount of `Data` values contained in this `DataSet`.
+    pub fn len(&self) -> usize {
+        self.set.len()
+    }
+
     /// Return the `Data` values contained in this `DataSet`.
     pub fn as_data_slice(&self) -> &[Data] {
         &self.set [..]
