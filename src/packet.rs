@@ -459,6 +459,15 @@ impl IdHash for Packet {
 }
 
 
+impl ToPacketId for Packet {
+
+    fn to_packet_id(&self) -> Result<PacketId, String> {
+        Ok(self.packet_id())
+    }
+
+}
+
+
 impl Debug for Packet {
 
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
