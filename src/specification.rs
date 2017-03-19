@@ -611,6 +611,16 @@ impl Specification {
 
 impl PacketSpec {
 
+    /// Get the position of a `PacketFieldSpec` by its field ID.
+    pub fn get_field_spec_position(&self, id: &str) -> Option<usize> {
+        self.fields.iter().position(|field_spec| field_spec.field_id == id)
+    }
+
+    /// Get a `PacketFieldSpec` by its position.
+    pub fn get_field_spec_by_position(&self, pos: usize) -> &PacketFieldSpec {
+        &self.fields [pos]
+    }
+
     /// Get a `PacketFieldSpec` by its field ID.
     pub fn get_field_spec(&self, id: &str) -> Option<&PacketFieldSpec> {
         self.fields.iter().find(|field_spec| field_spec.field_id == id)
