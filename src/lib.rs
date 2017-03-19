@@ -179,7 +179,7 @@
 // #![deny(warnings)]
 
 extern crate byteorder;
-extern crate chrono;
+pub extern crate chrono;
 
 
 #[cfg(test)]
@@ -203,7 +203,7 @@ mod header;
 pub use header::Header;
 
 mod packet;
-pub use packet::Packet;
+pub use packet::{Packet, PacketId, ToPacketId, PacketFieldId, ToPacketFieldId};
 
 mod datagram;
 pub use datagram::Datagram;
