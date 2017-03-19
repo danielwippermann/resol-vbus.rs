@@ -7,6 +7,7 @@ use std::rc::Rc;
 
 use chrono::{DateTime, TimeZone, UTC};
 
+use packet::PacketId;
 use data::Data;
 use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
 
@@ -523,6 +524,30 @@ impl Specification {
         let mut packets = self.packets.borrow_mut();
         get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, self.language)
     }
+
+    /// Get a `PacketSpec`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language, PacketId};
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
+    ///
+    /// let packet_spec = spec.get_packet_spec_by_id(PacketId(0x00, 0x0010, 0x7E11, 0x0100));
+    /// assert_eq!("00_0010_7E11_10_0100", packet_spec.packet_id);
+    /// assert_eq!(0, packet_spec.channel);
+    /// assert_eq!(0x0010, packet_spec.destination_address);
+    /// assert_eq!(0x7E11, packet_spec.source_address);
+    /// assert_eq!(0x0100, packet_spec.command);
+    /// assert_eq!("DFA", packet_spec.destination_device.name);
+    /// assert_eq!("DeltaSol MX [Regler]", packet_spec.source_device.name);
+    /// assert_eq!("DeltaSol MX [Regler]", packet_spec.name);
+    /// ```
+    pub fn get_packet_spec_by_id(&self, packet_id: PacketId) -> Rc<PacketSpec> {
+        self.get_packet_spec(packet_id.0, packet_id.1, packet_id.2, packet_id.3)
+    }
+
 
     /// Returns an iterator that iterates over all known packet fields in the data set.
     ///
