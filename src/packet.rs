@@ -516,6 +516,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_str_to_packet_id() {
+        assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), "11_1213_1415_10_1718".to_packet_id().unwrap());
+        assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), "11_1213_1415_10_1718_XXX_X_X".to_packet_id().unwrap());
+        assert_eq!("Invalid length of input \"11_1213_1415_10_171\"", "11_1213_1415_10_171".to_packet_id().unwrap_err());
+        assert_eq!("Invalid length of channel \"111\"", "111_1213_1415_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid characters in channel \"1G\"", "1G_1213_1415_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid length of destination address \"12131\"", "11_12131_1415_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid characters in destination address \"121G\"", "11_121G_1415_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid length of source address \"14151\"", "11_1213_14151_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid characters in source address \"141G\"", "11_1213_141G_10_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid length of protocol version \"101\"", "11_1213_1415_101_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid characters in protocol version \"1G\"", "11_1213_1415_1G_1718".to_packet_id().unwrap_err());
+        assert_eq!("Unsupported protocol version 0x20", "11_1213_1415_20_1718".to_packet_id().unwrap_err());
+        assert_eq!("Invalid length of command \"17181\"", "11_1213_1415_10_17181".to_packet_id().unwrap_err());
+        assert_eq!("Invalid characters in command \"171G\"", "11_1213_1415_10_171G".to_packet_id().unwrap_err());
+    }
+
+    #[test]
     fn test_debug_fmt() {
         let packet = Packet {
             header: Header {
