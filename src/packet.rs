@@ -13,7 +13,7 @@ use header::Header;
 /// - the destination address
 /// - the source address
 /// - the command
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PacketId(pub u8, pub u16, pub u16, pub u16);
 
 
@@ -138,7 +138,7 @@ impl ToPacketId for str {
 ///
 /// - the packet ID tuple (channel, destination address, source address and command)
 /// - the field ID
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PacketFieldId<'a>(pub PacketId, pub &'a str);
 
 
