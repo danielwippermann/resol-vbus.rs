@@ -52,6 +52,12 @@ impl<T: Read> LiveDataRecordingReader<T> {
         }
     }
 
+    /// Set optinal minimum and maximum timestamps for prefiltering data.
+    pub fn set_min_max_timestamps(&mut self, min_timestamp: Option<DateTime<UTC>>, max_timestamp: Option<DateTime<UTC>>) {
+        self.min_timestamp = min_timestamp;
+        self.max_timestamp = max_timestamp;
+    }
+
     /// Quickly read to EOF of the source and return the DataSet for all uniquely found `Data` variants.
     pub fn read_topology_data_set(&mut self) -> Result<DataSet> {
         let mut set = HashSet::new();
@@ -167,6 +173,8 @@ impl<T: Read> LiveDataRecordingReader<T> {
 
     /// Read from the stream until a valid `Data` variant can be decoded.
     pub fn read_data(&mut self) -> Result<Option<Data>> {
+        let has_timestamps = self.min_timestamp.is_some() || self.max_timestamp.is_some();
+
         loop {
             let mut start = 0;
 
@@ -184,21 +192,40 @@ impl<T: Read> LiveDataRecordingReader<T> {
                 }
             }
 
-            let record = self.reader.read_record()?;
-            let len = record.len();
-            if len == 0 {
-                return Ok(None);
-            }
-
-            if record [1] == 0x88 {
-                if len >= 22 {
-                    self.timestamp = recording_decoder::timestamp_from_checked_bytes(&record [14..22]);
-                    self.buf.extend_from_slice(&record [22..]);
-                } else {
-                    panic!("Record type 0x88 too small: {}", len);
+            loop {
+                let record = self.reader.read_record()?;
+                let len = record.len();
+                if len == 0 {
+                    return Ok(None);
                 }
-            } else {
-                panic!("Unexpected record type 0x{:02X}", record [1]);
+
+                if record [1] == 0x88 {
+                    if len >= 22 {
+                        let record_timestamp = recording_decoder::timestamp_from_checked_bytes(&record [14..22]);
+
+                        if has_timestamps {
+                            if let Some(timestamp) = self.min_timestamp {
+                                if record_timestamp < timestamp {
+                                    continue;
+                                }
+                            }
+
+                            if let Some(timestamp) = self.max_timestamp {
+                                if record_timestamp >= timestamp {
+                                    continue;
+                                }
+                            }
+                        }
+
+                        self.timestamp = record_timestamp;
+                        self.buf.extend_from_slice(&record [22..]);
+                        break;
+                    } else {
+                        panic!("Record type 0x88 too small: {}", len);
+                    }
+                } else {
+                    panic!("Unexpected record type 0x{:02X}", record [1]);
+                }
             }
         }
     }
