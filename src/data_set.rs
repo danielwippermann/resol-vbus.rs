@@ -104,6 +104,11 @@ impl DataSet {
         }
     }
 
+    /// Remove all `Data` values.
+    pub fn remove_all_data(&mut self) {
+        self.set.clear();
+    }
+
     /// Remove `Data` values with timestamps older than `min_timestamp`.
     pub fn remove_data_older_than(&mut self, min_timestamp: DateTime<UTC>) {
         self.set.retain(|data| data.as_header().timestamp >= min_timestamp);
