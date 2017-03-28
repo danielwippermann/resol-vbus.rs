@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use chrono::{DateTime, TimeZone, UTC};
 
-use packet::PacketId;
+use packet::{PacketId, PacketFieldId};
 use data::Data;
 use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
 
@@ -881,6 +881,16 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     /// Return the `PacketFieldSpec` associated with this field.
     pub fn field_spec(&self) -> &PacketFieldSpec {
         &self.packet_spec.fields [self.field_index]
+    }
+
+    /// Return the `PacketId` associated with this field.
+    pub fn packet_id(&self) -> PacketId {
+        self.data().as_packet().packet_id()
+    }
+
+    /// Return the `PacketFieldId` associated with this field.
+    pub fn packet_field_id(&self) -> PacketFieldId {
+        PacketFieldId(self.data().as_packet().packet_id(), &self.field_spec().field_id)
     }
 
     /// Return the raw value associated with this field.
