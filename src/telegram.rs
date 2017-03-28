@@ -75,17 +75,80 @@ impl Telegram {
     }
 
     /// Return the length of the valid area of the `frame_data`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Telegram, Header};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let tgram = Telegram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x36,
+    ///     },
+    ///     command: 0x37,
+    ///     frame_data: [0u8; 21],
+    /// };
+    ///
+    /// assert_eq!(7, tgram.valid_frame_data_len());
+    /// ```
     pub fn valid_frame_data_len(&self) -> usize {
         self.frame_count() as usize * 7
     }
 
     /// Return the valid area of the `frame_data` immutably.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Telegram, Header};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let tgram = Telegram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x36,
+    ///     },
+    ///     command: 0x37,
+    ///     frame_data: [0u8; 21],
+    /// };
+    ///
+    /// assert_eq!(7, tgram.valid_frame_data().len());
+    /// ```
     pub fn valid_frame_data(&self) -> &[u8] {
         let end = self.valid_frame_data_len();
         &self.frame_data [0..end]
     }
 
     /// Return the valid area of the `frame_data` mutably.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{Telegram, Header};
+    /// use resol_vbus::utils::utc_timestamp;
+    ///
+    /// let mut tgram = Telegram {
+    ///     header: Header {
+    ///         timestamp: utc_timestamp(1485688933),
+    ///         channel: 0x11,
+    ///         destination_address: 0x1213,
+    ///         source_address: 0x1415,
+    ///         protocol_version: 0x36,
+    ///     },
+    ///     command: 0x37,
+    ///     frame_data: [0u8; 21],
+    /// };
+    ///
+    /// assert_eq!(7, tgram.valid_frame_data_mut().len());
+    /// ```
     pub fn valid_frame_data_mut(&mut self) -> &mut [u8] {
         let end = self.valid_frame_data_len();
         &mut self.frame_data [0..end]
