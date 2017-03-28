@@ -1,10 +1,11 @@
-use std::cmp::Ordering;
+use std::cmp::{Ord, Ordering};
 use std::hash::{Hasher};
 use std::slice::{Iter, IterMut};
 
 use chrono::{DateTime, UTC};
 
 use id_hash::IdHash;
+use packet::PacketId;
 use data::Data;
 
 
@@ -156,6 +157,35 @@ impl DataSet {
     /// Sort the `Data` values contained in this `DataSet`.
     pub fn sort_by<F>(&mut self, f: F) where F: FnMut(&Data, &Data) -> Ordering {
         self.set.sort_by(f);
+    }
+
+    /// Sort the `Data` values contained in this `DataSet` by a list of known `PacketId` values.
+    pub fn sort_by_id_slice(&mut self, ids: &[PacketId]) {
+        self.sort_by(|l, r| {
+            if l.is_packet() && r.is_packet() {
+                let l_id = l.as_packet().packet_id();
+                let r_id = r.as_packet().packet_id();
+
+                let l_pos = ids.iter().position(|id| *id == l_id);
+                let r_pos = ids.iter().position(|id| *id == r_id);
+
+                if l_pos.is_some() && r_pos.is_some() {
+                    l_pos.cmp(&r_pos)
+                } else if l_pos.is_some() {
+                    Ordering::Less
+                } else if r_pos.is_some() {
+                    Ordering::Greater
+                } else {
+                    l_id.cmp(&r_id)
+                }
+            } else if l.is_packet() {
+                Ordering::Less
+            } else if r.is_packet() {
+                Ordering::Greater
+            } else {
+                Ordering::Equal
+            }
+        })
     }
 
 }
