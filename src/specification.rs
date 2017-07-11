@@ -152,7 +152,8 @@ pub struct PacketFieldSpec {
     /// The parts the field consists of.
     pub parts: Vec<PacketTemplateFieldPart>,
 
-    language: Language,
+    /// The language used for the specification.
+    pub language: Language,
 }
 
 
