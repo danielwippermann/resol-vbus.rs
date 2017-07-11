@@ -854,6 +854,17 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
 
 impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
+    /// Construct new `DataSetPacketField` value.
+    pub fn new(data_set: &'a T, data_index: usize, packet_spec: Rc<PacketSpec>, field_index: usize, raw_value: Option<i64>) -> DataSetPacketField<'a, T> {
+        DataSetPacketField {
+            data_set: data_set,
+            data_index: data_index,
+            packet_spec: packet_spec,
+            field_index: field_index,
+            raw_value: raw_value,
+        }
+    }
+
     /// Return the `DataSet` associated with this field.
     pub fn data_set(&self) -> &[Data] {
         self.data_set.as_ref()
@@ -887,6 +898,11 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     /// Return the `PacketId` associated with this field.
     pub fn packet_id(&self) -> PacketId {
         self.data().as_packet().packet_id()
+    }
+
+    /// Return the field ID associated with this field.
+    pub fn field_id(&self) -> &str {
+        &self.field_spec().field_id
     }
 
     /// Return the `PacketFieldId` associated with this field.
