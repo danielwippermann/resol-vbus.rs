@@ -762,7 +762,23 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                         Language::De | Language::Fr => ",",
                     };
 
-                    write!(f, "{}{}{}{:.*}{}", sign, left_part, separator, self.precision as usize, right_part, self.unit_text)
+                    write!(f, "{}{}{}", sign, left_part, separator)?;
+                    match self.precision {
+                        1 => write!(f, "{:01}", right_part)?,
+                        2 => write!(f, "{:02}", right_part)?,
+                        3 => write!(f, "{:03}", right_part)?,
+                        4 => write!(f, "{:04}", right_part)?,
+                        5 => write!(f, "{:05}", right_part)?,
+                        6 => write!(f, "{:06}", right_part)?,
+                        7 => write!(f, "{:07}", right_part)?,
+                        8 => write!(f, "{:08}", right_part)?,
+                        9 => write!(f, "{:09}", right_part)?,
+                        _ => {
+                            let s = format!("{}", right_part + factor);
+                            write!(f, "{}", &s [1..])?;
+                        },
+                    };
+                    write!(f, "{}", self.unit_text)
                 } else {
                     write!(f, "{}{}", self.raw_value, self.unit_text)
                 }
@@ -1217,6 +1233,9 @@ mod tests {
 
         let field_spec = fake_field_spec(4, Type::Number, "don't append unit");
         assert_eq!("12345.6789", fmt_raw_value(&field_spec, 123456789, false));
+
+        let field_spec = fake_field_spec(4, Type::Number, "don't append unit");
+        assert_eq!("12345.0009", fmt_raw_value(&field_spec, 123450009, false));
 
         let field_spec = fake_field_spec(10, Type::Number, "don't append unit");
         assert_eq!("1.2345678900", fmt_raw_value(&field_spec, 12345678900, false));
