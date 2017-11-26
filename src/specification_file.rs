@@ -517,7 +517,7 @@ impl SpecificationFile {
             Err(Error::InvalidSpecificationUnitTable)
         } else if !check_offset(bytes, device_template_table_offset, 0x0C, device_template_count) {
             Err(Error::InvalidSpecificationDeviceTemplateTable)
-        } else if !check_offset(bytes, packet_template_table_offset, 0x0C, packet_template_count) {
+        } else if !check_offset(bytes, packet_template_table_offset, 0x14, packet_template_count) {
             Err(Error::InvalidSpecificationPacketTemplateTable)
         } else {
             self.datecode = datecode;
