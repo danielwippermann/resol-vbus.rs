@@ -36,6 +36,8 @@ pub struct RecordingReader<R: Read> {
     current_channel: u8,
     reader: BlobReader<R>,
     previous_length: usize,
+    min_timestamp: Option<DateTime<UTC>>,
+    max_timestamp: Option<DateTime<UTC>>,
 }
 
 
@@ -47,7 +49,15 @@ impl<R: Read> RecordingReader<R> {
             current_channel: 0,
             reader: BlobReader::new(reader),
             previous_length: 0,
+            min_timestamp: None,
+            max_timestamp: None,
         }
+    }
+
+    /// Set optional minimum and maximum timestamps for prefiltering data.
+    pub fn set_min_max_timestamps(&mut self, min_timestamp: Option<DateTime<UTC>>, max_timestamp: Option<DateTime<UTC>>) {
+        self.min_timestamp = min_timestamp;
+        self.max_timestamp = max_timestamp;
     }
 
     /// Read from the stream until a valid blob of data is found.
@@ -79,6 +89,10 @@ impl<R: Read> RecordingReader<R> {
     }
 
     fn read_to_next_data_set_record(&mut self) -> Result<Option<DateTime<UTC>>> {
+        let min_timestamp = self.min_timestamp;
+        let max_timestamp = self.max_timestamp;
+        let has_timestamps = min_timestamp.is_some() || max_timestamp.is_some();
+
         loop {
             let bytes = self.read_record()?;
             let length = bytes.len();
@@ -87,6 +101,21 @@ impl<R: Read> RecordingReader<R> {
                 return Ok(None)
             } else if bytes [1] == 0x44 {
                 let data_set_timestamp = timestamp_from_checked_bytes(&bytes [6..14]);
+
+                if has_timestamps {
+                    if let Some(timestamp) = min_timestamp {
+                        if data_set_timestamp < timestamp {
+                            continue;
+                        }
+                    }
+
+                    if let Some(timestamp) = max_timestamp {
+                        if data_set_timestamp >= timestamp {
+                            continue;
+                        }
+                    }
+                }
+
                 return Ok(Some(data_set_timestamp));
             }
         }
@@ -135,6 +164,11 @@ impl<R: Read> RecordingReader<R> {
 
         let mut current_channel = 0u8;
 
+        let min_timestamp = self.min_timestamp;
+        let max_timestamp = self.max_timestamp;
+        let has_timestamps = min_timestamp.is_some() || max_timestamp.is_some();
+        let mut is_valid_timestamp = false;
+
         loop {
             let record = self.read_record()?;
             let length = record.len();
@@ -144,6 +178,25 @@ impl<R: Read> RecordingReader<R> {
 
             if record [1] == 0x44 {
                 current_channel = 0;
+                is_valid_timestamp = true;
+
+                if has_timestamps {
+                    let record_timestamp = timestamp_from_checked_bytes(&record [6..14]);
+
+                    if let Some(timestamp) = min_timestamp {
+                        if record_timestamp < timestamp {
+                            is_valid_timestamp = false;
+                        }
+                    }
+
+                    if let Some(timestamp) = max_timestamp {
+                        if record_timestamp >= timestamp {
+                            is_valid_timestamp = false;
+                        }
+                    }
+                }
+            } else if !is_valid_timestamp {
+                // nop
             } else if record [1] == 0x66 {
                 if length >= 26 {
                     let mut fingerprint = [0u8; 10];
