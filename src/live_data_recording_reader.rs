@@ -52,7 +52,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
         }
     }
 
-    /// Set optinal minimum and maximum timestamps for prefiltering data.
+    /// Set optional minimum and maximum timestamps for prefiltering data.
     pub fn set_min_max_timestamps(&mut self, min_timestamp: Option<DateTime<UTC>>, max_timestamp: Option<DateTime<UTC>>) {
         self.min_timestamp = min_timestamp;
         self.max_timestamp = max_timestamp;
