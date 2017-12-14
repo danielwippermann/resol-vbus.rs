@@ -98,7 +98,9 @@ impl TcpConnector {
     }
 
     fn transceive<R: Read>(&self, r: &mut BufReader<R>, output: &str) -> Result<()> {
-        write!(&self.inner, "{}\r\n", output)?;
+        let line = format!("{}\r\n", output);
+
+        write!(&self.inner, "{}", line)?;
 
         self.read_response(r)
     }
