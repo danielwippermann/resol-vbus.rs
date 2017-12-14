@@ -27,6 +27,9 @@ mod data_set_reader;
 mod config;
 use config::Config;
 
+mod stats_generator;
+use stats_generator::print_stats;
+
 mod packet_list_generator;
 use packet_list_generator::print_data_set_packets;
 
@@ -82,22 +85,13 @@ fn read_topology_data_set(input_filenames: Vec<String>, min_timestamp: Option<Da
 }
 
 
-fn process_topology_data_set(typ: &str, data_set: &DataSet, spec: &Specification) -> Result<bool> {
-    let mut handled = true;
-    match typ {
-        "packets" => print_data_set_packets(data_set, spec),
-        "fields" => print_data_set_fields(data_set, spec),
-        "filter-template" => print_filter_template(data_set, spec),
-        _ => handled = false,
-    }
-
-    Ok(handled)
-}
-
-
 fn process_data_set_stream(typ: &str, config: &mut Config) -> Result<bool> {
     let mut handled = true;
     match typ {
+        "stats" => print_stats(config)?,
+        "packets" => print_data_set_packets(config),
+        "fields" => print_data_set_fields(config),
+        "filter-template" => print_filter_template(config),
         "csv" => convert_to_text_data(config)?,
         _ => handled = false,
     }
@@ -121,6 +115,7 @@ fn run() -> Result<()> {
             .takes_value(true)
             .value_name("TYPE")
             .possible_values(&[
+                "stats",
                 "packets",
                 "fields",
                 "filter-template",
@@ -233,9 +228,7 @@ fn run() -> Result<()> {
 
     let flr = FileListReader::new(input_filenames.clone());
 
-    if process_topology_data_set(typ, &topology_data_set, &spec)? {
-        // nop, already handled
-    } else if source_type == SourceType::Type44 {
+    if source_type == SourceType::Type44 {
         let mut rr = RecordingReader::new(flr);
         rr.set_min_max_timestamps(min_timestamp, max_timestamp);
 

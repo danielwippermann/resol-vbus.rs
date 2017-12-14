@@ -1,14 +1,15 @@
 use resol_vbus::*;
 
+use config::Config;
 use field_iterator::{AllFieldsIterator, FieldIterator};
 
 
-pub fn print_data_set_packets(data_set: &DataSet, spec: &Specification) {
+pub fn print_data_set_packets(config: &mut Config) {
     let mut last_packet_id = None;
 
-    let field_iterator = AllFieldsIterator::new(spec);
+    let field_iterator = AllFieldsIterator::new(config.specification);
 
-    for field in field_iterator.fields_in_data_set(data_set) {
+    for field in field_iterator.fields_in_data_set(config.topology_data_set) {
         let PacketFieldId(packet_id, _) = field.packet_field_id();
 
         if last_packet_id != Some(packet_id) {

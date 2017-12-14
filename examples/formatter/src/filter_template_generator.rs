@@ -1,10 +1,11 @@
 use resol_vbus::*;
 
+use config::Config;
 use field_iterator::{AllFieldsIterator, FieldIterator};
 
 
-pub fn print_filter_template(data_set: &DataSet, spec: &Specification) {
-    let field_iterator = AllFieldsIterator::new(spec);
+pub fn print_filter_template(config: &mut Config) {
+    let field_iterator = AllFieldsIterator::new(config.specification);
 
     println!("use resol_vbus::{{PacketId, PacketFieldId, Specification}};");
     println!("");
@@ -16,7 +17,7 @@ pub fn print_filter_template(data_set: &DataSet, spec: &Specification) {
 
     let mut last_packet_id = None;
 
-    for field in field_iterator.fields_in_data_set(data_set) {
+    for field in field_iterator.fields_in_data_set(config.topology_data_set) {
         let packet_id = field.packet_id();
 
         let PacketId(channel, destination_address, source_address, command) = packet_id;
