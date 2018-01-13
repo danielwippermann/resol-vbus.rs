@@ -10,6 +10,8 @@ passes their contents to one of the supported formatting processors:
   `FilteredFieldIterator` based on all the `PacketFieldId`s found within the
   input files
 - `csv` converts the input files to one or more CSV files
+- `simple-json` converts the first data set from the input file to a simple
+  JSON file
 
 
 ## Compile
