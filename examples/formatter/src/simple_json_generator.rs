@@ -68,7 +68,7 @@ pub fn generate(config: &mut Config) -> Result<()> {
             write!(output, "        \"fieldName\": \"{}\",\n", JsonEscape::new(&field.field_spec().name))?;
             write!(output, "        \"rawValue\": \"{}\",\n", field.raw_value_i64().unwrap())?;
             write!(output, "        \"textValue\": \"{}\",\n", field.fmt_raw_value(false))?;
-            write!(output, "        \"unitCode\": \"{}\"\n", JsonEscape::new(&field.field_spec().unit_code))?;
+            write!(output, "        \"unitCode\": \"{}\",\n", JsonEscape::new(&field.field_spec().unit_code))?;
             write!(output, "        \"unitText\": \"{}\"\n", JsonEscape::new(&field.field_spec().unit_text))?;
             write!(output, "    }}")?;
         }
