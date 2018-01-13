@@ -42,6 +42,8 @@ use filter_template_generator::print_filter_template;
 mod csv_generator;
 use csv_generator::convert_to_text_data;
 
+mod simple_json_generator;
+
 
 #[derive(Debug, PartialEq)]
 enum SourceType {
@@ -93,6 +95,7 @@ fn process_data_set_stream(typ: &str, config: &mut Config) -> Result<bool> {
         "fields" => print_data_set_fields(config),
         "filter-template" => print_filter_template(config),
         "csv" => convert_to_text_data(config)?,
+        "simple-json" => simple_json_generator::generate(config)?,
         _ => handled = false,
     }
 
@@ -120,6 +123,7 @@ fn run() -> Result<()> {
                 "fields",
                 "filter-template",
                 "csv",
+                "simple-json",
             ]))
         .arg(Arg::with_name("sieve_interval")
             .help("Sieves input data and removes multiple data sets within the same interval")
