@@ -20,6 +20,16 @@ impl<W: Write> LiveDataWriter<W> {
         }
     }
 
+    /// Gets a reference to the underlying writer.
+    pub fn get_ref(&self) -> &W {
+        &self.writer
+    }
+
+    /// Gets a mutable reference to the underlying writer.
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
+
     /// Write the live representation of the `Data` variant.
     pub fn write_data(&mut self, data: &Data) -> Result<()> {
         let length = length_from_data(data);

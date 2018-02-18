@@ -21,6 +21,16 @@ impl<W: Write> RecordingWriter<W> {
         }
     }
 
+    /// Gets a reference to the underlying writer.
+    pub fn get_ref(&self) -> &W {
+        &self.writer
+    }
+
+    /// Gets a mutable reference to the underlying writer.
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
+
     /// Write the recorded representation of the `DataSet`.
     pub fn write_data_set(&mut self, data_set: &DataSet) -> Result<()> {
         let timestamp = data_set.timestamp;

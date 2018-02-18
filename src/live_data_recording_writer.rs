@@ -21,6 +21,16 @@ impl<W: Write> LiveDataRecordingWriter<W> {
         }
     }
 
+    /// Gets a reference to the underlying writer.
+    pub fn get_ref(&self) -> &W {
+        &self.writer
+    }
+
+    /// Gets a mutable reference to the underlying writer.
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
+
     /// Write a type 0x88 live data record.
     pub fn write_raw_data(&mut self, start_timestamp: DateTime<UTC>, end_timestamp: DateTime<UTC>, data: &[u8]) -> Result<()> {
         let data_length = data.len();
