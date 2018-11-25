@@ -11,6 +11,17 @@ use recording_reader::RecordingReader;
 use stream_blob_length::StreamBlobLength::*;
 
 
+#[derive(Debug, Default)]
+pub struct LiveDataRecordingStats {
+    total_record_count: usize,
+    live_data_record_count: usize,
+    live_data_record_byte_count: usize,
+    malformed_byte_count: usize,
+    data_count: usize,
+    data_byte_count: usize,
+}
+
+
 /// A `RecordingReader` for type 0x88 live data recordings.
 ///
 /// # Examples
@@ -228,6 +239,75 @@ impl<T: Read> LiveDataRecordingReader<T> {
                 }
             }
         }
+    }
+
+    /// Quickly read to EOF of the source and return the `LiveDataRecordingStats`.
+    pub fn read_to_stats(&mut self) -> Result<LiveDataRecordingStats> {
+        let has_timestamps = self.min_timestamp.is_some() || self.max_timestamp.is_some();
+
+        let mut stats = LiveDataRecordingStats::default();
+
+        loop {
+            let record = self.reader.read_record()?;
+            let len = record.len();
+            if len == 0 {
+                break;
+            }
+
+            stats.total_record_count += 1;
+
+            if record [1] == 0x88 {
+                if len >= 22 {
+                    if has_timestamps {
+                        let record_timestamp = recording_decoder::timestamp_from_checked_bytes(&record [14..22]);
+
+                        if let Some(timestamp) = self.min_timestamp {
+                            if record_timestamp < timestamp {
+                                continue;
+                            }
+                        }
+
+                        if let Some(timestamp) = self.max_timestamp {
+                            if record_timestamp >= timestamp {
+                                continue;
+                            }
+                        }
+                    }
+
+                    stats.live_data_record_count += 1;
+                    stats.live_data_record_byte_count += len - 22;
+
+                    self.buf.extend_from_slice(&record [22..]);
+
+                    let mut start = 0;
+                    let mut consumed = 0;
+                    while start < self.buf.len() {
+                        match live_data_decoder::length_from_bytes(&self.buf [start..]) {
+                            BlobLength(length) => {
+                                stats.data_byte_count += length;
+                                stats.data_count += 1;
+                                start += length;
+                            }
+                            Partial => break,
+                            Malformed => {
+                                stats.malformed_byte_count += 1;
+                                start += 1;
+                            },
+                        }
+
+                        consumed = start;
+                    }
+
+                    if consumed > 0 {
+                        drop(self.buf.drain(0..consumed));
+                    }
+                } else {
+                    panic!("Record type 0x88 too small: {}", len);
+                }
+            }
+        }
+
+        Ok(stats)
     }
 
     /// Get amount of already consumed bytes.
