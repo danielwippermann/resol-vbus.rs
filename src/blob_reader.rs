@@ -44,6 +44,7 @@ pub struct BlobReader<R: Read> {
     reader: R,
     buf: Vec<u8>,
     start: usize,
+    offset: usize,
 }
 
 
@@ -55,6 +56,7 @@ impl<R: Read> BlobReader<R> {
             reader: reader,
             buf: Vec::new(),
             start: 0,
+            offset: 0,
         }
     }
 
@@ -82,11 +84,17 @@ impl<R: Read> BlobReader<R> {
     /// Consume the given amount of data from the internal buffer.
     pub fn consume(&mut self, length: usize) {
         self.start += length;
+        self.offset += length;
     }
 
     /// Returns the unconsumed byte slice of the internal buffer.
     pub fn as_bytes(&self) -> &[u8] {
         &self.buf[self.start..]
+    }
+
+    /// Get amount of already consumed bytes.
+    pub fn offset(&self) -> usize {
+        self.offset
     }
 
 }
