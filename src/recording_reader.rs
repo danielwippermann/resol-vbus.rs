@@ -79,6 +79,7 @@ impl<R: Read> RecordingReader<R> {
                     }
                 }
                 Malformed => {
+                    println!("Malformed record at offset {}", self.reader.offset());
                     self.reader.consume(1);
                 }
             }
@@ -259,6 +260,11 @@ impl<R: Read> RecordingReader<R> {
 
         data_set.sort();
         Ok(data_set)
+    }
+
+    /// Get amount of already consumed bytes.
+    pub fn offset(&self) -> usize {
+        self.reader.offset()
     }
 
 }

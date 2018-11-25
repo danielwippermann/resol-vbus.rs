@@ -230,6 +230,11 @@ impl<T: Read> LiveDataRecordingReader<T> {
         }
     }
 
+    /// Get amount of already consumed bytes.
+    pub fn offset(&self) -> usize {
+        self.reader.offset()
+    }
+
 }
 
 
