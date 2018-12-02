@@ -1,4 +1,8 @@
 use std::io::{Read, Result};
+use std::time::Duration;
+
+
+use read_with_timeout::ReadWithTimeout;
 
 
 /// A buffering reader that allows to borrow the internal buffer.
@@ -97,6 +101,25 @@ impl<R: Read> BlobReader<R> {
         self.offset
     }
 
+}
+
+
+impl<R: ReadWithTimeout + Read> BlobReader<R> {
+    /// Reads additional data to the internal buffer using an optional timeout.
+    pub fn read_with_timeout(&mut self, timeout: Option<Duration>) -> Result<usize> {
+        if self.start > 0 {
+            drop(self.buf.drain(0..self.start));
+            self.start = 0;
+        }
+
+        let end = self.buf.len();
+        self.buf.resize(end + 4096, 0);
+
+        let result = self.reader.read_with_timeout(&mut self.buf [end..], timeout)?;
+        self.buf.resize(end + result, 0);
+
+        Ok(result)
+    }
 }
 
 

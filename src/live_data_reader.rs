@@ -1,4 +1,5 @@
 use std::io::{Read, Result};
+use std::time::{Duration, Instant};
 
 use chrono::{UTC};
 
@@ -6,6 +7,7 @@ use blob_reader::BlobReader;
 use data::Data;
 use stream_blob_length::StreamBlobLength::{BlobLength, Partial, Malformed};
 use live_data_decoder::{length_from_bytes, data_from_checked_bytes};
+use read_with_timeout::ReadWithTimeout;
 
 
 /// Allows reading `Data` variants from a `Read` trait object.
@@ -87,6 +89,67 @@ impl<R: Read> LiveDataReader<R> {
         Ok(data)
     }
 
+}
+
+
+impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
+    /// Read from the stream until a valid blob of data is found or the optional timeout occurred.
+    pub fn read_bytes_with_timeout(&mut self, timeout: Option<Duration>) -> Result<&[u8]> {
+        if self.previous_length > 0 {
+            self.reader.consume(self.previous_length);
+            self.previous_length = 0;
+        }
+
+        let end = match timeout {
+            Some(timeout) => Some(Instant::now() + timeout),
+            None => None,
+        };
+
+        loop {
+            let timeout = match end {
+                Some(end) => {
+                    let now = Instant::now();
+                    if now >= end {
+                        break;
+                    }
+                    Some(end - now)
+                },
+                None => None,
+            };
+
+            match length_from_bytes(self.reader.as_bytes()) {
+                BlobLength(size) => {
+                    self.previous_length = size;
+                    break;
+                }
+                Partial => {
+                    if self.reader.read_with_timeout(timeout)? == 0 {
+                        break;
+                    }
+                }
+                Malformed => {
+                    self.reader.consume(1);
+                }
+            }
+        }
+
+        let bytes = self.reader.as_bytes();
+        Ok(&bytes [0..self.previous_length])
+    }
+
+    /// Read from the stream until a valid `Data` variant can be decoded or the optional timeout occurred.
+    pub fn read_data_with_timeout(&mut self, timeout: Option<Duration>) -> Result<Option<Data>> {
+        let channel = self.channel;
+        let bytes = self.read_bytes_with_timeout(timeout)?;
+
+        let data = if bytes.len() > 0 {
+            Some(data_from_checked_bytes(UTC::now(), channel, bytes))
+        } else {
+            None
+        };
+
+        Ok(data)
+    }
 }
 
 
