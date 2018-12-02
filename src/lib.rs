@@ -221,11 +221,17 @@ pub mod live_data_decoder;
 
 pub mod live_data_encoder;
 
+mod read_with_timeout;
+pub use read_with_timeout::ReadWithTimeout;
+
 mod live_data_reader;
 pub use live_data_reader::LiveDataReader;
 
 mod live_data_writer;
 pub use live_data_writer::LiveDataWriter;
+
+mod live_data_stream;
+pub use live_data_stream::LiveDataStream;
 
 pub mod recording_decoder;
 
