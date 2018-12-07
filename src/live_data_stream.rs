@@ -349,4 +349,80 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
         })
     }
 
+    #[cfg(test)]
+    pub fn reader_mut(&mut self) -> &mut R {
+        self.reader.as_mut()
+    }
+
+    #[cfg(test)]
+    pub fn writer_mut(&mut self) -> &mut W {
+        self.writer.as_mut()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Write};
+
+    use live_data_decoder::{length_from_bytes, data_from_checked_bytes};
+    use stream_blob_length::StreamBlobLength;
+    use utils::utc_timestamp;
+
+    use super::*;
+
+    use test_data::LIVE_DATA_1;
+    use test_utils::Buffer;
+
+
+    #[test]
+    fn test_new() {
+        let mut lds = LiveDataStream::new(0, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        assert_eq!(0, lds.reader_mut().unread_len());
+        assert_eq!(0, lds.writer_mut().written_len());
+    }
+
+    #[test]
+    fn test_transmit() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let timestamp = utc_timestamp(1544209081);
+
+        let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+
+        lds.transmit(&data1).unwrap();
+
+        assert_eq!(0, lds.reader_mut().unread_len());
+        assert_eq!(172, lds.writer_mut().written_len());
+
+        assert_eq!(StreamBlobLength::BlobLength(172), length_from_bytes(&lds.writer_mut().written_bytes()));
+    }
+
+    #[test]
+    fn test_receive() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        lds.reader_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+
+        let data1 = lds.receive(1000).unwrap().unwrap();
+
+        assert_eq!("00_0010_7E11_10_0100", data1.id_string());
+
+        lds.reader_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
+
+        let data2 = lds.receive(1000).unwrap();
+
+        assert_eq!(None, data2);
+
+        lds.reader_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
+
+        let data3 = lds.receive(1000).unwrap().unwrap();
+
+        assert_eq!("00_0015_7E11_10_0100", data3.id_string());
+    }
 }

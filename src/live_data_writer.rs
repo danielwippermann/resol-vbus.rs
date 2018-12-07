@@ -48,6 +48,14 @@ impl<W: Write> LiveDataWriter<W> {
 
 
 #[cfg(test)]
+impl<W: Write> AsMut<W> for LiveDataWriter<W> {
+    fn as_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
+}
+
+
+#[cfg(test)]
 mod tests {
     use chrono::{TimeZone, UTC};
 
