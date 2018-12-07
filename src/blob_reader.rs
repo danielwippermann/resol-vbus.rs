@@ -79,10 +79,16 @@ impl<R: Read> BlobReader<R> {
         let end = self.buf.len();
         self.buf.resize(end + 4096, 0);
 
-        let result = self.reader.read(&mut self.buf [end..])?;
-        self.buf.resize(end + result, 0);
-
-        Ok(result)
+        match self.reader.read(&mut self.buf [end..]) {
+            Ok(size) => {
+                self.buf.resize(end + size, 0);
+                Ok(size)
+            },
+            Err(err) => {
+                self.buf.resize(end, 0);
+                Err(err)
+            }
+        }
     }
 
     /// Consume the given amount of data from the internal buffer.
@@ -115,10 +121,16 @@ impl<R: ReadWithTimeout + Read> BlobReader<R> {
         let end = self.buf.len();
         self.buf.resize(end + 4096, 0);
 
-        let result = self.reader.read_with_timeout(&mut self.buf [end..], timeout)?;
-        self.buf.resize(end + result, 0);
-
-        Ok(result)
+        match self.reader.read_with_timeout(&mut self.buf [end..], timeout) {
+            Ok(size) => {
+                self.buf.resize(end + size, 0);
+                Ok(size)
+            },
+            Err(err) => {
+                self.buf.resize(end, 0);
+                Err(err)
+            }
+        }
     }
 }
 
