@@ -154,10 +154,21 @@ impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
 
 
 #[cfg(test)]
+impl<R: Read> AsMut<R> for LiveDataReader<R> {
+    fn as_mut(&mut self) -> &mut R {
+        self.reader.as_mut()
+    }
+}
+
+
+#[cfg(test)]
 mod tests {
+    use std::io::Write;
+
     use super::*;
 
     use test_data::LIVE_DATA_1;
+    use test_utils::Buffer;
 
     #[test]
     fn test_read_bytes() {
@@ -205,5 +216,45 @@ mod tests {
         let data = ldr.read_data().unwrap();
 
         assert_eq!(true, data.is_none());
+    }
+
+    #[test]
+    fn test_read_bytes_with_timeout() {
+        let channel = 0x11;
+
+        let mut ldr = LiveDataReader::new(channel, Buffer::new());
+
+        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+
+        {
+            let bytes1 = ldr.read_bytes_with_timeout(None).unwrap();
+
+            assert_eq!(&LIVE_DATA_1 [0..172], bytes1);
+        }
+
+        assert_eq!(true, ldr.read_bytes_with_timeout(None).is_err());
+    }
+
+    #[test]
+    fn test_read_data_with_timeout() {
+        let channel = 0x11;
+
+        let mut ldr = LiveDataReader::new(channel, Buffer::new());
+
+        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+
+        let data1 = ldr.read_data_with_timeout(None).unwrap().unwrap();
+
+        assert_eq!("11_0010_7E11_10_0100", data1.id_string());
+
+        ldr.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
+
+        assert_eq!(true, ldr.read_data_with_timeout(None).is_err());
+
+        ldr.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
+
+        let data3 = ldr.read_data_with_timeout(None).unwrap().unwrap();
+
+        assert_eq!("11_0015_7E11_10_0100", data3.id_string());
     }
 }

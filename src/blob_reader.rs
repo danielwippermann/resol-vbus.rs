@@ -124,10 +124,21 @@ impl<R: ReadWithTimeout + Read> BlobReader<R> {
 
 
 #[cfg(test)]
+impl<R: Read> AsMut<R> for BlobReader<R> {
+    fn as_mut(&mut self) -> &mut R {
+        &mut self.reader
+    }
+}
+
+
+#[cfg(test)]
 mod tests {
+    use std::io::Write;
+
     use super::*;
 
     use test_data::LIVE_DATA_1;
+    use test_utils::Buffer;
 
     #[test]
     fn test_new() {
@@ -232,5 +243,31 @@ mod tests {
         assert_eq!(0, result);
         assert_eq!(len - 20, br.buf.len());
         assert_eq!(0, br.start);
+    }
+
+    #[test]
+    fn test_read_with_timeout() {
+        let mut br = BlobReader::new(Buffer::new());
+
+        assert_eq!(0, br.as_bytes().len());
+
+        assert_eq!(true, br.read_with_timeout(None).is_err());
+
+        assert_eq!(0, br.as_bytes().len());
+
+        br.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+
+        assert_eq!(172, br.read_with_timeout(None).unwrap());
+        assert_eq!(172, br.as_bytes().len());
+
+        br.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
+
+        assert_eq!(60, br.read_with_timeout(None).unwrap());
+        assert_eq!(232, br.as_bytes().len());
+
+        br.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
+
+        assert_eq!(10, br.read_with_timeout(None).unwrap());
+        assert_eq!(242, br.as_bytes().len());
     }
 }
