@@ -7,6 +7,8 @@ use read_with_timeout::ReadWithTimeout;
 pub struct Buffer {
     bytes: Vec<u8>,
     read_index: usize,
+    read_call_count: usize,
+    write_call_count: usize,
 }
 
 
@@ -15,7 +17,16 @@ impl Buffer {
         Buffer {
             bytes: Vec::new(),
             read_index: 0,
+            read_call_count: 0,
+            write_call_count: 0,
         }
+    }
+
+    pub fn reset(&mut self) -> () {
+        self.bytes.clear();
+        self.read_index = 0;
+        self.read_call_count = 0;
+        self.write_call_count = 0;
     }
 
     pub fn unread_len(&self) -> usize {
@@ -33,11 +44,21 @@ impl Buffer {
     pub fn written_bytes(&self) -> &[u8] {
         &self.bytes
     }
+
+    pub fn read_call_count(&self) -> usize {
+        self.read_call_count
+    }
+
+    pub fn write_call_count(&self) -> usize {
+        self.write_call_count
+    }
 }
 
 
 impl Read for Buffer {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        self.read_call_count += 1;
+
         let mut bytes = &self.bytes [self.read_index..];
         if bytes.len() > 0 {
             let size = bytes.read(buf)?;
@@ -52,6 +73,8 @@ impl Read for Buffer {
 
 impl Write for Buffer {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        self.write_call_count += 1;
+
         self.bytes.write(buf)
     }
 

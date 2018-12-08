@@ -363,9 +363,11 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
     use std::io::{Write};
 
     use live_data_decoder::{length_from_bytes, data_from_checked_bytes};
+    use live_data_encoder::{length_from_data, bytes_from_data};
     use stream_blob_length::StreamBlobLength;
     use utils::utc_timestamp;
 
@@ -396,7 +398,9 @@ mod tests {
         lds.transmit(&data1).unwrap();
 
         assert_eq!(0, lds.reader_mut().unread_len());
+        assert_eq!(0, lds.reader_mut().read_call_count());
         assert_eq!(172, lds.writer_mut().written_len());
+        assert_eq!(1, lds.writer_mut().write_call_count());
 
         assert_eq!(StreamBlobLength::BlobLength(172), length_from_bytes(&lds.writer_mut().written_bytes()));
     }
@@ -424,5 +428,297 @@ mod tests {
         let data3 = lds.receive(1000).unwrap().unwrap();
 
         assert_eq!("00_0015_7E11_10_0100", data3.id_string());
+    }
+
+    #[test]
+    fn test_transceive() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let timestamp = utc_timestamp(1544209081);
+
+        let tx_data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+
+        let rx_data_list = RefCell::new(Vec::new());
+
+        lds.reader_mut().write(&LIVE_DATA_1 [172..258]).unwrap();
+
+        let result1 = lds.transceive(Some(tx_data1), 3, 500, 500, |rx_data| {
+            rx_data_list.borrow_mut().push(rx_data.clone());
+            false
+        }).unwrap();
+
+        let rx_data_list = rx_data_list.into_inner();
+
+        assert_eq!(None, result1);
+        assert_eq!(2, rx_data_list.len());
+        assert_eq!(3, lds.writer_mut().write_call_count());
+        assert_eq!(3 * 172, lds.writer_mut().written_len());
+        assert_eq!(4, lds.reader_mut().read_call_count());
+        assert_eq!(0, lds.reader_mut().unread_len());
+
+        lds.writer_mut().reset();
+        lds.reader_mut().reset();
+
+        lds.reader_mut().write(&LIVE_DATA_1 [172..258]).unwrap();
+
+        let result2 = lds.transceive(None, 1, 500, 0, |_rx_data| {
+            true
+        }).unwrap();
+
+        assert_eq!(true, result2.is_some());
+        assert_eq!(0, lds.writer_mut().write_call_count());
+        assert_eq!(0, lds.writer_mut().written_len());
+        assert_eq!(1, lds.reader_mut().read_call_count());
+        assert_eq!(0, lds.reader_mut().unread_len());
+
+        let result3 = lds.transceive(None, 1, 500, 0, |_rx_data| {
+            true
+        }).unwrap();
+
+        assert_eq!(true, result3.is_some());
+        assert_eq!(0, lds.writer_mut().write_call_count());
+        assert_eq!(0, lds.writer_mut().written_len());
+        assert_eq!(1, lds.reader_mut().read_call_count());
+        assert_eq!(0, lds.reader_mut().unread_len());
+
+        let result4 = lds.transceive(None, 1, 500, 0, |_rx_data| {
+            true
+        }).unwrap();
+
+        assert_eq!(None, result4);
+        assert_eq!(0, lds.writer_mut().write_call_count());
+        assert_eq!(0, lds.writer_mut().written_len());
+        assert_eq!(2, lds.reader_mut().read_call_count());
+        assert_eq!(0, lds.reader_mut().unread_len());
+    }
+
+    fn read_written_data(lds: &mut LiveDataStream<Buffer, Buffer>) -> Option<Data> {
+        match length_from_bytes(lds.writer_mut().written_bytes()) {
+            StreamBlobLength::BlobLength(size) => {
+                let mut bytes = [0u8; 1024];
+                lds.writer_mut().read(&mut bytes [0..size]).unwrap();
+                let data = data_from_checked_bytes(utc_timestamp(1544209081), 0, &bytes [0..size]);
+                Some(data)
+            },
+            _ => None,
+        }
+    }
+
+    fn write_datagram(lds: &mut LiveDataStream<Buffer, Buffer>, destination_address: u16, source_address: u16, command: u16, param16: i16, param32: i32) {
+        let data = Data::Datagram(Datagram {
+            header: Header {
+                timestamp: UTC::now(),
+                channel: 0,
+                destination_address,
+                source_address,
+                protocol_version: 0x20,
+            },
+            command,
+            param16,
+            param32,
+        });
+
+        let mut bytes = [0u8; 1024];
+
+        let size = length_from_data(&data);
+
+        bytes_from_data(&data, &mut bytes [0..size]);
+
+        lds.reader_mut().write(&bytes [0..size]).unwrap();
+    }
+
+    #[test]
+    fn test_wait_for_free_bus() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        write_datagram(&mut lds, 0x0000, 0x7E11, 0x0500, 0, 0);
+
+        assert_eq!("00_0000_7E11_20_0500_0000", lds.wait_for_free_bus().unwrap().unwrap().id_string());
+
+        assert_eq!(None, lds.wait_for_free_bus().unwrap());
+    }
+
+    #[test]
+    fn test_release_bus() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        lds.reader_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+
+        assert_eq!("00_0010_7E11_10_0100", lds.release_bus(0x7E11).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_0600_0000", read_written_data(&mut lds).unwrap().id_string());
+
+        lds.writer_mut().reset();
+
+        assert_eq!(None, lds.release_bus(0x7E11).unwrap());
+        assert_eq!(32, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_0600_0000", read_written_data(&mut lds).unwrap().id_string());
+        assert_eq!("00_7E11_0020_20_0600_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_get_value_by_index() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let value_index = 0x1234;
+        let value = 0x56789abc;
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0101, value_index, value);
+
+        assert_eq!("00_0020_7E11_20_0101_0000", lds.get_value_by_index(0x7E11, value_index, 1).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_0301_0000", read_written_data(&mut lds).unwrap().id_string());
+
+        lds.writer_mut().reset();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0100, value_index, value);
+
+        assert_eq!(None, lds.get_value_by_index(0x7E11, value_index, 1).unwrap());
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0301, value_index, value);
+
+        assert_eq!(None, lds.get_value_by_index(0x7E11, value_index, 1).unwrap());
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0101, value_index + 1, value);
+
+        assert_eq!(None, lds.get_value_by_index(0x7E11, value_index, 1).unwrap());
+    }
+
+    #[test]
+    fn test_set_value_by_index() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let value_index = 0x1234;
+        let value = 0x56789abc;
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0101, value_index, value);
+
+        assert_eq!("00_0020_7E11_20_0101_0000", lds.set_value_by_index(0x7E11, value_index, 1, value).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_0201_0000", read_written_data(&mut lds).unwrap().id_string());
+
+        lds.writer_mut().reset();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0100, value_index, value);
+
+        assert_eq!(None, lds.set_value_by_index(0x7E11, value_index, 1, value).unwrap());
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0201, value_index, value);
+
+        assert_eq!(None, lds.set_value_by_index(0x7E11, value_index, 1, value).unwrap());
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0101, value_index + 1, value);
+
+        assert_eq!(None, lds.set_value_by_index(0x7E11, value_index, 1, value).unwrap());
+    }
+
+    #[test]
+    fn test_get_value_id_hash_by_index() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let value_index = 0x1234;
+        let value_id_hash = 0x56789abc;
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0100, value_index, value_id_hash);
+
+        assert_eq!("00_0020_7E11_20_0100_0000", lds.get_value_id_hash_by_index(0x7E11, value_index).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1000_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_get_value_index_by_id_hash() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let value_index = 0x1234;
+        let value_id_hash = 0x56789abc;
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x0100, value_index, value_id_hash);
+
+        assert_eq!("00_0020_7E11_20_0100_0000", lds.get_value_index_by_id_hash(0x7E11, value_id_hash).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1100_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_get_caps1() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x1301, 0, 0);
+
+        assert_eq!("00_0020_7E11_20_1301_0000", lds.get_caps1(0x7E11).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1300_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_begin_bulk_value_transaction() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x1401, 0, 0);
+
+        assert_eq!("00_0020_7E11_20_1401_0000", lds.begin_bulk_value_transaction(0x7E11, 10).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1400_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_commit_bulk_value_transaction() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x1403, 0, 0);
+
+        assert_eq!("00_0020_7E11_20_1403_0000", lds.commit_bulk_value_transaction(0x7E11).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1402_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_rollback_bulk_value_transaction() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x1405, 0, 0);
+
+        assert_eq!("00_0020_7E11_20_1405_0000", lds.rollback_bulk_value_transaction(0x7E11).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1404_0000", read_written_data(&mut lds).unwrap().id_string());
+    }
+
+    #[test]
+    fn test_set_bulk_value_by_index() {
+        let channel = 0x00;
+
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+
+        let value_index = 0x1234;
+        let value = 0x56789abc;
+
+        write_datagram(&mut lds, 0x0020, 0x7E11, 0x1601, 0, 0);
+
+        assert_eq!("00_0020_7E11_20_1601_0000", lds.set_bulk_value_by_index(0x7E11, value_index, 1, value).unwrap().unwrap().id_string());
+        assert_eq!(16, lds.writer_mut().written_len());
+        assert_eq!("00_7E11_0020_20_1501_0000", read_written_data(&mut lds).unwrap().id_string());
     }
 }
