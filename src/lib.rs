@@ -96,15 +96,13 @@
 //!
 //! ```rust
 //! //! A converter from the binary recorded VBus file format to human-readable CSV.
-//! extern crate chrono;
 //! extern crate resol_vbus;
 //!
 //! use std::fs::File;
 //! use std::io::{Read, Write};
 //!
-//! use chrono::{Local};
-//!
 //! use resol_vbus::*;
+//! use resol_vbus::chrono::{Local};
 //!
 //!
 //! /// Load the VSF file to allow decoding of the payload contained in `Packet` `frame_data` values.
