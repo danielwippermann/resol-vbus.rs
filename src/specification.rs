@@ -312,11 +312,11 @@ fn get_or_create_cached_device_spec(
     };
 
     let device = DeviceSpec {
-        device_id: device_id,
-        channel: channel,
-        self_address: self_address,
+        device_id,
+        channel,
+        self_address,
         peer_address: peer_address_option,
-        name: name,
+        name,
     };
 
     devices.push(Rc::new(device));
@@ -326,11 +326,10 @@ fn get_or_create_cached_device_spec(
 
 fn get_cached_packet_spec(
     packets: &[Rc<PacketSpec>],
-    channel: u8,
-    destination_address: u16,
-    source_address: u16,
-    command: u16,
+    packet_id: PacketId,
 ) -> Option<Rc<PacketSpec>> {
+    let PacketId(channel, destination_address, source_address, command) = packet_id;
+
     let result = packets.iter().find(|&packet| {
         if packet.channel != channel {
             false
@@ -353,21 +352,14 @@ fn get_cached_packet_spec(
 
 fn get_or_create_cached_packet_spec(
     packets: &mut Vec<Rc<PacketSpec>>,
-    channel: u8,
-    destination_address: u16,
-    source_address: u16,
-    command: u16,
+    packet_id: PacketId,
     devices: &mut Vec<Rc<DeviceSpec>>,
     file: &SpecificationFile,
     language: Language,
 ) -> Rc<PacketSpec> {
-    if let Some(packet) = get_cached_packet_spec(
-        packets,
-        channel,
-        destination_address,
-        source_address,
-        command,
-    ) {
+    let PacketId(channel, destination_address, source_address, command) = packet_id;
+
+    if let Some(packet) = get_cached_packet_spec(packets, packet_id) {
         return packet;
     }
 
@@ -388,10 +380,7 @@ fn get_or_create_cached_packet_spec(
         language,
     );
 
-    let packet_id = format!(
-        "{:02X}_{:04X}_{:04X}_10_{:04X}",
-        channel, destination_address, source_address, command
-    );
+    let packet_id_string = packet_id.packet_id_string();
 
     let packet_name = match destination_address {
         0x0010 => source_device.name.clone(),
@@ -406,7 +395,7 @@ fn get_or_create_cached_packet_spec(
             .map(|field| {
                 let field_id = file.text_by_index(&field.id_text_index).to_string();
 
-                let packet_field_id = format!("{}_{}", packet_id, field_id);
+                let packet_field_id = format!("{}_{}", packet_id_string, field_id);
 
                 let field_name = file
                     .localized_text_by_index(&field.name_localized_text_index, language)
@@ -421,44 +410,37 @@ fn get_or_create_cached_packet_spec(
                 let typ = file.type_by_id(&field.type_id);
 
                 PacketFieldSpec {
-                    field_id: field_id,
-                    packet_field_id: packet_field_id,
+                    field_id,
+                    packet_field_id,
                     name: field_name,
                     unit_id: field.unit_id,
-                    unit_family: unit_family,
-                    unit_code: unit_code,
-                    unit_text: unit_text,
+                    unit_family,
+                    unit_code,
+                    unit_text,
                     precision: field.precision,
-                    typ: typ,
+                    typ,
                     parts: field.parts.clone(),
-                    language: language,
+                    language,
                 }
             })
             .collect(),
     };
 
     let packet = PacketSpec {
-        packet_id: packet_id,
-        channel: channel,
-        destination_address: destination_address,
-        source_address: source_address,
-        command: command,
-        destination_device: destination_device,
-        source_device: source_device,
-        name: packet_name,
-        fields: fields,
-    };
-
-    packets.push(Rc::new(packet));
-
-    get_cached_packet_spec(
-        packets,
+        packet_id: packet_id_string,
         channel,
         destination_address,
         source_address,
         command,
-    )
-    .unwrap()
+        destination_device,
+        source_device,
+        name: packet_name,
+        fields,
+    };
+
+    packets.push(Rc::new(packet));
+
+    get_cached_packet_spec(packets, packet_id).unwrap()
 }
 
 /// Get the "power of 10" `i64` value for common "n"s and calculate it otherwise.
@@ -500,7 +482,7 @@ pub fn power_of_ten_f64(n: i32) -> f64 {
         7 => 10_000_000.0,
         8 => 100_000_000.0,
         9 => 1_000_000_000.0,
-        _ => 10.0f64.powf(n as f64),
+        _ => 10.0f64.powf(f64::from(n)),
     }
 }
 
@@ -522,10 +504,10 @@ impl Specification {
         let packets = RefCell::new(Vec::new());
 
         Specification {
-            file: file,
-            language: language,
-            devices: devices,
-            packets: packets,
+            file,
+            language,
+            devices,
+            packets,
         }
     }
 
@@ -590,12 +572,10 @@ impl Specification {
     ) -> Rc<PacketSpec> {
         let mut devices = self.devices.borrow_mut();
         let mut packets = self.packets.borrow_mut();
+        let packet_id = PacketId(channel, destination_address, source_address, command);
         get_or_create_cached_packet_spec(
             &mut packets,
-            channel,
-            destination_address,
-            source_address,
-            command,
+            packet_id,
             &mut devices,
             &self.file,
             self.language,
@@ -651,7 +631,7 @@ impl Specification {
     ) -> DataSetPacketFieldIterator<'a, T> {
         DataSetPacketFieldIterator {
             spec: self,
-            data_set: data_set,
+            data_set,
             data_index: 0,
             field_index: 0,
         }
@@ -668,19 +648,19 @@ impl Specification {
     /// let fmt_localized_timestamp = |language| {
     ///     let spec = Specification::from_file(SpecificationFile::new_default(), language);
     ///
-    ///     format!("{}", spec.fmt_timestamp(utc_timestamp(1485688933)))
+    ///     format!("{}", spec.fmt_timestamp(&utc_timestamp(1485688933)))
     /// };
     ///
     /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::En));
     /// assert_eq!("29.01.2017 11:22:13", fmt_localized_timestamp(Language::De));
     /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::Fr));
     /// ```
-    pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: DateTime<Tz>) -> RawValueFormatter {
+    pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: &DateTime<Tz>) -> RawValueFormatter {
         RawValueFormatter {
             language: self.language,
             typ: Type::DateTime,
             precision: 0,
-            raw_value: timestamp.timestamp() - 978307200,
+            raw_value: timestamp.timestamp() - 978_307_200,
             unit_text: "",
         }
     }
@@ -720,12 +700,12 @@ impl PacketFieldSpec {
 
             if offset < length {
                 let mut part_value = if part.is_signed {
-                    (buf[offset] as i8) as i64
+                    i64::from(buf[offset] as i8)
                 } else {
-                    buf[offset] as i64
+                    i64::from(buf[offset])
                 };
                 if part.mask != 0xFF {
-                    part_value &= part.mask as i64;
+                    part_value &= i64::from(part.mask);
                 }
                 if part.bit_pos > 0 {
                     part_value >>= part.bit_pos;
@@ -757,17 +737,17 @@ impl PacketFieldSpec {
             language: self.language,
             typ: self.typ,
             precision: self.precision,
-            raw_value: raw_value,
-            unit_text: unit_text,
+            raw_value,
+            unit_text,
         }
     }
 }
 
-const WEEKDAYS_EN: [&'static str; 7] = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+const WEEKDAYS_EN: [&str; 7] = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-const WEEKDAYS_DE: [&'static str; 7] = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const WEEKDAYS_DE: [&str; 7] = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-const WEEKDAYS_FR: [&'static str; 7] = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
+const WEEKDAYS_FR: [&str; 7] = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
 
 impl<'a> RawValueFormatter<'a> {
     /// Construct a `RawValueFormatter` to help format a raw value into its textual representation.
@@ -779,11 +759,11 @@ impl<'a> RawValueFormatter<'a> {
         unit_text: &'a str,
     ) -> RawValueFormatter<'a> {
         RawValueFormatter {
-            language: language,
-            typ: typ,
-            precision: precision,
-            raw_value: raw_value,
-            unit_text: unit_text,
+            language,
+            typ,
+            precision,
+            raw_value,
+            unit_text,
         }
     }
 }
@@ -852,7 +832,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                 }
             }
             Type::DateTime => {
-                let timestamp = UTC.timestamp(self.raw_value + 978307200, 0);
+                let timestamp = UTC.timestamp(self.raw_value + 978_307_200, 0);
                 match self.language {
                     Language::En | Language::Fr => {
                         write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))
@@ -910,8 +890,8 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
                         data_set: self.data_set,
                         data_index: self.data_index,
                         packet_spec: packet_spec.clone(),
-                        field_index: field_index,
-                        raw_value: raw_value,
+                        field_index,
+                        raw_value,
                     });
                 }
             }
@@ -934,11 +914,11 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
         raw_value: Option<i64>,
     ) -> DataSetPacketField<'a, T> {
         DataSetPacketField {
-            data_set: data_set,
-            data_index: data_index,
-            packet_spec: packet_spec,
-            field_index: field_index,
-            raw_value: raw_value,
+            data_set,
+            data_index,
+            packet_spec,
+            field_index,
+            raw_value,
         }
     }
 
@@ -1384,8 +1364,8 @@ mod tests {
             unit_family: UnitFamily::None,
             unit_code: "unit code".to_string(),
             unit_text: unit_text.to_string(),
-            precision: precision,
-            typ: typ,
+            precision,
+            typ,
             parts: Vec::new(),
             language: Language::En,
         };

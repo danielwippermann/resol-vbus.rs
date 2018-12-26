@@ -101,8 +101,8 @@ pub fn data_from_checked_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]
     let major = protocol_version & 0xF0;
 
     let header = Header {
-        timestamp: timestamp,
-        channel: channel,
+        timestamp,
+        channel,
         destination_address: LittleEndian::read_u16(&buf[1..]),
         source_address: LittleEndian::read_u16(&buf[3..]),
         protocol_version: buf[5],
@@ -122,17 +122,17 @@ pub fn data_from_checked_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]
         }
 
         Data::Packet(Packet {
-            header: header,
+            header,
             command: LittleEndian::read_u16(&buf[6..]),
             frame_count: buf[8],
-            frame_data: frame_data,
+            frame_data,
         })
     } else if major == 0x20 {
         let mut payload = [0u8; 6];
         copy_bytes_injecting_septett(&mut payload, &buf[8..15]);
 
         Data::Datagram(Datagram {
-            header: header,
+            header,
             command: LittleEndian::read_u16(&buf[6..]),
             param16: LittleEndian::read_i16(&payload[0..]),
             param32: LittleEndian::read_i32(&payload[2..]),
@@ -152,9 +152,9 @@ pub fn data_from_checked_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]
         }
 
         Data::Telegram(Telegram {
-            header: header,
-            command: command,
-            frame_data: frame_data,
+            header,
+            command,
+            frame_data,
         })
     } else {
         unreachable!();

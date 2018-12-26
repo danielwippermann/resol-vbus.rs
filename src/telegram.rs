@@ -241,7 +241,7 @@ impl Clone for Telegram {
         Telegram {
             header: self.header.clone(),
             command: self.command,
-            frame_data: frame_data,
+            frame_data,
         }
     }
 }

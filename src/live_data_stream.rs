@@ -22,18 +22,13 @@ pub struct LiveDataStream<R: Read + ReadWithTimeout, W: Write> {
 
 impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
     /// Constructs a `LiveDataStream`.
-    pub fn new(
-        channel: u8,
-        self_address: u16,
-        reader: R,
-        writer: W,
-    ) -> Result<LiveDataStream<R, W>> {
-        Ok(LiveDataStream {
+    pub fn new(channel: u8, self_address: u16, reader: R, writer: W) -> LiveDataStream<R, W> {
+        LiveDataStream {
             channel,
             self_address,
             reader: LiveDataReader::new(channel, reader),
             writer: LiveDataWriter::new(writer),
-        })
+        }
     }
 
     fn create_datagram(
@@ -72,7 +67,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
 
     /// Receive data from the stream.
     pub fn receive(&mut self, timeout_ms: u32) -> Result<Option<Data>> {
-        let timeout = Duration::from_millis(timeout_ms as u64);
+        let timeout = Duration::from_millis(u64::from(timeout_ms));
         self.receive_internal(timeout)
     }
 
@@ -82,14 +77,14 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
         tx_data: Option<Data>,
         tries: u32,
         initial_timeout_ms: u32,
-        timeout_incr_ms: i32,
+        timeout_incr_ms: u32,
         filter: F,
     ) -> Result<Option<Data>>
     where
         F: Fn(&Data) -> bool,
     {
-        let mut timeout = Duration::from_millis(initial_timeout_ms as u64);
-        let timeout_incr = Duration::from_millis(timeout_incr_ms as u64);
+        let mut timeout = Duration::from_millis(u64::from(initial_timeout_ms));
+        let timeout_incr = Duration::from_millis(u64::from(timeout_incr_ms));
 
         for _try in 0..tries {
             let start_at = Instant::now();
@@ -118,7 +113,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
                 }
             }
 
-            timeout = timeout + timeout_incr;
+            timeout += timeout_incr;
         }
 
         Ok(None)
@@ -149,7 +144,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
         value_index: i16,
         sub_index: u8,
     ) -> Result<Option<Data>> {
-        let tx_data = self.create_datagram(address, 0x0300 | (sub_index as u16), value_index, 0);
+        let tx_data = self.create_datagram(address, 0x0300 | u16::from(sub_index), value_index, 0);
         let self_address = self.self_address;
 
         self.transceive(Some(tx_data), 3, 500, 500, |data| match *data {
@@ -158,7 +153,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
                     false
                 } else if dgram.header.source_address != address {
                     false
-                } else if dgram.command != (0x0100 | (sub_index as u16)) {
+                } else if dgram.command != (0x0100 | u16::from(sub_index)) {
                     false
                 } else if dgram.param16 != value_index {
                     false
@@ -179,7 +174,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
         value: i32,
     ) -> Result<Option<Data>> {
         let tx_data =
-            self.create_datagram(address, 0x0200 | (sub_index as u16), value_index, value);
+            self.create_datagram(address, 0x0200 | u16::from(sub_index), value_index, value);
         let self_address = self.self_address;
 
         self.transceive(Some(tx_data), 3, 500, 500, |data| match *data {
@@ -188,7 +183,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
                     false
                 } else if dgram.header.source_address != address {
                     false
-                } else if dgram.command != (0x0100 | (sub_index as u16)) {
+                } else if dgram.command != (0x0100 | u16::from(sub_index)) {
                     false
                 } else if dgram.param16 != value_index {
                     false
@@ -351,9 +346,9 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
         value: i32,
     ) -> Result<Option<Data>> {
         let tx_data =
-            self.create_datagram(address, 0x1500 | (sub_index as u16), value_index, value);
+            self.create_datagram(address, 0x1500 | u16::from(sub_index), value_index, value);
         let self_address = self.self_address;
-        let resp_command = 0x1600 | (sub_index as u16);
+        let resp_command = 0x1600 | u16::from(sub_index);
 
         self.transceive(Some(tx_data), 3, 500, 500, |data| match *data {
             Data::Datagram(ref dgram) => {
@@ -399,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let mut lds = LiveDataStream::new(0, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(0, 0x0020, Buffer::new(), Buffer::new());
 
         assert_eq!(0, lds.reader_mut().unread_len());
         assert_eq!(0, lds.writer_mut().written_len());
@@ -409,7 +404,7 @@ mod tests {
     fn test_transmit() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let timestamp = utc_timestamp(1544209081);
 
@@ -432,7 +427,7 @@ mod tests {
     fn test_receive() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         lds.reader_mut().write(&LIVE_DATA_1[0..172]).unwrap();
 
@@ -457,7 +452,7 @@ mod tests {
     fn test_transceive() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let timestamp = utc_timestamp(1544209081);
 
@@ -559,7 +554,7 @@ mod tests {
     fn test_wait_for_free_bus() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         write_datagram(&mut lds, 0x0000, 0x7E11, 0x0500, 0, 0);
 
@@ -575,7 +570,7 @@ mod tests {
     fn test_release_bus() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         lds.reader_mut().write(&LIVE_DATA_1[0..172]).unwrap();
 
@@ -607,7 +602,7 @@ mod tests {
     fn test_get_value_by_index() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let value_index = 0x1234;
         let value = 0x56789abc;
@@ -655,7 +650,7 @@ mod tests {
     fn test_set_value_by_index() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let value_index = 0x1234;
         let value = 0x56789abc;
@@ -706,7 +701,7 @@ mod tests {
     fn test_get_value_id_hash_by_index() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let value_index = 0x1234;
         let value_id_hash = 0x56789abc;
@@ -731,7 +726,7 @@ mod tests {
     fn test_get_value_index_by_id_hash() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let value_index = 0x1234;
         let value_id_hash = 0x56789abc;
@@ -756,7 +751,7 @@ mod tests {
     fn test_get_caps1() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         write_datagram(&mut lds, 0x0020, 0x7E11, 0x1301, 0, 0);
 
@@ -775,7 +770,7 @@ mod tests {
     fn test_begin_bulk_value_transaction() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         write_datagram(&mut lds, 0x0020, 0x7E11, 0x1401, 0, 0);
 
@@ -797,7 +792,7 @@ mod tests {
     fn test_commit_bulk_value_transaction() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         write_datagram(&mut lds, 0x0020, 0x7E11, 0x1403, 0, 0);
 
@@ -819,7 +814,7 @@ mod tests {
     fn test_rollback_bulk_value_transaction() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         write_datagram(&mut lds, 0x0020, 0x7E11, 0x1405, 0, 0);
 
@@ -841,7 +836,7 @@ mod tests {
     fn test_set_bulk_value_by_index() {
         let channel = 0x00;
 
-        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new()).unwrap();
+        let mut lds = LiveDataStream::new(channel, 0x0020, Buffer::new(), Buffer::new());
 
         let value_index = 0x1234;
         let value = 0x56789abc;

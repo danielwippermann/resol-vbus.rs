@@ -14,7 +14,7 @@ pub struct RecordingWriter<W: Write> {
 impl<W: Write> RecordingWriter<W> {
     /// Construct a new `RecordingWriter`.
     pub fn new(writer: W) -> RecordingWriter<W> {
-        RecordingWriter { writer: writer }
+        RecordingWriter { writer }
     }
 
     /// Gets a reference to the underlying writer.

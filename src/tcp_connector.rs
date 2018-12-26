@@ -49,7 +49,7 @@ impl TcpConnector {
     /// Constructs a new `TcpConnector` using the given `TcpStream`.
     pub fn new(inner: TcpStream) -> TcpConnector {
         TcpConnector {
-            inner: inner,
+            inner,
             via_tag: None,
             channel: None,
             password: "vbus".to_owned(),
@@ -90,9 +90,9 @@ impl TcpConnector {
         if line.starts_with('+') {
             Ok(())
         } else if line.starts_with('-') {
-            Err(Error::new(line))
+            Err(Error::new(format!("Received negative reply: {}", line)))
         } else {
-            Err(Error::new(line))
+            Err(Error::new(format!("Received unexpected reply: {}", line)))
         }
     }
 

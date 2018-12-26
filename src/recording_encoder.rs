@@ -20,7 +20,7 @@ pub fn length_from_data(data: &Data) -> usize {
 pub fn bytes_from_timestamp(timestamp: DateTime<UTC>, buf: &mut [u8]) {
     let timestamp_s = timestamp.timestamp();
     let timestamp_ms = timestamp.timestamp_subsec_millis();
-    let timestamp = timestamp_s * 1000 + timestamp_ms as i64;
+    let timestamp = timestamp_s * 1000 + i64::from(timestamp_ms);
 
     LittleEndian::write_i64(&mut buf[0..8], timestamp);
 }

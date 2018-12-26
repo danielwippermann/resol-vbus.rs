@@ -175,6 +175,12 @@
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations)]
 // #![deny(warnings)]
+#![allow(clippy::if_same_then_else)]
+#![allow(clippy::large_enum_variant)]
+#![allow(clippy::needless_bool)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::trivially_copy_pass_by_ref)]
+#![allow(clippy::write_with_newline)]
 
 extern crate byteorder;
 pub extern crate chrono;

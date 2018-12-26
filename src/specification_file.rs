@@ -11,7 +11,7 @@ use error::{Error, Result};
 use utils::calc_crc16;
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum ErrorKind {
     /// The data is too small for a valid FILEHEADER.
     InvalidFileHeader,
@@ -335,11 +335,11 @@ impl SpecificationFile {
 
         let mut spec_file = SpecificationFile {
             datecode: 0,
-            texts: texts,
-            localized_texts: localized_texts,
-            units: units,
-            device_templates: device_templates,
-            packet_templates: packet_templates,
+            texts,
+            localized_texts,
+            units,
+            device_templates,
+            packet_templates,
         };
 
         if !check_offset(bytes, 0, 0x10, 1) {
@@ -429,15 +429,11 @@ impl SpecificationFile {
         peer_address: u16,
     ) -> Option<&DeviceTemplate> {
         self.device_templates.iter().find(|&device_template| {
-            if ((device_template.self_address ^ self_address) & device_template.self_mask) != 0 {
-                false
-            } else if ((device_template.peer_address ^ peer_address) & device_template.peer_mask)
-                != 0
-            {
-                false
-            } else {
-                true
-            }
+            let self_valid =
+                ((device_template.self_address ^ self_address) & device_template.self_mask) == 0;
+            let peer_valid =
+                ((device_template.peer_address ^ peer_address) & device_template.peer_mask) == 0;
+            self_valid && peer_valid
         })
     }
 
@@ -449,21 +445,13 @@ impl SpecificationFile {
         command: u16,
     ) -> Option<&PacketTemplate> {
         self.packet_templates.iter().find(|&packet_template| {
-            if ((packet_template.destination_address ^ destination_address)
+            let dst_valid = ((packet_template.destination_address ^ destination_address)
                 & packet_template.destination_mask)
-                != 0
-            {
-                false
-            } else if ((packet_template.source_address ^ source_address)
+                == 0;
+            let src_valid = ((packet_template.source_address ^ source_address)
                 & packet_template.source_mask)
-                != 0
-            {
-                false
-            } else if packet_template.command != command {
-                false
-            } else {
-                true
-            }
+                == 0;
+            dst_valid && src_valid && (packet_template.command == command)
         })
     }
 
@@ -650,10 +638,10 @@ impl SpecificationFile {
             err(ErrorKind::InvalidDeviceTemplateNameLocalizedTextIndex)
         } else {
             Ok(DeviceTemplate {
-                self_address: self_address,
-                self_mask: self_mask,
-                peer_address: peer_address,
-                peer_mask: peer_mask,
+                self_address,
+                self_mask,
+                peer_address,
+                peer_mask,
                 name_localized_text_index: LocalizedTextIndex(name_localized_text_index),
             })
         }
@@ -685,12 +673,12 @@ impl SpecificationFile {
             }
 
             Ok(PacketTemplate {
-                destination_address: destination_address,
-                destination_mask: destination_mask,
-                source_address: source_address,
-                source_mask: source_mask,
-                command: command,
-                fields: fields,
+                destination_address,
+                destination_mask,
+                source_address,
+                source_mask,
+                command,
+                fields,
             })
         }
     }
@@ -732,9 +720,9 @@ impl SpecificationFile {
                 id_text_index: TextIndex(id_text_index),
                 name_localized_text_index: LocalizedTextIndex(name_localized_text_index),
                 unit_id: UnitId(unit_id),
-                precision: precision,
+                precision,
                 type_id: TypeId(type_id),
-                parts: parts,
+                parts,
             })
         }
     }
@@ -754,10 +742,10 @@ impl SpecificationFile {
 
         Ok(PacketTemplateFieldPart {
             offset: data_offset,
-            bit_pos: bit_pos,
-            mask: mask,
+            bit_pos,
+            mask,
             is_signed: is_signed != 0,
-            factor: factor,
+            factor,
         })
     }
 }

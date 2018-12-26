@@ -14,7 +14,7 @@ pub struct LiveDataRecordingWriter<W: Write> {
 impl<W: Write> LiveDataRecordingWriter<W> {
     /// Construct a new `LiveDataRecordingWriter<T>` instance.
     pub fn new(writer: W) -> LiveDataRecordingWriter<W> {
-        LiveDataRecordingWriter { writer: writer }
+        LiveDataRecordingWriter { writer }
     }
 
     /// Gets a reference to the underlying writer.
@@ -44,7 +44,7 @@ impl<W: Write> LiveDataRecordingWriter<W> {
 
         bytes_from_record(0x88, record_length as u16, start_timestamp, buf);
         bytes_from_timestamp(end_timestamp, &mut buf[14..22]);
-        &mut buf[22..].copy_from_slice(data);
+        buf[22..].copy_from_slice(data);
 
         self.writer.write_all(buf)?;
 

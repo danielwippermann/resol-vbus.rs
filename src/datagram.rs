@@ -173,7 +173,7 @@ mod tests {
 
         let dgram = Datagram {
             header: Header {
-                timestamp: timestamp,
+                timestamp,
                 channel: 0x11,
                 destination_address: 0x1213,
                 source_address: 0x1415,

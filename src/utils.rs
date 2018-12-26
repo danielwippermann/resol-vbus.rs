@@ -144,7 +144,7 @@ pub fn has_msb_set(buf: &[u8]) -> bool {
     buf.iter().any(|b| b & 0x80 != 0)
 }
 
-const CRC16_TABLE: &'static [u16] = &[
+const CRC16_TABLE: &[u16] = &[
     0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF, 0x8C48, 0x9DC1, 0xAF5A, 0xBED3,
     0xCA6C, 0xDBE5, 0xE97E, 0xF8F7, 0x1081, 0x0108, 0x3393, 0x221A, 0x56A5, 0x472C, 0x75B7, 0x643E,
     0x9CC9, 0x8D40, 0xBFDB, 0xAE52, 0xDAED, 0xCB64, 0xF9FF, 0xE876, 0x2102, 0x308B, 0x0210, 0x1399,
@@ -182,7 +182,7 @@ const CRC16_TABLE: &'static [u16] = &[
 pub fn calc_crc16(buf: &[u8]) -> u16 {
     let mut crc = 0xFFFFu16;
     for byte in buf {
-        crc = (crc >> 8) ^ CRC16_TABLE[(crc ^ *byte as u16) as usize & 0xFF];
+        crc = (crc >> 8) ^ CRC16_TABLE[(crc ^ u16::from(*byte)) as usize & 0xFF];
     }
     crc ^ 0xFFFF
 }

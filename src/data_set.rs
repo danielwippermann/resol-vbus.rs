@@ -55,15 +55,17 @@ impl DataSet {
 
     /// Construct a `DataSet` from a list of `Data` values.
     pub fn from_data(timestamp: DateTime<UTC>, set: Vec<Data>) -> DataSet {
-        DataSet {
-            timestamp: timestamp,
-            set: set,
-        }
+        DataSet { timestamp, set }
     }
 
     /// Return the amount of `Data` values contained in this `DataSet`.
     pub fn len(&self) -> usize {
         self.set.len()
+    }
+
+    /// Return whether this `DataSet` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.set.is_empty()
     }
 
     /// Return the `Data` values contained in this `DataSet`.

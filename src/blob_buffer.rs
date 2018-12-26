@@ -6,7 +6,7 @@ use std::{
 /// A size-adating buffer to store bytes in. The buffer grows when data is
 /// stored into it. The contents can then be consumed which results in
 /// the buffer dropping the consumed data before new data are appended.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct BlobBuffer {
     buf: Vec<u8>,
     start: usize,
@@ -16,11 +16,7 @@ pub struct BlobBuffer {
 impl BlobBuffer {
     /// Constructs a new `BlobBuffer`.
     pub fn new() -> BlobBuffer {
-        BlobBuffer {
-            buf: Vec::new(),
-            start: 0,
-            offset: 0,
-        }
+        BlobBuffer::default()
     }
 
     /// Provide additional data to the internal buffer.
@@ -42,6 +38,11 @@ impl BlobBuffer {
     /// Returns the unconsumed byte length of the internal buffer.
     pub fn len(&self) -> usize {
         self.buf.len() - self.start
+    }
+
+    /// Returns whether the internal buffer is empty.
+    pub fn is_empty(&self) -> bool {
+        self.buf.len() == self.start
     }
 
     /// Get amount of already consumed bytes.

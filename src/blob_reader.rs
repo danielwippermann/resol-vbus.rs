@@ -54,7 +54,7 @@ impl<R: Read> BlobReader<R> {
     /// Constructs a new `BlobReader<T>`.
     pub fn new(reader: R) -> BlobReader<R> {
         BlobReader {
-            reader: reader,
+            reader,
             buf: BlobBuffer::new(),
         }
     }

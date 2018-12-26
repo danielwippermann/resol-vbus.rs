@@ -41,7 +41,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
 pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<UTC> {
     let timestamp_ms = LittleEndian::read_i64(&buf[0..8]);
     let timestamp_s = timestamp_ms / 1000;
-    let timestamp_ns = (timestamp_ms % 1000) as u32 * 1000000;
+    let timestamp_ns = (timestamp_ms % 1000) as u32 * 1_000_000;
     UTC.timestamp(timestamp_s, timestamp_ns)
 }
 
@@ -63,15 +63,15 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
 
         Data::Packet(Packet {
             header: Header {
-                timestamp: timestamp,
-                channel: channel,
-                destination_address: destination_address,
-                source_address: source_address,
-                protocol_version: protocol_version,
+                timestamp,
+                channel,
+                destination_address,
+                source_address,
+                protocol_version,
             },
-            command: command,
-            frame_count: frame_count,
-            frame_data: frame_data,
+            command,
+            frame_count,
+            frame_data,
         })
     } else if major == 0x20 {
         let command = LittleEndian::read_u16(&buf[20..22]);
@@ -80,15 +80,15 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
 
         Data::Datagram(Datagram {
             header: Header {
-                timestamp: timestamp,
-                channel: channel,
-                destination_address: destination_address,
-                source_address: source_address,
-                protocol_version: protocol_version,
+                timestamp,
+                channel,
+                destination_address,
+                source_address,
+                protocol_version,
             },
-            command: command,
-            param16: param16,
-            param32: param32,
+            command,
+            param16,
+            param32,
         })
     } else {
         panic!("Unhandled protocol version {}", protocol_version);

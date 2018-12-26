@@ -40,7 +40,7 @@ impl<T: AsRef<Path>> FileListReader<T> {
     /// Construct a new `FileListReader` from a list of paths.
     pub fn new(file_list: Vec<T>) -> FileListReader<T> {
         FileListReader {
-            file_list: file_list,
+            file_list,
             file_index: 0,
             file: None,
         }

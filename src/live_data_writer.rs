@@ -13,7 +13,7 @@ pub struct LiveDataWriter<W: Write> {
 impl<W: Write> LiveDataWriter<W> {
     /// Construct a new `LiveDataWriter`.
     pub fn new(writer: W) -> LiveDataWriter<W> {
-        LiveDataWriter { writer: writer }
+        LiveDataWriter { writer }
     }
 
     /// Gets a reference to the underlying writer.

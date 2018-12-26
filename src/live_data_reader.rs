@@ -56,7 +56,7 @@ impl<R: Read> LiveDataReader<R> {
     /// Read from the stream until a valid blob of data is found.
     pub fn read_bytes(&mut self) -> Result<Option<&[u8]>> {
         let has_bytes = loop {
-            if let Some(_) = self.buf.peek_length() {
+            if self.buf.peek_length().is_some() {
                 break true;
             }
 
@@ -116,7 +116,7 @@ impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
         };
 
         let has_data = loop {
-            if let Some(_) = self.buf.peek_length() {
+            if self.buf.peek_length().is_some() {
                 break true;
             }
 

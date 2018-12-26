@@ -20,7 +20,7 @@ impl LiveDataBuffer {
     /// Constructs a `LiveDataReader`.
     pub fn new(channel: u8) -> LiveDataBuffer {
         LiveDataBuffer {
-            channel: channel,
+            channel,
             buf: BlobBuffer::new(),
             previous_length: 0,
         }

@@ -483,7 +483,7 @@ impl Clone for Packet {
             header: self.header.clone(),
             command: self.command,
             frame_count: self.frame_count,
-            frame_data: frame_data,
+            frame_data,
         }
     }
 }
