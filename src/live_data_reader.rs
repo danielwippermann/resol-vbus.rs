@@ -1,14 +1,13 @@
-use std::io::{Read, Result};
-use std::time::{Duration, Instant};
+use std::{
+    io::{Error, ErrorKind, Read, Result},
+    time::{Duration, Instant},
+};
 
-use chrono::{UTC};
-
-use blob_reader::BlobReader;
-use data::Data;
-use stream_blob_length::StreamBlobLength::{BlobLength, Partial, Malformed};
-use live_data_decoder::{length_from_bytes, data_from_checked_bytes};
-use read_with_timeout::ReadWithTimeout;
-
+use crate::{
+    data::Data,
+    live_data_buffer::LiveDataBuffer,
+    read_with_timeout::ReadWithTimeout,
+};
 
 /// Allows reading `Data` variants from a `Read` trait object.
 ///
@@ -30,136 +29,140 @@ use read_with_timeout::ReadWithTimeout;
 /// ```
 #[derive(Debug)]
 pub struct LiveDataReader<R: Read> {
-    channel: u8,
-    reader: BlobReader<R>,
-    previous_length: usize,
+    buf: LiveDataBuffer,
+    reader: R,
 }
 
 
 impl<R: Read> LiveDataReader<R> {
-
     /// Constructs a `LiveDataReader`.
     pub fn new(channel: u8, reader: R) -> LiveDataReader<R> {
         LiveDataReader {
-            channel: channel,
-            reader: BlobReader::new(reader),
-            previous_length: 0,
+            buf: LiveDataBuffer::new(channel),
+            reader,
         }
     }
 
+    fn read_to_buf(&mut self) -> Result<usize> {
+        let mut buf = Vec::new();
+        buf.resize(4096, 0);
+
+        let size = self.reader.read(&mut buf)?;
+        self.buf.extend_from_slice(&buf [0..size]);
+
+        Ok(size)
+    }
+
     /// Read from the stream until a valid blob of data is found.
-    pub fn read_bytes(&mut self) -> Result<&[u8]> {
-        if self.previous_length > 0 {
-            self.reader.consume(self.previous_length);
-            self.previous_length = 0;
-        }
-
-        loop {
-            match length_from_bytes(self.reader.as_bytes()) {
-                BlobLength(size) => {
-                    self.previous_length = size;
-                    break;
-                }
-                Partial => {
-                    if self.reader.read()? == 0 {
-                        break;
-                    }
-                }
-                Malformed => {
-                    self.reader.consume(1);
-                }
+    pub fn read_bytes(&mut self) -> Result<Option<&[u8]>> {
+        let has_bytes = loop {
+            if let Some(_) = self.buf.peek_length() {
+                break true;
             }
-        }
 
-        let bytes = self.reader.as_bytes();
-        Ok(&bytes [0..self.previous_length])
+            if self.read_to_buf()? == 0 {
+                break false;
+            }
+        };
+
+        if has_bytes {
+            Ok(self.buf.read_bytes())
+        } else {
+            Ok(None)
+        }
     }
 
     /// Read from the stream until a valid `Data` variant can be decoded.
     pub fn read_data(&mut self) -> Result<Option<Data>> {
-        let channel = self.channel;
-        let bytes = self.read_bytes()?;
+        loop {
+            if let Some(data) = self.buf.read_data() {
+                break Ok(Some(data));
+            }
 
-        let data = if bytes.len() > 0 {
-            Some(data_from_checked_bytes(UTC::now(), channel, bytes))
-        } else {
-            None
-        };
-
-        Ok(data)
+            if self.read_to_buf()? == 0 {
+                break Ok(None);
+            }
+        }
     }
 
 }
 
-
 impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
-    /// Read from the stream until a valid blob of data is found or the optional timeout occurred.
-    pub fn read_bytes_with_timeout(&mut self, timeout: Option<Duration>) -> Result<&[u8]> {
-        if self.previous_length > 0 {
-            self.reader.consume(self.previous_length);
-            self.previous_length = 0;
-        }
+    fn read_to_buf_with_timeout(&mut self, end: Option<Instant>) -> Result<usize> {
+        let mut buf = Vec::new();
+        buf.resize(4096, 0);
 
+        let timeout = match end {
+            Some(end) => {
+                let now = Instant::now();
+                if now >= end {
+                    return Err(Error::new(ErrorKind::TimedOut, "Timed out"));
+                }
+                Some(end - now)
+            },
+            None => None,
+        };
+
+        let size = self.reader.read_with_timeout(&mut buf, timeout)?;
+        self.buf.extend_from_slice(&buf [0..size]);
+
+        Ok(size)
+    }
+
+    /// Read from the stream until a valid blob of data is found or the optional timeout occurred.
+    pub fn read_bytes_with_timeout(&mut self, timeout: Option<Duration>) -> Result<Option<&[u8]>> {
+        let end = match timeout {
+            Some(timeout) => Some(Instant::now() + timeout),
+            None => None,
+        };
+
+        let has_data = loop {
+            if let Some(_) = self.buf.peek_length() {
+                break true;
+            }
+
+            if self.read_to_buf_with_timeout(end)? == 0 {
+                break false;
+            }
+        };
+
+        if has_data {
+            Ok(self.buf.read_bytes())
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Read from the stream until a valid `Data` variant can be decoded or the optional timeout occurred.
+    pub fn read_data_with_timeout(&mut self, timeout: Option<Duration>) -> Result<Option<Data>> {
         let end = match timeout {
             Some(timeout) => Some(Instant::now() + timeout),
             None => None,
         };
 
         loop {
-            let timeout = match end {
-                Some(end) => {
-                    let now = Instant::now();
-                    if now >= end {
-                        break;
-                    }
-                    Some(end - now)
-                },
-                None => None,
-            };
+            if let Some(data) = self.buf.read_data() {
+                break Ok(Some(data));
+            }
 
-            match length_from_bytes(self.reader.as_bytes()) {
-                BlobLength(size) => {
-                    self.previous_length = size;
-                    break;
-                }
-                Partial => {
-                    if self.reader.read_with_timeout(timeout)? == 0 {
-                        break;
-                    }
-                }
-                Malformed => {
-                    self.reader.consume(1);
-                }
+            if self.read_to_buf_with_timeout(end)? == 0 {
+                break Ok(None);
             }
         }
-
-        let bytes = self.reader.as_bytes();
-        Ok(&bytes [0..self.previous_length])
-    }
-
-    /// Read from the stream until a valid `Data` variant can be decoded or the optional timeout occurred.
-    pub fn read_data_with_timeout(&mut self, timeout: Option<Duration>) -> Result<Option<Data>> {
-        let channel = self.channel;
-        let bytes = self.read_bytes_with_timeout(timeout)?;
-
-        let data = if bytes.len() > 0 {
-            Some(data_from_checked_bytes(UTC::now(), channel, bytes))
-        } else {
-            None
-        };
-
-        Ok(data)
     }
 }
 
+impl<R: Read> AsRef<R> for LiveDataReader<R> {
+    fn as_ref(&self) -> &R {
+        &self.reader
+    }
+}
 
-#[cfg(test)]
 impl<R: Read> AsMut<R> for LiveDataReader<R> {
     fn as_mut(&mut self) -> &mut R {
-        self.reader.as_mut()
+        &mut self.reader
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -174,17 +177,23 @@ mod tests {
     fn test_read_bytes() {
         let mut ldr = LiveDataReader::new(0, LIVE_DATA_1);
 
-        for expected_len in [ 172, 70, 16, 94, 16, 0, 0, 0 ].iter() {
-            let result = ldr.read_bytes().unwrap();
+        for expected_len in [ 172, 70, 16, 94, 16 ].iter() {
+            let result = ldr.read_bytes().expect("No error").expect("Expected data");
             assert_eq!(*expected_len, result.len());
         }
+
+        let result = ldr.read_bytes().expect("No error");
+        assert_eq!(None, result);
 
         let mut ldr = LiveDataReader::new(0, &LIVE_DATA_1 [1..]);
 
-        for expected_len in [ 70, 16, 94, 16, 0, 0, 0 ].iter() {
-            let result = ldr.read_bytes().unwrap();
+        for expected_len in [ 70, 16, 94, 16 ].iter() {
+            let result = ldr.read_bytes().expect("No error").expect("Expected data");
             assert_eq!(*expected_len, result.len());
         }
+
+        let result = ldr.read_bytes().expect("No error");
+        assert_eq!(None, result);
     }
 
     #[test]
@@ -221,39 +230,41 @@ mod tests {
     #[test]
     fn test_read_bytes_with_timeout() {
         let channel = 0x11;
+        let timeout = Some(Duration::from_millis(1));
 
         let mut ldr = LiveDataReader::new(channel, Buffer::new());
 
-        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).expect("No error");
 
         {
-            let bytes1 = ldr.read_bytes_with_timeout(None).unwrap();
+            let bytes1 = ldr.read_bytes_with_timeout(timeout).unwrap();
 
-            assert_eq!(&LIVE_DATA_1 [0..172], bytes1);
+            assert_eq!(Some(&LIVE_DATA_1 [0..172]), bytes1);
         }
 
-        assert_eq!(true, ldr.read_bytes_with_timeout(None).is_err());
+        assert_eq!(true, ldr.read_bytes_with_timeout(timeout).is_err());
     }
 
     #[test]
     fn test_read_data_with_timeout() {
         let channel = 0x11;
+        let timeout = Some(Duration::from_millis(1));
 
         let mut ldr = LiveDataReader::new(channel, Buffer::new());
 
         ldr.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
 
-        let data1 = ldr.read_data_with_timeout(None).unwrap().unwrap();
+        let data1 = ldr.read_data_with_timeout(timeout).unwrap().unwrap();
 
         assert_eq!("11_0010_7E11_10_0100", data1.id_string());
 
         ldr.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
 
-        assert_eq!(true, ldr.read_data_with_timeout(None).is_err());
+        assert_eq!(true, ldr.read_data_with_timeout(timeout).is_err());
 
         ldr.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
 
-        let data3 = ldr.read_data_with_timeout(None).unwrap().unwrap();
+        let data3 = ldr.read_data_with_timeout(timeout).unwrap().unwrap();
 
         assert_eq!("11_0015_7E11_10_0100", data3.id_string());
     }
