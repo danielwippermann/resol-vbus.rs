@@ -68,7 +68,7 @@ impl<R: Read> RecordingReader<R> {
         }
 
         loop {
-            match length_from_bytes(self.reader.as_bytes()) {
+            match length_from_bytes(&self.reader) {
                 BlobLength(size) => {
                     self.previous_length = size;
                     break;
@@ -85,7 +85,7 @@ impl<R: Read> RecordingReader<R> {
             }
         }
 
-        let bytes = self.reader.as_bytes();
+        let bytes = &*self.reader;
         Ok(&bytes [0..self.previous_length])
     }
 

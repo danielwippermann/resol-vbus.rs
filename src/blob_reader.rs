@@ -1,8 +1,13 @@
-use std::io::{Read, Result};
-use std::time::Duration;
+use std::{
+    io::{Read, Result},
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 
-
-use read_with_timeout::ReadWithTimeout;
+use crate::{
+    blob_buffer::BlobBuffer,
+    read_with_timeout::ReadWithTimeout,
+};
 
 
 /// A buffering reader that allows to borrow the internal buffer.
@@ -22,7 +27,7 @@ use read_with_timeout::ReadWithTimeout;
 /// let mut br = BlobReader::new(file);
 ///
 /// loop {
-///     match length_from_bytes(br.as_bytes()) {
+///     match length_from_bytes(&br) {
 ///         StreamBlobLength::BlobLength(size) => {
 ///             // do something with the data
 ///
@@ -46,9 +51,7 @@ use read_with_timeout::ReadWithTimeout;
 #[derive(Debug)]
 pub struct BlobReader<R: Read> {
     reader: R,
-    buf: Vec<u8>,
-    start: usize,
-    offset: usize,
+    buf: BlobBuffer,
 }
 
 
@@ -58,9 +61,7 @@ impl<R: Read> BlobReader<R> {
     pub fn new(reader: R) -> BlobReader<R> {
         BlobReader {
             reader: reader,
-            buf: Vec::new(),
-            start: 0,
-            offset: 0,
+            buf: BlobBuffer::new(),
         }
     }
 
@@ -71,66 +72,41 @@ impl<R: Read> BlobReader<R> {
 
     /// Reads additional data to the internal buffer.
     pub fn read(&mut self) -> Result<usize> {
-        if self.start > 0 {
-            drop(self.buf.drain(0..self.start));
-            self.start = 0;
-        }
+        let mut buf = Vec::new();
+        buf.resize(4096, 0);
 
-        let end = self.buf.len();
-        self.buf.resize(end + 4096, 0);
+        let size = self.reader.read(&mut buf)?;
+        self.buf.extend_from_slice(&buf [0..size]);
 
-        match self.reader.read(&mut self.buf [end..]) {
-            Ok(size) => {
-                self.buf.resize(end + size, 0);
-                Ok(size)
-            },
-            Err(err) => {
-                self.buf.resize(end, 0);
-                Err(err)
-            }
-        }
-    }
-
-    /// Consume the given amount of data from the internal buffer.
-    pub fn consume(&mut self, length: usize) {
-        self.start += length;
-        self.offset += length;
-    }
-
-    /// Returns the unconsumed byte slice of the internal buffer.
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.buf[self.start..]
-    }
-
-    /// Get amount of already consumed bytes.
-    pub fn offset(&self) -> usize {
-        self.offset
+        Ok(size)
     }
 
 }
 
+impl<R: Read> Deref for BlobReader<R> {
+    type Target = BlobBuffer;
+
+    fn deref(&self) -> &BlobBuffer {
+        &self.buf
+    }
+}
+
+impl<R: Read> DerefMut for BlobReader<R> {
+    fn deref_mut(&mut self) -> &mut BlobBuffer {
+        &mut self.buf
+    }
+}
 
 impl<R: ReadWithTimeout + Read> BlobReader<R> {
     /// Reads additional data to the internal buffer using an optional timeout.
     pub fn read_with_timeout(&mut self, timeout: Option<Duration>) -> Result<usize> {
-        if self.start > 0 {
-            drop(self.buf.drain(0..self.start));
-            self.start = 0;
-        }
+        let mut buf = Vec::new();
+        buf.resize(4096, 0);
 
-        let end = self.buf.len();
-        self.buf.resize(end + 4096, 0);
+        let size = self.reader.read_with_timeout(&mut buf, timeout)?;
+        self.buf.extend_from_slice(&buf [0..size]);
 
-        match self.reader.read_with_timeout(&mut self.buf [end..], timeout) {
-            Ok(size) => {
-                self.buf.resize(end + size, 0);
-                Ok(size)
-            },
-            Err(err) => {
-                self.buf.resize(end, 0);
-                Err(err)
-            }
-        }
+        Ok(size)
     }
 }
 
@@ -159,7 +135,6 @@ mod tests {
         let br = BlobReader::new(bytes);
 
         assert_eq!(0, br.buf.len());
-        assert_eq!(0, br.start);
     }
 
     #[test]
@@ -172,12 +147,10 @@ mod tests {
         let result = br.read().unwrap();
         assert_eq!(len, result);
         assert_eq!(len, br.buf.len());
-        assert_eq!(0, br.start);
 
         let result = br.read().unwrap();
         assert_eq!(0, result);
         assert_eq!(len, br.buf.len());
-        assert_eq!(0, br.start);
     }
 
     #[test]
@@ -191,95 +164,43 @@ mod tests {
         let result = br.read().unwrap();
         assert_eq!(len, result);
         assert_eq!(len, br.buf.len());
-        assert_eq!(0, br.start);
 
         br.consume(10);
-        assert_eq!(len, result);
-        assert_eq!(len, br.buf.len());
-        assert_eq!(10, br.start);
+        assert_eq!(len - 10, br.buf.len());
 
         br.consume(10);
-        assert_eq!(len, result);
-        assert_eq!(len, br.buf.len());
-        assert_eq!(20, br.start);
+        assert_eq!(len - 20, br.buf.len());
 
         let result = br.read().unwrap();
         assert_eq!(0, result);
         assert_eq!(len - 20, br.buf.len());
-        assert_eq!(0, br.start);
-    }
-
-    #[test]
-    fn test_as_bytes() {
-        let bytes = LIVE_DATA_1;
-        let len = bytes.len();
-        assert!(len > 20);
-
-        let mut br = BlobReader::new(bytes);
-
-        {
-            let br_bytes = br.as_bytes();
-            assert_eq!(0, br_bytes.len());
-        }
-
-        let result = br.read().unwrap();
-
-        {
-            let br_bytes = br.as_bytes();
-            assert_eq!(len, br_bytes.len());
-        }
-
-        br.consume(10);
-        assert_eq!(len, result);
-        assert_eq!(len, br.buf.len());
-        assert_eq!(10, br.start);
-
-        {
-            let br_bytes = br.as_bytes();
-            assert_eq!(len - 10, br_bytes.len());
-            assert_eq!(&bytes [10..], br_bytes);
-        }
-
-        br.consume(10);
-        assert_eq!(len, result);
-        assert_eq!(len, br.buf.len());
-        assert_eq!(20, br.start);
-
-        {
-            let br_bytes = br.as_bytes();
-            assert_eq!(len - 20, br_bytes.len());
-            assert_eq!(&bytes [20..], br_bytes);
-        }
-
-        let result = br.read().unwrap();
-        assert_eq!(0, result);
-        assert_eq!(len - 20, br.buf.len());
-        assert_eq!(0, br.start);
     }
 
     #[test]
     fn test_read_with_timeout() {
+        let timeout = Some(Duration::from_millis(1));
+
         let mut br = BlobReader::new(Buffer::new());
 
-        assert_eq!(0, br.as_bytes().len());
+        assert_eq!(0, br.len());
 
-        assert_eq!(true, br.read_with_timeout(None).is_err());
+        assert_eq!(true, br.read_with_timeout(timeout).is_err());
 
-        assert_eq!(0, br.as_bytes().len());
+        assert_eq!(0, br.len());
 
         br.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
 
-        assert_eq!(172, br.read_with_timeout(None).unwrap());
-        assert_eq!(172, br.as_bytes().len());
+        assert_eq!(172, br.read_with_timeout(timeout).unwrap());
+        assert_eq!(172, br.len());
 
         br.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
 
-        assert_eq!(60, br.read_with_timeout(None).unwrap());
-        assert_eq!(232, br.as_bytes().len());
+        assert_eq!(60, br.read_with_timeout(timeout).unwrap());
+        assert_eq!(232, br.len());
 
         br.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
 
-        assert_eq!(10, br.read_with_timeout(None).unwrap());
-        assert_eq!(242, br.as_bytes().len());
+        assert_eq!(10, br.read_with_timeout(timeout).unwrap());
+        assert_eq!(242, br.len());
     }
 }
