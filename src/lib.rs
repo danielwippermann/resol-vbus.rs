@@ -191,6 +191,9 @@ pub mod utils;
 mod stream_blob_length;
 pub use stream_blob_length::StreamBlobLength;
 
+mod blob_buffer;
+pub use blob_buffer::BlobBuffer;
+
 mod blob_reader;
 pub use blob_reader::BlobReader;
 
@@ -218,6 +221,9 @@ pub use data_set::DataSet;
 pub mod live_data_decoder;
 
 pub mod live_data_encoder;
+
+mod live_data_buffer;
+pub use live_data_buffer::LiveDataBuffer;
 
 mod read_with_timeout;
 pub use read_with_timeout::ReadWithTimeout;
