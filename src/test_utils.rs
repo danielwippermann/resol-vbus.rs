@@ -9,6 +9,7 @@ pub struct Buffer {
     read_index: usize,
     read_call_count: usize,
     write_call_count: usize,
+    is_eof: bool,
 }
 
 
@@ -19,14 +20,20 @@ impl Buffer {
             read_index: 0,
             read_call_count: 0,
             write_call_count: 0,
+            is_eof: false,
         }
     }
 
-    pub fn reset(&mut self) -> () {
+    pub fn reset(&mut self) {
         self.bytes.clear();
         self.read_index = 0;
         self.read_call_count = 0;
         self.write_call_count = 0;
+        self.is_eof = false;
+    }
+
+    pub fn set_eof(&mut self) {
+        self.is_eof = true;
     }
 
     pub fn unread_len(&self) -> usize {
@@ -57,16 +64,7 @@ impl Buffer {
 
 impl Read for Buffer {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        self.read_call_count += 1;
-
-        let mut bytes = &self.bytes [self.read_index..];
-        if bytes.len() > 0 {
-            let size = bytes.read(buf)?;
-            self.read_index += size;
-            Ok(size)
-        } else {
-            Err(Error::new(ErrorKind::WouldBlock, "Simulated timeout".to_string()))
-        }
+        self.read_with_timeout(buf, None)
     }
 }
 
@@ -85,8 +83,21 @@ impl Write for Buffer {
 
 
 impl ReadWithTimeout for Buffer {
-    fn read_with_timeout(&mut self, buf: &mut [u8], _timeout: Option<Duration>) -> Result<usize> {
-        self.read(buf)
+    fn read_with_timeout(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> Result<usize> {
+        self.read_call_count += 1;
+
+        let mut bytes = &self.bytes [self.read_index..];
+        if bytes.len() > 0 {
+            let size = bytes.read(buf)?;
+            self.read_index += size;
+            Ok(size)
+        } else if self.is_eof {
+            Ok(0)
+        } else if timeout.is_some() {
+            Err(Error::new(ErrorKind::WouldBlock, "Simulated timeout"))
+        } else {
+            panic!("Reading empty buffer without timeout");
+        }
     }
 }
 
@@ -114,6 +125,12 @@ fn test_buffer() {
     assert_eq!(4, size);
     assert_eq!(0, buffer.unread_len());
     assert_eq!(4, buffer.written_len());
+
+    buffer.set_eof();
+
+    let size = buffer.read(&mut bytes).unwrap();
+
+    assert_eq!(size, 0);
 }
 
 #[test]
