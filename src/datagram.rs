@@ -1,9 +1,8 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use id_hash::IdHash;
 use header::Header;
-
+use id_hash::IdHash;
 
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
 ///
@@ -35,9 +34,7 @@ pub struct Datagram {
     pub param32: i32,
 }
 
-
 impl Datagram {
-
     /// Creates an identification string for this `Datagram`.
     ///
     /// The string contains all fields that count towards the "identity" of the `Datagram`:
@@ -89,14 +86,16 @@ impl Datagram {
             0x0900 => self.param16,
             _ => 0,
         };
-        format!("{}_{:04X}_{:04X}", self.header.id_string(), self.command, info)
+        format!(
+            "{}_{:04X}_{:04X}",
+            self.header.id_string(),
+            self.command,
+            info
+        )
     }
-
 }
 
-
 impl IdHash for Datagram {
-
     /// Returns an identification hash for this `Datagram`.
     ///
     /// The hash contains all fields that count towards the "identity" of the `Datagram`:
@@ -139,37 +138,32 @@ impl IdHash for Datagram {
         self.command.hash(h);
         info.hash(h);
     }
-
 }
 
-
 impl fmt::Debug for Datagram {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Datagram")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:04X}", self.command))
             .field("param16", &format_args!("0x{:04X}", self.param16))
-            .field("param32", &format_args!("0x{:08X} ({})", self.param32, self.param32))
+            .field(
+                "param32",
+                &format_args!("0x{:08X} ({})", self.param32, self.param32),
+            )
             .finish()
     }
-
 }
 
-
 impl AsRef<Header> for Datagram {
-
     fn as_ref(&self) -> &Header {
         &self.header
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
-    use utils::utc_timestamp;
     use header::Header;
+    use utils::utc_timestamp;
 
     use super::*;
 

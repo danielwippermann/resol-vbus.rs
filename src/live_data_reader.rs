@@ -34,7 +34,6 @@ pub struct LiveDataReader<R: Read> {
     reader: R,
 }
 
-
 impl<R: Read> LiveDataReader<R> {
     /// Constructs a `LiveDataReader`.
     pub fn new(channel: u8, reader: R) -> LiveDataReader<R> {
@@ -49,7 +48,7 @@ impl<R: Read> LiveDataReader<R> {
         buf.resize(4096, 0);
 
         let size = self.reader.read(&mut buf)?;
-        self.buf.extend_from_slice(&buf [0..size]);
+        self.buf.extend_from_slice(&buf[0..size]);
 
         Ok(size)
     }
@@ -85,7 +84,6 @@ impl<R: Read> LiveDataReader<R> {
             }
         }
     }
-
 }
 
 impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
@@ -100,12 +98,12 @@ impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
                     return Err(Error::new("Timed out"));
                 }
                 Some(end - now)
-            },
+            }
             None => None,
         };
 
         let size = self.reader.read_with_timeout(&mut buf, timeout)?;
-        self.buf.extend_from_slice(&buf [0..size]);
+        self.buf.extend_from_slice(&buf[0..size]);
 
         Ok(size)
     }
@@ -178,7 +176,7 @@ mod tests {
     fn test_read_bytes() {
         let mut ldr = LiveDataReader::new(0, LIVE_DATA_1);
 
-        for expected_len in [ 172, 70, 16, 94, 16 ].iter() {
+        for expected_len in [172, 70, 16, 94, 16].iter() {
             let result = ldr.read_bytes().expect("No error").expect("Expected data");
             assert_eq!(*expected_len, result.len());
         }
@@ -186,9 +184,9 @@ mod tests {
         let result = ldr.read_bytes().expect("No error");
         assert_eq!(None, result);
 
-        let mut ldr = LiveDataReader::new(0, &LIVE_DATA_1 [1..]);
+        let mut ldr = LiveDataReader::new(0, &LIVE_DATA_1[1..]);
 
-        for expected_len in [ 70, 16, 94, 16 ].iter() {
+        for expected_len in [70, 16, 94, 16].iter() {
             let result = ldr.read_bytes().expect("No error").expect("Expected data");
             assert_eq!(*expected_len, result.len());
         }
@@ -235,12 +233,12 @@ mod tests {
 
         let mut ldr = LiveDataReader::new(channel, Buffer::new());
 
-        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).expect("No error");
+        ldr.as_mut().write(&LIVE_DATA_1[0..172]).expect("No error");
 
         {
             let bytes1 = ldr.read_bytes_with_timeout(timeout).unwrap();
 
-            assert_eq!(Some(&LIVE_DATA_1 [0..172]), bytes1);
+            assert_eq!(Some(&LIVE_DATA_1[0..172]), bytes1);
         }
 
         assert_eq!(true, ldr.read_bytes_with_timeout(timeout).is_err());
@@ -253,17 +251,17 @@ mod tests {
 
         let mut ldr = LiveDataReader::new(channel, Buffer::new());
 
-        ldr.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+        ldr.as_mut().write(&LIVE_DATA_1[0..172]).unwrap();
 
         let data1 = ldr.read_data_with_timeout(timeout).unwrap().unwrap();
 
         assert_eq!("11_0010_7E11_10_0100", data1.id_string());
 
-        ldr.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
+        ldr.as_mut().write(&LIVE_DATA_1[172..232]).unwrap();
 
         assert_eq!(true, ldr.read_data_with_timeout(timeout).is_err());
 
-        ldr.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
+        ldr.as_mut().write(&LIVE_DATA_1[232..242]).unwrap();
 
         let data3 = ldr.read_data_with_timeout(timeout).unwrap().unwrap();
 

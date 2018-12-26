@@ -1,13 +1,11 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 
-
 /// A trait to generate an identification hash for any of the VBus data types.
 pub trait IdHash {
     /// Creates an identification hash for this VBus data value.
     fn id_hash<H: Hasher>(&self, h: &mut H);
 }
-
 
 /// Calculate the identification hash for a given VBus data value.
 ///

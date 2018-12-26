@@ -3,8 +3,7 @@ use std::io::Write;
 
 use data_set::DataSet;
 use error::Result;
-use recording_encoder::{length_from_data, bytes_from_record, bytes_from_channel, bytes_from_data};
-
+use recording_encoder::{bytes_from_channel, bytes_from_data, bytes_from_record, length_from_data};
 
 /// Allows writing the recorded representation of `DataSet` values to a `Write` trait object.
 #[derive(Debug)]
@@ -12,14 +11,10 @@ pub struct RecordingWriter<W: Write> {
     writer: W,
 }
 
-
 impl<W: Write> RecordingWriter<W> {
-
     /// Construct a new `RecordingWriter`.
     pub fn new(writer: W) -> RecordingWriter<W> {
-        RecordingWriter {
-            writer: writer,
-        }
+        RecordingWriter { writer: writer }
     }
 
     /// Gets a reference to the underlying writer.
@@ -47,10 +42,10 @@ impl<W: Write> RecordingWriter<W> {
         let mut bytes = Vec::new();
         bytes.resize(max_length, 0u8);
 
-        let buf = &mut bytes [..];
+        let buf = &mut bytes[..];
         bytes_from_record(0x44, 14, timestamp, buf);
 
-        self.writer.write_all(&buf [0..14])?;
+        self.writer.write_all(&buf[0..14])?;
 
         let mut current_channel = 0;
         for data in data_set.iter() {
@@ -59,19 +54,17 @@ impl<W: Write> RecordingWriter<W> {
                 current_channel = channel;
 
                 bytes_from_channel(channel, buf);
-                self.writer.write_all(&buf [0..16])?;
+                self.writer.write_all(&buf[0..16])?;
             }
 
             let length = length_from_data(data);
             bytes_from_data(data, buf);
-            self.writer.write_all(&buf [0..length])?;
+            self.writer.write_all(&buf[0..length])?;
         }
 
         Ok(())
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -79,7 +72,7 @@ mod tests {
 
     use super::*;
 
-    use test_data::{RECORDING_1};
+    use test_data::RECORDING_1;
 
     #[test]
     fn test_write_data_set() {
@@ -97,6 +90,6 @@ mod tests {
 
         assert_eq!(740, RECORDING_1.len());
         assert_eq!(740, writer.len());
-        assert_eq!(&RECORDING_1 [0..740], &writer [0..740]);
+        assert_eq!(&RECORDING_1[0..740], &writer[0..740]);
     }
 }

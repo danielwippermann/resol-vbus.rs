@@ -1,9 +1,8 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use id_hash::IdHash;
 use header::Header;
-
+use id_hash::IdHash;
 
 /// The `Telegram` type stores information according to the VBus protocol version 3.x.
 ///
@@ -29,9 +28,7 @@ pub struct Telegram {
     pub frame_data: [u8; 21],
 }
 
-
 impl Telegram {
-
     /// Get number of frames from a VBus protocol version 3.x command.
     ///
     /// # Examples
@@ -124,7 +121,7 @@ impl Telegram {
     /// ```
     pub fn valid_frame_data(&self) -> &[u8] {
         let end = self.valid_frame_data_len();
-        &self.frame_data [0..end]
+        &self.frame_data[0..end]
     }
 
     /// Return the valid area of the `frame_data` mutably.
@@ -151,7 +148,7 @@ impl Telegram {
     /// ```
     pub fn valid_frame_data_mut(&mut self) -> &mut [u8] {
         let end = self.valid_frame_data_len();
-        &mut self.frame_data [0..end]
+        &mut self.frame_data[0..end]
     }
 
     /// Creates an identification string for this `Telegram`.
@@ -187,12 +184,9 @@ impl Telegram {
     pub fn id_string(&self) -> String {
         format!("{}_{:02X}", self.header.id_string(), self.command)
     }
-
 }
 
-
 impl IdHash for Telegram {
-
     /// Returns an identification hash for this `Telegram`.
     ///
     /// The hash contains all fields that count towards the "identity" of the `Telegram`:
@@ -227,12 +221,9 @@ impl IdHash for Telegram {
         self.header.id_hash(h);
         self.command.hash(h);
     }
-
 }
 
-
 impl fmt::Debug for Telegram {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Telegram")
             .field("header", &self.header)
@@ -240,12 +231,9 @@ impl fmt::Debug for Telegram {
             .field("frame_data", &format_args!("..."))
             .finish()
     }
-
 }
 
-
 impl Clone for Telegram {
-
     fn clone(&self) -> Self {
         let mut frame_data = [0u8; 21];
         frame_data.copy_from_slice(&self.frame_data);
@@ -256,23 +244,18 @@ impl Clone for Telegram {
             frame_data: frame_data,
         }
     }
-
 }
 
-
 impl AsRef<Header> for Telegram {
-
     fn as_ref(&self) -> &Header {
         &self.header
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
-    use utils::utc_timestamp;
     use header::Header;
+    use utils::utc_timestamp;
 
     use super::*;
 

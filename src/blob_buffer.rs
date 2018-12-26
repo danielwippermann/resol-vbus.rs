@@ -54,15 +54,18 @@ impl Deref for BlobBuffer {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
-        &self.buf [self.start..]
+        &self.buf[self.start..]
     }
 }
 
-impl<I> Index<I> for BlobBuffer where I: SliceIndex<[u8]> {
+impl<I> Index<I> for BlobBuffer
+where
+    I: SliceIndex<[u8]>,
+{
     type Output = I::Output;
 
     fn index(&self, index: I) -> &Self::Output {
-        &self.deref() [index]
+        &self.deref()[index]
     }
 }
 
@@ -115,7 +118,7 @@ mod tests {
         assert_eq!(&[0x03, 0x04, 0x05, 0x06, 0x07], &(*bb));
 
         // Index trait impl
-        assert_eq!(0x05, bb [2]);
-        assert_eq!(&[0x05, 0x06], &bb [2..4]);
+        assert_eq!(0x05, bb[2]);
+        assert_eq!(&[0x05, 0x06], &bb[2..4]);
     }
 }

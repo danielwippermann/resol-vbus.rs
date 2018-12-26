@@ -1,10 +1,10 @@
-use chrono::{UTC};
+use chrono::UTC;
 
 use crate::{
     blob_buffer::BlobBuffer,
     data::Data,
-    stream_blob_length::StreamBlobLength::{BlobLength, Partial, Malformed},
     live_data_decoder::{data_from_checked_bytes, length_from_bytes},
+    stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
 };
 
 /// A size-adapting buffer that supports decoding VBus live data. See
@@ -42,10 +42,10 @@ impl LiveDataBuffer {
             match length_from_bytes(&self.buf) {
                 BlobLength(length) => {
                     break Some(length);
-                },
+                }
                 Partial => {
                     break None;
-                },
+                }
                 Malformed => {
                     self.buf.consume(1);
                 }
@@ -58,8 +58,8 @@ impl LiveDataBuffer {
         match self.peek_length() {
             Some(length) => {
                 self.previous_length = length;
-                Some(&self.buf [0..length])
-            },
+                Some(&self.buf[0..length])
+            }
             None => None,
         }
     }
@@ -100,7 +100,7 @@ mod tests {
         let mut ldb = LiveDataBuffer::new(0);
         ldb.extend_from_slice(LIVE_DATA_1);
 
-        for expected_len in [ 172, 70, 16, 94, 16 ].iter() {
+        for expected_len in [172, 70, 16, 94, 16].iter() {
             let actual_len = ldb.read_bytes().expect("Expected to return bytes").len();
             assert_eq!(*expected_len, actual_len);
         }
@@ -108,9 +108,9 @@ mod tests {
         assert_eq!(None, ldb.read_bytes());
 
         let mut ldb = LiveDataBuffer::new(0);
-        ldb.extend_from_slice(&LIVE_DATA_1 [1..]);
+        ldb.extend_from_slice(&LIVE_DATA_1[1..]);
 
-        for expected_len in [ 70, 16, 94, 16 ].iter() {
+        for expected_len in [70, 16, 94, 16].iter() {
             let actual_len = ldb.read_bytes().expect("Expected to return bytes").len();
             assert_eq!(*expected_len, actual_len);
         }

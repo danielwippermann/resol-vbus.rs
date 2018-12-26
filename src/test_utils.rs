@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use read_with_timeout::ReadWithTimeout;
 
-
 pub struct Buffer {
     bytes: Vec<u8>,
     read_index: usize,
@@ -11,7 +10,6 @@ pub struct Buffer {
     write_call_count: usize,
     is_eof: bool,
 }
-
 
 impl Buffer {
     pub fn new() -> Buffer {
@@ -61,13 +59,11 @@ impl Buffer {
     }
 }
 
-
 impl Read for Buffer {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         self.read_with_timeout(buf, None)
     }
 }
-
 
 impl Write for Buffer {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
@@ -81,12 +77,11 @@ impl Write for Buffer {
     }
 }
 
-
 impl ReadWithTimeout for Buffer {
     fn read_with_timeout(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> Result<usize> {
         self.read_call_count += 1;
 
-        let mut bytes = &self.bytes [self.read_index..];
+        let mut bytes = &self.bytes[self.read_index..];
         if bytes.len() > 0 {
             let size = bytes.read(buf)?;
             self.read_index += size;
@@ -101,11 +96,12 @@ impl ReadWithTimeout for Buffer {
     }
 }
 
-
 pub fn to_hex_string(buf: &[u8]) -> String {
-    buf.iter().map(|b| format!("{:02x}", b)).collect::<Vec<String>>().concat()
+    buf.iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<Vec<String>>()
+        .concat()
 }
-
 
 #[test]
 fn test_buffer() {

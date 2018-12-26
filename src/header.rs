@@ -5,7 +5,6 @@ use chrono::{DateTime, UTC};
 
 use id_hash::IdHash;
 
-
 /// All VBus data types consist of a `Header` element.
 ///
 /// Just like the fact that the first 6 bytes of each VBus live byte stream are the same (SYNC to
@@ -50,9 +49,7 @@ pub struct Header {
     pub protocol_version: u8,
 }
 
-
 impl Header {
-
     /// Creates the common identification string prefix for this `Header`.
     ///
     /// The string contains all fields that count towards the "identity" of the `Header`:
@@ -79,14 +76,14 @@ impl Header {
     /// assert_eq!("11_1213_1415_16", header.id_string());
     /// ```
     pub fn id_string(&self) -> String {
-        format!("{:02X}_{:04X}_{:04X}_{:02X}", self.channel, self.destination_address, self.source_address, self.protocol_version)
+        format!(
+            "{:02X}_{:04X}_{:04X}_{:02X}",
+            self.channel, self.destination_address, self.source_address, self.protocol_version
+        )
     }
-
 }
 
-
 impl IdHash for Header {
-
     /// Returns an identification hash for this `Header`.
     ///
     /// The hash contains all fields that count towards the "identity" of the `Header`:
@@ -118,24 +115,28 @@ impl IdHash for Header {
         self.source_address.hash(h);
         self.protocol_version.hash(h);
     }
-
 }
 
-
 impl fmt::Debug for Header {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Header")
             .field("timestamp", &self.timestamp)
             .field("channel", &format_args!("0x{:02X}", self.channel))
-            .field("destination_address", &format_args!("0x{:04X}", self.destination_address))
-            .field("source_address", &format_args!("0x{:04X}", self.source_address))
-            .field("protocol_version", &format_args!("0x{:02X}", self.protocol_version))
+            .field(
+                "destination_address",
+                &format_args!("0x{:04X}", self.destination_address),
+            )
+            .field(
+                "source_address",
+                &format_args!("0x{:04X}", self.source_address),
+            )
+            .field(
+                "protocol_version",
+                &format_args!("0x{:02X}", self.protocol_version),
+            )
             .finish()
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {

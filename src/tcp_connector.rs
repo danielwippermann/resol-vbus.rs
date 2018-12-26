@@ -1,5 +1,5 @@
-use std::net::TcpStream;
 use std::io::{BufRead, BufReader, Read, Write};
+use std::net::TcpStream;
 
 use error::{Error, Result};
 
@@ -45,9 +45,7 @@ pub struct TcpConnector {
     pub channel: Option<u8>,
 }
 
-
 impl TcpConnector {
-
     /// Constructs a new `TcpConnector` using the given `TcpStream`.
     pub fn new(inner: TcpStream) -> TcpConnector {
         TcpConnector {
@@ -105,9 +103,7 @@ impl TcpConnector {
 
         self.read_response(r)
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {

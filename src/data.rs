@@ -1,12 +1,11 @@
-use std::cmp::Ordering::{self, Less, Equal, Greater};
-use std::hash::{Hasher};
+use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::hash::Hasher;
 
-use id_hash::IdHash;
-use header::Header;
-use packet::Packet;
 use datagram::Datagram;
+use header::Header;
+use id_hash::IdHash;
+use packet::Packet;
 use telegram::Telegram;
-
 
 /// `Data` is a type that contains one of the supported VBus protocol data variants.
 ///
@@ -44,9 +43,7 @@ pub enum Data {
     Telegram(Telegram),
 }
 
-
 impl Data {
-
     /// Returns `true` if the variant is a `Packet`.
     pub fn is_packet(&self) -> bool {
         match *self {
@@ -79,7 +76,10 @@ impl Data {
     pub fn into_packet(self) -> Packet {
         match self {
             Data::Packet(packet) => packet,
-            _ => panic!("called `Data::into_packet` for a non-`Packet` value: {:?}", self),
+            _ => panic!(
+                "called `Data::into_packet` for a non-`Packet` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -91,7 +91,10 @@ impl Data {
     pub fn into_datagram(self) -> Datagram {
         match self {
             Data::Datagram(datagram) => datagram,
-            _ => panic!("called `Data::into_datagram` for a non-`Datagram` value: {:?}", self),
+            _ => panic!(
+                "called `Data::into_datagram` for a non-`Datagram` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -103,7 +106,10 @@ impl Data {
     pub fn into_telegram(self) -> Telegram {
         match self {
             Data::Telegram(telegram) => telegram,
-            _ => panic!("called `Data::into_telegram` for a non-`Telegram` value: {:?}", self),
+            _ => panic!(
+                "called `Data::into_telegram` for a non-`Telegram` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -120,7 +126,10 @@ impl Data {
     pub fn as_packet(&self) -> &Packet {
         match *self {
             Data::Packet(ref packet) => packet,
-            _ => panic!("called `Data::as_packet` for a non-`Packet` value: {:?}", self),
+            _ => panic!(
+                "called `Data::as_packet` for a non-`Packet` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -132,7 +141,10 @@ impl Data {
     pub fn as_datagram(&self) -> &Datagram {
         match *self {
             Data::Datagram(ref datagram) => datagram,
-            _ => panic!("called `Data::as_datagram` for a non-`Datagram` value: {:?}", self),
+            _ => panic!(
+                "called `Data::as_datagram` for a non-`Datagram` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -144,7 +156,10 @@ impl Data {
     pub fn as_telegram(&self) -> &Telegram {
         match *self {
             Data::Telegram(ref telegram) => telegram,
-            _ => panic!("called `Data::as_telegram` for a non-`Telegram` value: {:?}", self),
+            _ => panic!(
+                "called `Data::as_telegram` for a non-`Telegram` value: {:?}",
+                self
+            ),
         }
     }
 
@@ -156,12 +171,9 @@ impl Data {
             Data::Telegram(ref tgram) => tgram.id_string(),
         }
     }
-
 }
 
-
 impl IdHash for Data {
-
     fn id_hash<H: Hasher>(&self, h: &mut H) {
         match *self {
             Data::Packet(ref packet) => packet.id_hash(h),
@@ -169,12 +181,9 @@ impl IdHash for Data {
             Data::Telegram(ref tgram) => tgram.id_hash(h),
         }
     }
-
 }
 
-
 impl PartialEq for Data {
-
     /// Returns `true` if two `Data` values are "identical".
     ///
     /// Each `Data` variant has a set of fields that make up its "identity". The `PartialEq` trait
@@ -239,12 +248,9 @@ impl PartialEq for Data {
             }
         }
     }
-
 }
 
-
 impl PartialOrd for Data {
-
     /// Compares two `Data` values are "identical".
     ///
     /// Each `Data` variant has a set of fields that make up its "identity". The `PartialOrd` trait
@@ -324,39 +330,27 @@ impl PartialOrd for Data {
             }
         }
     }
-
 }
 
-
 impl From<Packet> for Data {
-
     fn from(packet: Packet) -> Data {
         Data::Packet(packet)
     }
-
 }
 
-
 impl From<Datagram> for Data {
-
     fn from(dgram: Datagram) -> Data {
         Data::Datagram(dgram)
     }
-
 }
 
-
 impl From<Telegram> for Data {
-
     fn from(tgram: Telegram) -> Data {
         Data::Telegram(tgram)
     }
-
 }
 
-
 impl AsRef<Header> for Data {
-
     fn as_ref(&self) -> &Header {
         match *self {
             Data::Packet(ref packet) => &packet.as_ref(),
@@ -364,9 +358,7 @@ impl AsRef<Header> for Data {
             Data::Telegram(ref tgram) => &tgram.as_ref(),
         }
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -384,13 +376,13 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         assert_eq!(true, packet_data.is_packet());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         assert_eq!(false, dgram_data.is_packet());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         assert_eq!(false, tgram_data.is_packet());
     }
 
@@ -399,13 +391,13 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         assert_eq!(false, packet_data.is_datagram());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         assert_eq!(true, dgram_data.is_datagram());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         assert_eq!(false, tgram_data.is_datagram());
     }
 
@@ -414,13 +406,13 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         assert_eq!(false, packet_data.is_telegram());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         assert_eq!(false, dgram_data.is_telegram());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         assert_eq!(true, tgram_data.is_telegram());
     }
 
@@ -429,7 +421,7 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         let packet = packet_data.into_packet();
 
         assert_eq!(timestamp, packet.header.timestamp);
@@ -444,7 +436,7 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         let dgram = dgram_data.into_datagram();
 
         assert_eq!(timestamp, dgram.header.timestamp);
@@ -459,7 +451,7 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         let tgram = tgram_data.into_telegram();
 
         assert_eq!(timestamp, tgram.header.timestamp);
@@ -474,7 +466,7 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
 
         let header = packet_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -483,7 +475,7 @@ mod tests {
         assert_eq!(0x7E11, header.source_address);
         assert_eq!(0x10, header.protocol_version);
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
 
         let header = dgram_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -492,7 +484,7 @@ mod tests {
         assert_eq!(0x7E11, header.source_address);
         assert_eq!(0x20, header.protocol_version);
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
 
         let header = tgram_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -507,13 +499,13 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         let packet = packet_data.clone().into_packet();
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         let dgram = dgram_data.clone().into_datagram();
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         let tgram = tgram_data.clone().into_telegram();
 
         let other_timestamp = UTC.timestamp(0, 0);
@@ -556,7 +548,7 @@ mod tests {
         assert_eq!(true, Data::Packet(other).eq(&packet_data));
 
         let mut other = packet.clone();
-        other.frame_data [0] ^= 1;
+        other.frame_data[0] ^= 1;
         assert_eq!(true, Data::Packet(other).eq(&packet_data));
 
         // ---- Datagram ----
@@ -624,7 +616,7 @@ mod tests {
         assert_eq!(false, Data::Telegram(other).eq(&tgram_data));
 
         let mut other = tgram.clone();
-        other.frame_data [0] ^= 1;
+        other.frame_data[0] ^= 1;
         assert_eq!(true, Data::Telegram(other).eq(&tgram_data));
     }
 
@@ -633,19 +625,19 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
         let packet = match packet_data {
             Data::Packet(ref packet) => packet,
             _ => unreachable!(),
         };
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
         let dgram = match dgram_data {
             Data::Datagram(ref dgram) => dgram,
             _ => unreachable!(),
         };
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         let tgram = match tgram_data {
             Data::Telegram(ref tgram) => tgram,
             _ => unreachable!(),
@@ -711,7 +703,7 @@ mod tests {
         assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
 
         let mut other = packet.clone();
-        other.frame_data [0] ^= 1;
+        other.frame_data[0] ^= 1;
         assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
 
         // ---- Datagram ----
@@ -728,7 +720,10 @@ mod tests {
 
         let mut other = dgram.clone();
         other.header.channel += 1;
-        assert_eq!(Some(Greater), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&dgram_data)
+        );
 
         let mut other = dgram.clone();
         other.header.destination_address += 1; // NOTE(daniel): subtraction would underflow
@@ -736,7 +731,10 @@ mod tests {
 
         let mut other = dgram.clone();
         other.header.destination_address += 1;
-        assert_eq!(Some(Greater), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&dgram_data)
+        );
 
         let mut other = dgram.clone();
         other.header.source_address -= 1;
@@ -744,7 +742,10 @@ mod tests {
 
         let mut other = dgram.clone();
         other.header.source_address += 1;
-        assert_eq!(Some(Greater), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&dgram_data)
+        );
 
         let mut other = dgram.clone();
         other.header.protocol_version -= 1;
@@ -752,7 +753,10 @@ mod tests {
 
         let mut other = dgram.clone();
         other.header.protocol_version += 1;
-        assert_eq!(Some(Greater), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&dgram_data)
+        );
 
         let mut other = dgram.clone();
         other.command -= 1;
@@ -760,7 +764,10 @@ mod tests {
 
         let mut other = dgram.clone();
         other.command += 1;
-        assert_eq!(Some(Greater), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&dgram_data)
+        );
 
         let mut other = dgram.clone();
         other.param16 ^= 1;
@@ -784,7 +791,10 @@ mod tests {
 
         let mut other = tgram.clone();
         other.header.channel += 1;
-        assert_eq!(Some(Greater), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Telegram(other).partial_cmp(&tgram_data)
+        );
 
         let mut other = tgram.clone();
         other.header.destination_address -= 1;
@@ -792,7 +802,10 @@ mod tests {
 
         let mut other = tgram.clone();
         other.header.destination_address += 1;
-        assert_eq!(Some(Greater), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Telegram(other).partial_cmp(&tgram_data)
+        );
 
         let mut other = tgram.clone();
         other.header.source_address -= 1;
@@ -800,7 +813,10 @@ mod tests {
 
         let mut other = tgram.clone();
         other.header.source_address += 1;
-        assert_eq!(Some(Greater), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Telegram(other).partial_cmp(&tgram_data)
+        );
 
         let mut other = tgram.clone();
         other.header.protocol_version -= 1;
@@ -808,7 +824,10 @@ mod tests {
 
         let mut other = tgram.clone();
         other.header.protocol_version += 1;
-        assert_eq!(Some(Greater), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Telegram(other).partial_cmp(&tgram_data)
+        );
 
         let mut other = tgram.clone();
         other.command -= 1;
@@ -816,10 +835,13 @@ mod tests {
 
         let mut other = tgram.clone();
         other.command += 1;
-        assert_eq!(Some(Greater), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(
+            Some(Greater),
+            Data::Telegram(other).partial_cmp(&tgram_data)
+        );
 
         let mut other = tgram.clone();
-        other.frame_data [0] ^= 1;
+        other.frame_data[0] ^= 1;
         assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
     }
 
@@ -828,17 +850,17 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
 
         let result = id_hash(&data);
         assert_eq!(541127499104566154, result);
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
 
         let result = id_hash(&data);
         assert_eq!(6066488998843577430, result);
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
 
         let result = id_hash(&data);
         assert_eq!(2688669052981416192, result);

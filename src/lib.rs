@@ -179,7 +179,6 @@
 extern crate byteorder;
 pub extern crate chrono;
 
-
 #[cfg(test)]
 mod test_data;
 
@@ -201,13 +200,13 @@ mod blob_reader;
 pub use blob_reader::BlobReader;
 
 mod id_hash;
-pub use id_hash::{IdHash, id_hash};
+pub use id_hash::{id_hash, IdHash};
 
 mod header;
 pub use header::Header;
 
 mod packet;
-pub use packet::{Packet, PacketId, ToPacketId, PacketFieldId, ToPacketFieldId};
+pub use packet::{Packet, PacketFieldId, PacketId, ToPacketFieldId, ToPacketId};
 
 mod datagram;
 pub use datagram::Datagram;
@@ -260,7 +259,7 @@ pub mod specification_file;
 pub use specification_file::{Language, SpecificationFile};
 
 pub mod specification;
-pub use specification::{Specification};
+pub use specification::Specification;
 
 mod file_list_reader;
 pub use file_list_reader::FileListReader;

@@ -4,12 +4,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    blob_buffer::BlobBuffer,
-    error::Result,
-    read_with_timeout::ReadWithTimeout,
-};
-
+use crate::{blob_buffer::BlobBuffer, error::Result, read_with_timeout::ReadWithTimeout};
 
 /// A buffering reader that allows to borrow the internal buffer.
 ///
@@ -55,9 +50,7 @@ pub struct BlobReader<R: Read> {
     buf: BlobBuffer,
 }
 
-
 impl<R: Read> BlobReader<R> {
-
     /// Constructs a new `BlobReader<T>`.
     pub fn new(reader: R) -> BlobReader<R> {
         BlobReader {
@@ -77,11 +70,10 @@ impl<R: Read> BlobReader<R> {
         buf.resize(4096, 0);
 
         let size = self.reader.read(&mut buf)?;
-        self.buf.extend_from_slice(&buf [0..size]);
+        self.buf.extend_from_slice(&buf[0..size]);
 
         Ok(size)
     }
-
 }
 
 impl<R: Read> Deref for BlobReader<R> {
@@ -105,12 +97,11 @@ impl<R: ReadWithTimeout + Read> BlobReader<R> {
         buf.resize(4096, 0);
 
         let size = self.reader.read_with_timeout(&mut buf, timeout)?;
-        self.buf.extend_from_slice(&buf [0..size]);
+        self.buf.extend_from_slice(&buf[0..size]);
 
         Ok(size)
     }
 }
-
 
 #[cfg(test)]
 impl<R: Read> AsMut<R> for BlobReader<R> {
@@ -118,7 +109,6 @@ impl<R: Read> AsMut<R> for BlobReader<R> {
         &mut self.reader
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -189,17 +179,17 @@ mod tests {
 
         assert_eq!(0, br.len());
 
-        br.as_mut().write(&LIVE_DATA_1 [0..172]).unwrap();
+        br.as_mut().write(&LIVE_DATA_1[0..172]).unwrap();
 
         assert_eq!(172, br.read_with_timeout(timeout).unwrap());
         assert_eq!(172, br.len());
 
-        br.as_mut().write(&LIVE_DATA_1 [172..232]).unwrap();
+        br.as_mut().write(&LIVE_DATA_1[172..232]).unwrap();
 
         assert_eq!(60, br.read_with_timeout(timeout).unwrap());
         assert_eq!(232, br.len());
 
-        br.as_mut().write(&LIVE_DATA_1 [232..242]).unwrap();
+        br.as_mut().write(&LIVE_DATA_1[232..242]).unwrap();
 
         assert_eq!(10, br.read_with_timeout(timeout).unwrap());
         assert_eq!(242, br.len());

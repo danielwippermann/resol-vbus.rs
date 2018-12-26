@@ -5,11 +5,10 @@
 //!
 //! See the [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
 //! for details.
-use byteorder::{LittleEndian, ByteOrder};
+use byteorder::{ByteOrder, LittleEndian};
 
 use error::{Error, Result};
-use utils::{calc_crc16};
-
+use utils::calc_crc16;
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
 #[derive(Debug)]
@@ -85,17 +84,14 @@ fn check_offset(buf: &[u8], offset: usize, length: usize, count: usize) -> bool 
     end_offset <= buf.len()
 }
 
-
 fn slice_entry(buf: &[u8], offset: usize, length: usize) -> &[u8] {
-    &buf [offset..(offset + length)]
+    &buf[offset..(offset + length)]
 }
-
 
 fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> &[u8] {
     let table_entry_offset = offset + (index * length);
     slice_entry(buf, table_entry_offset, length)
 }
-
 
 /// Languages supported by VSF1 specification.
 ///
@@ -131,11 +127,9 @@ pub enum Language {
     Fr,
 }
 
-
 /// A numeric reference to a `Text`.
 #[derive(Clone, Copy, Debug)]
 pub struct TextIndex(i32);
-
 
 /// Combines three `TextIndex` values for each of the supported languages to form a localized text.
 #[derive(Debug)]
@@ -150,16 +144,13 @@ pub struct LocalizedText {
     pub text_index_fr: TextIndex,
 }
 
-
 /// A numeric reference to a `LocalizedText` instance.
 #[derive(Clone, Copy, Debug)]
 pub struct LocalizedTextIndex(i32);
 
-
 /// A numeric reference to an `UnitFamily` instance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnitFamilyId(pub i32);
-
 
 /// One of the unit families supported by the VSF1 specification.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -189,11 +180,9 @@ pub enum UnitFamily {
     Power,
 }
 
-
 /// A numeric reference to an `Unit` instance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnitId(pub i32);
-
 
 /// A physical unit.
 #[derive(Debug)]
@@ -210,7 +199,6 @@ pub struct Unit {
     /// The `TextIndex` of the unit's human-readable name.
     pub unit_text_text_index: TextIndex,
 }
-
 
 /// Contains information about a VBus device.
 #[derive(Debug)]
@@ -230,7 +218,6 @@ pub struct DeviceTemplate {
     /// The `LocalizedTextIndex` of the device's name.
     pub name_localized_text_index: LocalizedTextIndex,
 }
-
 
 /// Contains information about a VBus packet.
 #[derive(Clone, Debug)]
@@ -254,7 +241,6 @@ pub struct PacketTemplate {
     pub fields: Vec<PacketTemplateField>,
 }
 
-
 /// A type to describe different data types within the packet fields.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Type {
@@ -271,11 +257,9 @@ pub enum Type {
     DateTime,
 }
 
-
 /// A numeric reference to a `Type` instance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TypeId(pub i32);
-
 
 /// Contains information about a field with the frame data payload of a VBus packet.
 #[derive(Clone, Debug)]
@@ -299,7 +283,6 @@ pub struct PacketTemplateField {
     pub parts: Vec<PacketTemplateFieldPart>,
 }
 
-
 /// Contains information about one part of a packet field's raw value.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PacketTemplateFieldPart {
@@ -318,7 +301,6 @@ pub struct PacketTemplateFieldPart {
     /// The factor this part is multiplied with.
     pub factor: i64,
 }
-
 
 /// Contains the information from a VSF1 file.
 #[derive(Debug)]
@@ -342,9 +324,7 @@ pub struct SpecificationFile {
     pub packet_templates: Vec<PacketTemplate>,
 }
 
-
 impl SpecificationFile {
-
     /// Construct a new `SpecificationFile` from a byte slice of VSF1 data.
     pub fn from_bytes(bytes: &[u8]) -> Result<SpecificationFile> {
         let texts = Vec::<String>::new();
@@ -366,15 +346,15 @@ impl SpecificationFile {
             err(ErrorKind::InvalidFileHeader)
         } else {
             let fileheader = slice_entry(bytes, 0, 0x10);
-            let checksum_a = LittleEndian::read_u16(&fileheader [0x00..0x02]);
-            let checksum_b = LittleEndian::read_u16(&fileheader [0x02..0x04]);
-            let total_length = LittleEndian::read_i32(&fileheader [0x04..0x08]) as usize;
-            let data_version = LittleEndian::read_i32(&fileheader [0x08..0x0C]);
-            let specification_offset = LittleEndian::read_i32(&fileheader [0x0C..0x10]) as usize;
+            let checksum_a = LittleEndian::read_u16(&fileheader[0x00..0x02]);
+            let checksum_b = LittleEndian::read_u16(&fileheader[0x02..0x04]);
+            let total_length = LittleEndian::read_i32(&fileheader[0x04..0x08]) as usize;
+            let data_version = LittleEndian::read_i32(&fileheader[0x08..0x0C]);
+            let specification_offset = LittleEndian::read_i32(&fileheader[0x0C..0x10]) as usize;
 
             if total_length != bytes.len() {
                 err(ErrorKind::InvalidFileHeaderTotalLength)
-            } else if calc_crc16(&bytes [0x04..total_length]) != checksum_a {
+            } else if calc_crc16(&bytes[0x04..total_length]) != checksum_a {
                 err(ErrorKind::InvalidFileHeaderChecksumA)
             } else if checksum_a != checksum_b {
                 err(ErrorKind::InvalidFileHeaderChecksumB)
@@ -396,13 +376,13 @@ impl SpecificationFile {
 
     /// Get text by its index.
     pub fn text_by_index(&self, idx: &TextIndex) -> &str {
-        let text = &self.texts [idx.0 as usize];
+        let text = &self.texts[idx.0 as usize];
         text.as_str()
     }
 
     /// Get localized text by its index and language.
     pub fn localized_text_by_index(&self, idx: &LocalizedTextIndex, language: Language) -> &str {
-        let localized_text = &self.localized_texts [idx.0 as usize];
+        let localized_text = &self.localized_texts[idx.0 as usize];
         let text_index = match language {
             Language::En => &localized_text.text_index_en,
             Language::De => &localized_text.text_index_de,
@@ -443,11 +423,17 @@ impl SpecificationFile {
     }
 
     /// Find a `DeviceTemplate` matching the self and peer addresses.
-    pub fn find_device_template(&self, self_address: u16, peer_address: u16) -> Option<&DeviceTemplate> {
+    pub fn find_device_template(
+        &self,
+        self_address: u16,
+        peer_address: u16,
+    ) -> Option<&DeviceTemplate> {
         self.device_templates.iter().find(|&device_template| {
             if ((device_template.self_address ^ self_address) & device_template.self_mask) != 0 {
                 false
-            } else if ((device_template.peer_address ^ peer_address) & device_template.peer_mask) != 0 {
+            } else if ((device_template.peer_address ^ peer_address) & device_template.peer_mask)
+                != 0
+            {
                 false
             } else {
                 true
@@ -456,11 +442,22 @@ impl SpecificationFile {
     }
 
     /// Find a `PacketTemplate` matching the destination and source addresses as well as the command.
-    pub fn find_packet_template(&self, destination_address: u16, source_address: u16, command: u16) -> Option<&PacketTemplate> {
+    pub fn find_packet_template(
+        &self,
+        destination_address: u16,
+        source_address: u16,
+        command: u16,
+    ) -> Option<&PacketTemplate> {
         self.packet_templates.iter().find(|&packet_template| {
-            if ((packet_template.destination_address ^ destination_address) & packet_template.destination_mask) != 0 {
+            if ((packet_template.destination_address ^ destination_address)
+                & packet_template.destination_mask)
+                != 0
+            {
                 false
-            } else if ((packet_template.source_address ^ source_address) & packet_template.source_mask) != 0 {
+            } else if ((packet_template.source_address ^ source_address)
+                & packet_template.source_mask)
+                != 0
+            {
                 false
             } else if packet_template.command != command {
                 false
@@ -495,27 +492,42 @@ impl SpecificationFile {
 
     fn parse_specification_block(&mut self, bytes: &[u8], offset: usize) -> Result<()> {
         let block = slice_entry(bytes, offset, 0x2C);
-        let datecode = LittleEndian::read_i32(&block [0x00..0x04]);
-        let text_count = LittleEndian::read_i32(&block [0x04..0x08]) as usize;
-        let text_table_offset = LittleEndian::read_i32(&block [0x08..0x0C]) as usize;
-        let localized_text_count = LittleEndian::read_i32(&block [0x0C..0x10]) as usize;
-        let localized_text_table_offset = LittleEndian::read_i32(&block [0x10..0x14]) as usize;
-        let unit_count = LittleEndian::read_i32(&block [0x14..0x18]) as usize;
-        let unit_table_offset = LittleEndian::read_i32(&block [0x18..0x1C]) as usize;
-        let device_template_count = LittleEndian::read_i32(&block [0x1C..0x20]) as usize;
-        let device_template_table_offset = LittleEndian::read_i32(&block [0x20..0x24]) as usize;
-        let packet_template_count = LittleEndian::read_i32(&block [0x24..0x28]) as usize;
-        let packet_template_table_offset = LittleEndian::read_i32(&block [0x28..0x2C]) as usize;
+        let datecode = LittleEndian::read_i32(&block[0x00..0x04]);
+        let text_count = LittleEndian::read_i32(&block[0x04..0x08]) as usize;
+        let text_table_offset = LittleEndian::read_i32(&block[0x08..0x0C]) as usize;
+        let localized_text_count = LittleEndian::read_i32(&block[0x0C..0x10]) as usize;
+        let localized_text_table_offset = LittleEndian::read_i32(&block[0x10..0x14]) as usize;
+        let unit_count = LittleEndian::read_i32(&block[0x14..0x18]) as usize;
+        let unit_table_offset = LittleEndian::read_i32(&block[0x18..0x1C]) as usize;
+        let device_template_count = LittleEndian::read_i32(&block[0x1C..0x20]) as usize;
+        let device_template_table_offset = LittleEndian::read_i32(&block[0x20..0x24]) as usize;
+        let packet_template_count = LittleEndian::read_i32(&block[0x24..0x28]) as usize;
+        let packet_template_table_offset = LittleEndian::read_i32(&block[0x28..0x2C]) as usize;
 
         if !check_offset(bytes, text_table_offset, 0x04, text_count) {
             err(ErrorKind::InvalidSpecificationTextTable)
-        } else if !check_offset(bytes, localized_text_table_offset, 0x0C, localized_text_count) {
+        } else if !check_offset(
+            bytes,
+            localized_text_table_offset,
+            0x0C,
+            localized_text_count,
+        ) {
             err(ErrorKind::InvalidSpecificationLocalizedTextTable)
         } else if !check_offset(bytes, unit_table_offset, 0x10, unit_count) {
             err(ErrorKind::InvalidSpecificationUnitTable)
-        } else if !check_offset(bytes, device_template_table_offset, 0x0C, device_template_count) {
+        } else if !check_offset(
+            bytes,
+            device_template_table_offset,
+            0x0C,
+            device_template_count,
+        ) {
             err(ErrorKind::InvalidSpecificationDeviceTemplateTable)
-        } else if !check_offset(bytes, packet_template_table_offset, 0x14, packet_template_count) {
+        } else if !check_offset(
+            bytes,
+            packet_template_table_offset,
+            0x14,
+            packet_template_count,
+        ) {
             err(ErrorKind::InvalidSpecificationPacketTemplateTable)
         } else {
             self.datecode = datecode;
@@ -526,7 +538,8 @@ impl SpecificationFile {
             }
 
             for index in 0..localized_text_count {
-                let localized_text = self.parse_localized_text_block(bytes, localized_text_table_offset, index)?;
+                let localized_text =
+                    self.parse_localized_text_block(bytes, localized_text_table_offset, index)?;
                 self.localized_texts.push(localized_text);
             }
 
@@ -536,12 +549,14 @@ impl SpecificationFile {
             }
 
             for index in 0..device_template_count {
-                let device_template = self.parse_device_template_block(bytes, device_template_table_offset, index)?;
+                let device_template =
+                    self.parse_device_template_block(bytes, device_template_table_offset, index)?;
                 self.device_templates.push(device_template);
             }
 
             for index in 0..packet_template_count {
-                let packet_template = self.parse_packet_template_block(bytes, packet_template_table_offset, index)?;
+                let packet_template =
+                    self.parse_packet_template_block(bytes, packet_template_table_offset, index)?;
                 self.packet_templates.push(packet_template);
             }
 
@@ -553,27 +568,32 @@ impl SpecificationFile {
         use std::str;
 
         let block = slice_table_entry(bytes, offset, 0x04, index);
-        let string_offset = LittleEndian::read_i32(&block [0x00..0x04]) as usize;
+        let string_offset = LittleEndian::read_i32(&block[0x00..0x04]) as usize;
 
         if !check_offset(bytes, string_offset, 0x01, 1) {
             err(ErrorKind::InvalidTextStringOffset)
         } else {
             let mut string_end = string_offset;
-            while string_end < bytes.len() && bytes [string_end] != 0 {
+            while string_end < bytes.len() && bytes[string_end] != 0 {
                 string_end += 1;
             }
-            match str::from_utf8(&bytes [string_offset..string_end]) {
+            match str::from_utf8(&bytes[string_offset..string_end]) {
                 Ok(string) => Ok(string.to_string()),
                 Err(_) => err(ErrorKind::InvalidTextContent),
             }
         }
     }
 
-    fn parse_localized_text_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<LocalizedText> {
+    fn parse_localized_text_block(
+        &mut self,
+        bytes: &[u8],
+        offset: usize,
+        index: usize,
+    ) -> Result<LocalizedText> {
         let block = slice_table_entry(bytes, offset, 0x0C, index);
-        let text_index_en = LittleEndian::read_i32(&block [0x00..0x04]);
-        let text_index_de = LittleEndian::read_i32(&block [0x04..0x08]);
-        let text_index_fr = LittleEndian::read_i32(&block [0x08..0x0C]);
+        let text_index_en = LittleEndian::read_i32(&block[0x00..0x04]);
+        let text_index_de = LittleEndian::read_i32(&block[0x04..0x08]);
+        let text_index_fr = LittleEndian::read_i32(&block[0x08..0x0C]);
 
         if !self.check_text_index(text_index_en) {
             err(ErrorKind::InvalidLocalizedTextTextIndexEn)
@@ -592,10 +612,10 @@ impl SpecificationFile {
 
     fn parse_unit_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<Unit> {
         let block = slice_table_entry(bytes, offset, 0x10, index);
-        let unit_id = LittleEndian::read_i32(&block [0x00..0x04]);
-        let unit_family_id = LittleEndian::read_i32(&block [0x04..0x08]);
-        let unit_code_text_index = LittleEndian::read_i32(&block [0x08..0x0C]);
-        let unit_text_text_index = LittleEndian::read_i32(&block [0x0C..0x10]);
+        let unit_id = LittleEndian::read_i32(&block[0x00..0x04]);
+        let unit_family_id = LittleEndian::read_i32(&block[0x04..0x08]);
+        let unit_code_text_index = LittleEndian::read_i32(&block[0x08..0x0C]);
+        let unit_text_text_index = LittleEndian::read_i32(&block[0x0C..0x10]);
 
         if !self.check_unit_family_id(unit_family_id) {
             err(ErrorKind::InvalidUnitUnitFamilyId)
@@ -613,13 +633,18 @@ impl SpecificationFile {
         }
     }
 
-    fn parse_device_template_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<DeviceTemplate> {
+    fn parse_device_template_block(
+        &mut self,
+        bytes: &[u8],
+        offset: usize,
+        index: usize,
+    ) -> Result<DeviceTemplate> {
         let block = slice_table_entry(bytes, offset, 0x0C, index);
-        let self_address = LittleEndian::read_u16(&block [0x00..0x02]);
-        let self_mask = LittleEndian::read_u16(&block [0x02..0x04]);
-        let peer_address = LittleEndian::read_u16(&block [0x04..0x06]);
-        let peer_mask = LittleEndian::read_u16(&block [0x06..0x08]);
-        let name_localized_text_index = LittleEndian::read_i32(&block [0x08..0x0C]);
+        let self_address = LittleEndian::read_u16(&block[0x00..0x02]);
+        let self_mask = LittleEndian::read_u16(&block[0x02..0x04]);
+        let peer_address = LittleEndian::read_u16(&block[0x04..0x06]);
+        let peer_mask = LittleEndian::read_u16(&block[0x06..0x08]);
+        let name_localized_text_index = LittleEndian::read_i32(&block[0x08..0x0C]);
 
         if !self.check_localized_text_index(name_localized_text_index) {
             err(ErrorKind::InvalidDeviceTemplateNameLocalizedTextIndex)
@@ -634,22 +659,28 @@ impl SpecificationFile {
         }
     }
 
-    fn parse_packet_template_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<PacketTemplate> {
+    fn parse_packet_template_block(
+        &mut self,
+        bytes: &[u8],
+        offset: usize,
+        index: usize,
+    ) -> Result<PacketTemplate> {
         let block = slice_table_entry(bytes, offset, 0x14, index);
-        let destination_address = LittleEndian::read_u16(&block [0x00..0x02]);
-        let destination_mask = LittleEndian::read_u16(&block [0x02..0x04]);
-        let source_address = LittleEndian::read_u16(&block [0x04..0x06]);
-        let source_mask = LittleEndian::read_u16(&block [0x06..0x08]);
-        let command = LittleEndian::read_u16(&block [0x08..0x0A]);
-        let field_count = LittleEndian::read_i32(&block [0x0C..0x10]) as usize;
-        let field_table_offset = LittleEndian::read_i32(&block [0x10..0x14]) as usize;
+        let destination_address = LittleEndian::read_u16(&block[0x00..0x02]);
+        let destination_mask = LittleEndian::read_u16(&block[0x02..0x04]);
+        let source_address = LittleEndian::read_u16(&block[0x04..0x06]);
+        let source_mask = LittleEndian::read_u16(&block[0x06..0x08]);
+        let command = LittleEndian::read_u16(&block[0x08..0x0A]);
+        let field_count = LittleEndian::read_i32(&block[0x0C..0x10]) as usize;
+        let field_table_offset = LittleEndian::read_i32(&block[0x10..0x14]) as usize;
 
         if !check_offset(bytes, field_table_offset, 0x1C, field_count) {
             err(ErrorKind::InvalidPacketTemplateFieldTable)
         } else {
             let mut fields = Vec::<PacketTemplateField>::with_capacity(field_count);
             for index in 0..field_count {
-                let field = self.parse_packet_template_field_block(bytes, field_table_offset, index)?;
+                let field =
+                    self.parse_packet_template_field_block(bytes, field_table_offset, index)?;
                 fields.push(field);
             }
 
@@ -664,15 +695,20 @@ impl SpecificationFile {
         }
     }
 
-    fn parse_packet_template_field_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<PacketTemplateField> {
+    fn parse_packet_template_field_block(
+        &mut self,
+        bytes: &[u8],
+        offset: usize,
+        index: usize,
+    ) -> Result<PacketTemplateField> {
         let block = slice_table_entry(bytes, offset, 0x1C, index);
-        let id_text_index = LittleEndian::read_i32(&block [0x00..0x04]);
-        let name_localized_text_index = LittleEndian::read_i32(&block [0x04..0x08]);
-        let unit_id = LittleEndian::read_i32(&block [0x08..0x0C]);
-        let precision = LittleEndian::read_i32(&block [0x0C..0x10]);
-        let type_id = LittleEndian::read_i32(&block [0x10..0x14]);
-        let part_count = LittleEndian::read_i32(&block [0x14..0x18]) as usize;
-        let part_table_offset = LittleEndian::read_i32(&block [0x18..0x1C]) as usize;
+        let id_text_index = LittleEndian::read_i32(&block[0x00..0x04]);
+        let name_localized_text_index = LittleEndian::read_i32(&block[0x04..0x08]);
+        let unit_id = LittleEndian::read_i32(&block[0x08..0x0C]);
+        let precision = LittleEndian::read_i32(&block[0x0C..0x10]);
+        let type_id = LittleEndian::read_i32(&block[0x10..0x14]);
+        let part_count = LittleEndian::read_i32(&block[0x14..0x18]) as usize;
+        let part_table_offset = LittleEndian::read_i32(&block[0x18..0x1C]) as usize;
 
         if !self.check_text_index(id_text_index) {
             err(ErrorKind::InvalidPacketTemplateFieldIdTextIndex)
@@ -687,7 +723,8 @@ impl SpecificationFile {
         } else {
             let mut parts = Vec::<PacketTemplateFieldPart>::with_capacity(part_count);
             for index in 0..part_count {
-                let part = self.parse_packet_template_field_part_block(bytes, part_table_offset, index)?;
+                let part =
+                    self.parse_packet_template_field_part_block(bytes, part_table_offset, index)?;
                 parts.push(part);
             }
 
@@ -702,13 +739,18 @@ impl SpecificationFile {
         }
     }
 
-    fn parse_packet_template_field_part_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<PacketTemplateFieldPart> {
+    fn parse_packet_template_field_part_block(
+        &mut self,
+        bytes: &[u8],
+        offset: usize,
+        index: usize,
+    ) -> Result<PacketTemplateFieldPart> {
         let block = slice_table_entry(bytes, offset, 0x10, index);
-        let data_offset = LittleEndian::read_i32(&block [0x00..0x04]);
-        let bit_pos = block [0x04];
-        let mask = block [0x05];
-        let is_signed = block [0x06];
-        let factor = LittleEndian::read_i64(&block [0x08..0x10]);
+        let data_offset = LittleEndian::read_i32(&block[0x00..0x04]);
+        let bit_pos = block[0x04];
+        let mask = block[0x05];
+        let is_signed = block[0x06];
+        let factor = LittleEndian::read_i64(&block[0x08..0x10]);
 
         Ok(PacketTemplateFieldPart {
             offset: data_offset,
@@ -718,9 +760,7 @@ impl SpecificationFile {
             factor: factor,
         })
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -784,7 +824,7 @@ mod tests {
         check_next_text(" °C");
         check_next_text(" °F");
         check_next_text(" µV");
-        check_next_text(" \u{2126}");  // OHM SIGN
+        check_next_text(" \u{2126}"); // OHM SIGN
         check_next_text("%");
         check_next_text("000_4_0");
         check_next_text("004_4_0");
@@ -930,11 +970,14 @@ mod tests {
         let mut localized_text_index = 0;
 
         let mut check_next_localized_text = |ref_text_en, ref_text_de, ref_text_fr| {
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::En);
+            let text = spec_file
+                .localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::En);
             assert_eq!(ref_text_en, text);
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::De);
+            let text = spec_file
+                .localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::De);
             assert_eq!(ref_text_de, text);
-            let text = spec_file.localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::Fr);
+            let text = spec_file
+                .localized_text_by_index(&LocalizedTextIndex(localized_text_index), Language::Fr);
             assert_eq!(ref_text_fr, text);
             localized_text_index += 1;
         };
@@ -942,27 +985,103 @@ mod tests {
         assert_eq!(45, spec_file.localized_texts.len());
         check_next_localized_text("5 min error code", "5-Min-Fehlercode", "Code erreur 5 min");
         check_next_localized_text("DFA", "DFA", "DFA");
-        check_next_localized_text("Date measured values", "Datum_Messdaten", "Date valeurs de mesure");
-        check_next_localized_text("DeltaSol MX [WMZ #0]", "DeltaSol MX [WMZ #0]", "DeltaSol MX [WMZ #0]");
-        check_next_localized_text("DeltaSol MX [WMZ #10]", "DeltaSol MX [WMZ #10]", "DeltaSol MX [WMZ #10]");
-        check_next_localized_text("DeltaSol MX [WMZ #11]", "DeltaSol MX [WMZ #11]", "DeltaSol MX [WMZ #11]");
-        check_next_localized_text("DeltaSol MX [WMZ #12]", "DeltaSol MX [WMZ #12]", "DeltaSol MX [WMZ #12]");
-        check_next_localized_text("DeltaSol MX [WMZ #13]", "DeltaSol MX [WMZ #13]", "DeltaSol MX [WMZ #13]");
-        check_next_localized_text("DeltaSol MX [WMZ #14]", "DeltaSol MX [WMZ #14]", "DeltaSol MX [WMZ #14]");
-        check_next_localized_text("DeltaSol MX [WMZ #15]", "DeltaSol MX [WMZ #15]", "DeltaSol MX [WMZ #15]");
-        check_next_localized_text("DeltaSol MX [WMZ #1]", "DeltaSol MX [WMZ #1]", "DeltaSol MX [WMZ #1]");
-        check_next_localized_text("DeltaSol MX [WMZ #2]", "DeltaSol MX [WMZ #2]", "DeltaSol MX [WMZ #2]");
-        check_next_localized_text("DeltaSol MX [WMZ #3]", "DeltaSol MX [WMZ #3]", "DeltaSol MX [WMZ #3]");
-        check_next_localized_text("DeltaSol MX [WMZ #4]", "DeltaSol MX [WMZ #4]", "DeltaSol MX [WMZ #4]");
-        check_next_localized_text("DeltaSol MX [WMZ #5]", "DeltaSol MX [WMZ #5]", "DeltaSol MX [WMZ #5]");
-        check_next_localized_text("DeltaSol MX [WMZ #6]", "DeltaSol MX [WMZ #6]", "DeltaSol MX [WMZ #6]");
-        check_next_localized_text("DeltaSol MX [WMZ #7]", "DeltaSol MX [WMZ #7]", "DeltaSol MX [WMZ #7]");
-        check_next_localized_text("DeltaSol MX [WMZ #8]", "DeltaSol MX [WMZ #8]", "DeltaSol MX [WMZ #8]");
-        check_next_localized_text("DeltaSol MX [WMZ #9]", "DeltaSol MX [WMZ #9]", "DeltaSol MX [WMZ #9]");
-        check_next_localized_text("DeltaSol MX [WMZ #]", "DeltaSol MX [WMZ #]", "DeltaSol MX [WMZ #]");
+        check_next_localized_text(
+            "Date measured values",
+            "Datum_Messdaten",
+            "Date valeurs de mesure",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #0]",
+            "DeltaSol MX [WMZ #0]",
+            "DeltaSol MX [WMZ #0]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #10]",
+            "DeltaSol MX [WMZ #10]",
+            "DeltaSol MX [WMZ #10]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #11]",
+            "DeltaSol MX [WMZ #11]",
+            "DeltaSol MX [WMZ #11]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #12]",
+            "DeltaSol MX [WMZ #12]",
+            "DeltaSol MX [WMZ #12]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #13]",
+            "DeltaSol MX [WMZ #13]",
+            "DeltaSol MX [WMZ #13]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #14]",
+            "DeltaSol MX [WMZ #14]",
+            "DeltaSol MX [WMZ #14]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #15]",
+            "DeltaSol MX [WMZ #15]",
+            "DeltaSol MX [WMZ #15]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #1]",
+            "DeltaSol MX [WMZ #1]",
+            "DeltaSol MX [WMZ #1]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #2]",
+            "DeltaSol MX [WMZ #2]",
+            "DeltaSol MX [WMZ #2]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #3]",
+            "DeltaSol MX [WMZ #3]",
+            "DeltaSol MX [WMZ #3]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #4]",
+            "DeltaSol MX [WMZ #4]",
+            "DeltaSol MX [WMZ #4]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #5]",
+            "DeltaSol MX [WMZ #5]",
+            "DeltaSol MX [WMZ #5]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #6]",
+            "DeltaSol MX [WMZ #6]",
+            "DeltaSol MX [WMZ #6]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #7]",
+            "DeltaSol MX [WMZ #7]",
+            "DeltaSol MX [WMZ #7]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #8]",
+            "DeltaSol MX [WMZ #8]",
+            "DeltaSol MX [WMZ #8]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #9]",
+            "DeltaSol MX [WMZ #9]",
+            "DeltaSol MX [WMZ #9]",
+        );
+        check_next_localized_text(
+            "DeltaSol MX [WMZ #]",
+            "DeltaSol MX [WMZ #]",
+            "DeltaSol MX [WMZ #]",
+        );
         check_next_localized_text("Irradiation", "Einstrahlung", "Irradiation");
         check_next_localized_text("Gesamtvolumen", "Gesamtvolumen", "Gesamtvolumen");
-        check_next_localized_text("IOC-Modul [Messwerte]", "IOC-Modul [Messwerte]", "IOC-Modul [Messwerte]");
+        check_next_localized_text(
+            "IOC-Modul [Messwerte]",
+            "IOC-Modul [Messwerte]",
+            "IOC-Modul [Messwerte]",
+        );
         check_next_localized_text("S6", "S6", "S6");
         check_next_localized_text("S7", "S7", "S7");
         check_next_localized_text("Seconds no.", "SekNr", "N° secondes");
@@ -982,19 +1101,40 @@ mod tests {
         check_next_localized_text("Heat quantity", "Wärmemenge", "Quantité de chaleur");
         check_next_localized_text("Heat quantity 1", "Wärmemenge 1", "Quantité de chaleur 1");
         check_next_localized_text("Heat quantity 2", "Wärmemenge 2", "Quantité de chaleur 2");
-        check_next_localized_text("Wärmemenge Monat", "Wärmemenge Monat", "Wärmemenge Monat");
-        check_next_localized_text("Heat quantity week", "Wärmemenge Woche", "Quantité de chaleur semaine");
-        check_next_localized_text("Heat quantity today", "Wärmemenge heute", "Quantité de chaleur aujourd'hui");
+        check_next_localized_text(
+            "Wärmemenge Monat",
+            "Wärmemenge Monat",
+            "Wärmemenge Monat",
+        );
+        check_next_localized_text(
+            "Heat quantity week",
+            "Wärmemenge Woche",
+            "Quantité de chaleur semaine",
+        );
+        check_next_localized_text(
+            "Heat quantity today",
+            "Wärmemenge heute",
+            "Quantité de chaleur aujourd'hui",
+        );
 
         let mut unit_index = 0;
 
         let mut check_next_unit = |unit_id, unit_family, unit_code, unit_text| {
-            let unit = &spec_file.units [unit_index];
+            let unit = &spec_file.units[unit_index];
 
             assert_eq!(UnitId(unit_id), unit.unit_id);
-            assert_eq!(unit_family, spec_file.unit_family_by_id(&unit.unit_family_id));
-            assert_eq!(unit_code, spec_file.text_by_index(&unit.unit_code_text_index));
-            assert_eq!(unit_text, spec_file.text_by_index(&unit.unit_text_text_index));
+            assert_eq!(
+                unit_family,
+                spec_file.unit_family_by_id(&unit.unit_family_id)
+            );
+            assert_eq!(
+                unit_code,
+                spec_file.text_by_index(&unit.unit_code_text_index)
+            );
+            assert_eq!(
+                unit_text,
+                spec_file.text_by_index(&unit.unit_text_text_index)
+            );
 
             unit_index += 1;
         };
@@ -1018,9 +1158,24 @@ mod tests {
         check_next_unit(27, UnitFamily::None, "Hertz", " Hz");
         check_next_unit(71, UnitFamily::None, "Hours", " h");
         check_next_unit(1030, UnitFamily::Energy, "KiloBtus", " MBTU");
-        check_next_unit(1024, UnitFamily::None, "KiloWattHoursPerSquareMeterPerDay", " kWh/(m²*d)");
-        check_next_unit(1036, UnitFamily::Energy, "KilogramsCO2Gas", " kg CO₂ (Gas)");
-        check_next_unit(1033, UnitFamily::Energy, "KilogramsCO2Oil", " kg CO₂ (Oil)");
+        check_next_unit(
+            1024,
+            UnitFamily::None,
+            "KiloWattHoursPerSquareMeterPerDay",
+            " kWh/(m²*d)",
+        );
+        check_next_unit(
+            1036,
+            UnitFamily::Energy,
+            "KilogramsCO2Gas",
+            " kg CO₂ (Gas)",
+        );
+        check_next_unit(
+            1033,
+            UnitFamily::Energy,
+            "KilogramsCO2Oil",
+            " kg CO₂ (Oil)",
+        );
         check_next_unit(186, UnitFamily::None, "KilogramsPerCubicMeter", " kg/m³");
         check_next_unit(44, UnitFamily::None, "KilogramsPerHour", " kg/h");
         check_next_unit(19, UnitFamily::Energy, "KilowattHours", " kWh");
@@ -1028,7 +1183,12 @@ mod tests {
         check_next_unit(82, UnitFamily::Volume, "Liters", " l");
         check_next_unit(136, UnitFamily::VolumeFlow, "LitersPerHour", " l/h");
         check_next_unit(88, UnitFamily::VolumeFlow, "LitersPerMinute", " l/min");
-        check_next_unit(1025, UnitFamily::None, "LitersPerSquareMeterPerDay", " l/(m²*d)");
+        check_next_unit(
+            1025,
+            UnitFamily::None,
+            "LitersPerSquareMeterPerDay",
+            " l/(m²*d)",
+        );
         check_next_unit(1031, UnitFamily::Energy, "MegaBtus", " MMBTU");
         check_next_unit(146, UnitFamily::Energy, "MegawattHours", " MWh");
         check_next_unit(74, UnitFamily::None, "MetersPerSecond", " m/s");
@@ -1051,16 +1211,19 @@ mod tests {
 
         assert_eq!(18, spec_file.device_templates.len());
 
-        let dt = &spec_file.device_templates [0];
+        let dt = &spec_file.device_templates[0];
         assert_eq!(0x0010, dt.self_address);
         assert_eq!(0xFFFF, dt.self_mask);
         assert_eq!(0x0000, dt.peer_address);
         assert_eq!(0x0000, dt.peer_mask);
-        assert_eq!("DFA", spec_file.localized_text_by_index(&dt.name_localized_text_index, Language::En));
+        assert_eq!(
+            "DFA",
+            spec_file.localized_text_by_index(&dt.name_localized_text_index, Language::En)
+        );
 
         assert_eq!(2, spec_file.packet_templates.len());
 
-        let pt = &spec_file.packet_templates [0];
+        let pt = &spec_file.packet_templates[0];
         assert_eq!(0x0010, pt.destination_address);
         assert_eq!(0xFFFF, pt.destination_mask);
         assert_eq!(0x7E30, pt.source_address);
@@ -1068,7 +1231,7 @@ mod tests {
         assert_eq!(0x0100, pt.command);
         assert_eq!(8, pt.fields.len());
 
-        let pt = &spec_file.packet_templates [1];
+        let pt = &spec_file.packet_templates[1];
         assert_eq!(0x0010, pt.destination_address);
         assert_eq!(0xFFFF, pt.destination_mask);
         assert_eq!(0x7F61, pt.source_address);
@@ -1076,11 +1239,20 @@ mod tests {
         assert_eq!(0x0100, pt.command);
         assert_eq!(18, pt.fields.len());
 
-        let ptf = &spec_file.packet_templates [0].fields [0];
+        let ptf = &spec_file.packet_templates[0].fields[0];
         assert_eq!("000_4_0", spec_file.text_by_index(&ptf.id_text_index));
-        assert_eq!("Heat quantity", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::En));
-        assert_eq!("Wärmemenge", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::De));
-        assert_eq!("Quantité de chaleur", spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::Fr));
+        assert_eq!(
+            "Heat quantity",
+            spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::En)
+        );
+        assert_eq!(
+            "Wärmemenge",
+            spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::De)
+        );
+        assert_eq!(
+            "Quantité de chaleur",
+            spec_file.localized_text_by_index(&ptf.name_localized_text_index, Language::Fr)
+        );
         assert_eq!(18, ptf.unit_id.0);
         assert_eq!(0, ptf.precision);
         assert_eq!(1, ptf.type_id.0);
@@ -1090,7 +1262,7 @@ mod tests {
         let mut part_index = 0;
 
         let mut check_next_part = |offset, bit_pos, mask, is_signed, factor| {
-            let part = &ptf.parts [part_index];
+            let part = &ptf.parts[part_index];
 
             assert_eq!(offset, part.offset);
             assert_eq!(bit_pos, part.bit_pos);

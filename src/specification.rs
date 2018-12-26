@@ -7,10 +7,11 @@ use std::rc::Rc;
 
 use chrono::{DateTime, TimeZone, UTC};
 
-use packet::{PacketId, PacketFieldId};
 use data::Data;
-use specification_file::{SpecificationFile, Language, UnitFamily, UnitId, Type, PacketTemplateFieldPart};
-
+use packet::{PacketFieldId, PacketId};
+use specification_file::{
+    Language, PacketTemplateFieldPart, SpecificationFile, Type, UnitFamily, UnitId,
+};
 
 /// Contains information about a VBus device.
 ///
@@ -45,7 +46,6 @@ pub struct DeviceSpec {
     /// The name of the device.
     pub name: String,
 }
-
 
 /// Contains information about a VBus packet and its fields.
 ///
@@ -95,7 +95,6 @@ pub struct PacketSpec {
     /// The fields contained in the frame payload of the VBus packet.
     pub fields: Vec<PacketFieldSpec>,
 }
-
 
 /// Contains information about a VBus packet field.
 ///
@@ -156,7 +155,6 @@ pub struct PacketFieldSpec {
     pub language: Language,
 }
 
-
 /// A helper type for formatting raw values.
 #[derive(Debug)]
 pub struct RawValueFormatter<'a> {
@@ -167,7 +165,6 @@ pub struct RawValueFormatter<'a> {
     unit_text: &'a str,
 }
 
-
 /// A helper type for formatting raw values.
 #[derive(Debug)]
 pub struct PacketFieldFormatter<'a> {
@@ -177,7 +174,6 @@ pub struct PacketFieldFormatter<'a> {
     raw_value: Option<i64>,
     unit_text: &'a str,
 }
-
 
 /// The `Specification` type contains information about known devices and packets.
 ///
@@ -202,7 +198,6 @@ pub struct Specification {
     devices: RefCell<Vec<Rc<DeviceSpec>>>,
     packets: RefCell<Vec<Rc<PacketSpec>>>,
 }
-
 
 /// An iterator over the fields of the `Packet` instances in a `DataSet`.
 ///
@@ -234,7 +229,6 @@ pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]> + 'a> {
     field_index: usize,
 }
 
-
 /// An item returned from the `DataSetPacketFieldIterator` for each field.
 #[derive(Debug)]
 pub struct DataSetPacketField<'a, T: AsRef<[Data]> + 'a> {
@@ -245,8 +239,12 @@ pub struct DataSetPacketField<'a, T: AsRef<[Data]> + 'a> {
     raw_value: Option<i64>,
 }
 
-
-fn get_cached_device_spec(devices: &[Rc<DeviceSpec>], channel: u8, self_address: u16, peer_address: u16) -> Option<Rc<DeviceSpec>> {
+fn get_cached_device_spec(
+    devices: &[Rc<DeviceSpec>],
+    channel: u8,
+    self_address: u16,
+    peer_address: u16,
+) -> Option<Rc<DeviceSpec>> {
     let result = devices.iter().find(|&device| {
         if device.channel != channel {
             false
@@ -265,8 +263,14 @@ fn get_cached_device_spec(devices: &[Rc<DeviceSpec>], channel: u8, self_address:
     }
 }
 
-
-fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: u8, self_address: u16, peer_address: u16, file: &SpecificationFile, language: Language) -> Rc<DeviceSpec> {
+fn get_or_create_cached_device_spec(
+    devices: &mut Vec<Rc<DeviceSpec>>,
+    channel: u8,
+    self_address: u16,
+    peer_address: u16,
+    file: &SpecificationFile,
+    language: Language,
+) -> Rc<DeviceSpec> {
     if let Some(device) = get_cached_device_spec(devices, channel, self_address, peer_address) {
         return device;
     }
@@ -275,10 +279,12 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: 
 
     let peer_address_option = match device_template {
         None => None,
-        Some(device_template) => if device_template.peer_mask == 0 {
-            None
-        } else {
-            Some(peer_address)
+        Some(device_template) => {
+            if device_template.peer_mask == 0 {
+                None
+            } else {
+                Some(peer_address)
+            }
         }
     };
 
@@ -292,12 +298,12 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: 
             match language {
                 Language::En => format!("Unknown device 0x{:04X}", self_address),
                 Language::De => format!("Unbekanntes Gerät 0x{:04X}", self_address),
-                Language::Fr => format!("Unknown device 0x{:04X}", self_address),  // FIXME(daniel): missing translation
+                Language::Fr => format!("Unknown device 0x{:04X}", self_address), // FIXME(daniel): missing translation
             }
-        },
-        Some(device_template) => {
-            file.localized_text_by_index(&device_template.name_localized_text_index, language).to_owned()
         }
+        Some(device_template) => file
+            .localized_text_by_index(&device_template.name_localized_text_index, language)
+            .to_owned(),
     };
 
     let name = match channel {
@@ -318,8 +324,13 @@ fn get_or_create_cached_device_spec(devices: &mut Vec<Rc<DeviceSpec>>, channel: 
     get_cached_device_spec(devices, channel, self_address, peer_address).unwrap()
 }
 
-
-fn get_cached_packet_spec(packets: &[Rc<PacketSpec>], channel: u8, destination_address: u16, source_address: u16, command: u16) -> Option<Rc<PacketSpec>> {
+fn get_cached_packet_spec(
+    packets: &[Rc<PacketSpec>],
+    channel: u8,
+    destination_address: u16,
+    source_address: u16,
+    command: u16,
+) -> Option<Rc<PacketSpec>> {
     let result = packets.iter().find(|&packet| {
         if packet.channel != channel {
             false
@@ -340,16 +351,47 @@ fn get_cached_packet_spec(packets: &[Rc<PacketSpec>], channel: u8, destination_a
     }
 }
 
-
-fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: u8, destination_address: u16, source_address: u16, command: u16, devices: &mut Vec<Rc<DeviceSpec>>, file: &SpecificationFile, language: Language) -> Rc<PacketSpec> {
-    if let Some(packet) = get_cached_packet_spec(packets, channel, destination_address, source_address, command) {
+fn get_or_create_cached_packet_spec(
+    packets: &mut Vec<Rc<PacketSpec>>,
+    channel: u8,
+    destination_address: u16,
+    source_address: u16,
+    command: u16,
+    devices: &mut Vec<Rc<DeviceSpec>>,
+    file: &SpecificationFile,
+    language: Language,
+) -> Rc<PacketSpec> {
+    if let Some(packet) = get_cached_packet_spec(
+        packets,
+        channel,
+        destination_address,
+        source_address,
+        command,
+    ) {
         return packet;
     }
 
-    let destination_device = get_or_create_cached_device_spec(devices, channel, destination_address, source_address, file, language);
-    let source_device = get_or_create_cached_device_spec(devices, channel, source_address, destination_address, file, language);
+    let destination_device = get_or_create_cached_device_spec(
+        devices,
+        channel,
+        destination_address,
+        source_address,
+        file,
+        language,
+    );
+    let source_device = get_or_create_cached_device_spec(
+        devices,
+        channel,
+        source_address,
+        destination_address,
+        file,
+        language,
+    );
 
-    let packet_id = format!("{:02X}_{:04X}_{:04X}_10_{:04X}", channel, destination_address, source_address, command);
+    let packet_id = format!(
+        "{:02X}_{:04X}_{:04X}_10_{:04X}",
+        channel, destination_address, source_address, command
+    );
 
     let packet_name = match destination_address {
         0x0010 => source_device.name.clone(),
@@ -358,13 +400,17 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
 
     let fields = match file.find_packet_template(destination_address, source_address, command) {
         None => Vec::new(),
-        Some(packet_template) => {
-            packet_template.fields.iter().map(|field| {
+        Some(packet_template) => packet_template
+            .fields
+            .iter()
+            .map(|field| {
                 let field_id = file.text_by_index(&field.id_text_index).to_string();
 
                 let packet_field_id = format!("{}_{}", packet_id, field_id);
 
-                let field_name = file.localized_text_by_index(&field.name_localized_text_index, language).to_string();
+                let field_name = file
+                    .localized_text_by_index(&field.name_localized_text_index, language)
+                    .to_string();
 
                 let unit = file.unit_by_id(&field.unit_id);
 
@@ -387,8 +433,8 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
                     parts: field.parts.clone(),
                     language: language,
                 }
-            }).collect()
-        },
+            })
+            .collect(),
     };
 
     let packet = PacketSpec {
@@ -405,9 +451,15 @@ fn get_or_create_cached_packet_spec(packets: &mut Vec<Rc<PacketSpec>>, channel: 
 
     packets.push(Rc::new(packet));
 
-    get_cached_packet_spec(packets, channel, destination_address, source_address, command).unwrap()
+    get_cached_packet_spec(
+        packets,
+        channel,
+        destination_address,
+        source_address,
+        command,
+    )
+    .unwrap()
 }
-
 
 /// Get the "power of 10" `i64` value for common "n"s and calculate it otherwise.
 pub fn power_of_ten_i64(n: u32) -> i64 {
@@ -425,7 +477,6 @@ pub fn power_of_ten_i64(n: u32) -> i64 {
         _ => 10i64.pow(n),
     }
 }
-
 
 /// Get the "power of 10" `f64` value for common "n"s and calculate it otherwise.
 pub fn power_of_ten_f64(n: i32) -> f64 {
@@ -453,9 +504,7 @@ pub fn power_of_ten_f64(n: i32) -> f64 {
     }
 }
 
-
 impl Specification {
-
     /// Construct a `Specification` from a `SpecificationFile` and a `Language`.
     ///
     /// # Examples
@@ -496,9 +545,21 @@ impl Specification {
     /// assert_eq!(None, device_spec.peer_address);
     /// assert_eq!("DeltaSol MX [Regler]", device_spec.name);
     /// ```
-    pub fn get_device_spec(&self, channel: u8, self_address: u16, peer_address: u16) -> Rc<DeviceSpec> {
+    pub fn get_device_spec(
+        &self,
+        channel: u8,
+        self_address: u16,
+        peer_address: u16,
+    ) -> Rc<DeviceSpec> {
         let mut devices = self.devices.borrow_mut();
-        get_or_create_cached_device_spec(&mut devices, channel, self_address, peer_address, &self.file, self.language)
+        get_or_create_cached_device_spec(
+            &mut devices,
+            channel,
+            self_address,
+            peer_address,
+            &self.file,
+            self.language,
+        )
     }
 
     /// Get a `PacketSpec`.
@@ -520,10 +581,25 @@ impl Specification {
     /// assert_eq!("DeltaSol MX [Regler]", packet_spec.source_device.name);
     /// assert_eq!("DeltaSol MX [Regler]", packet_spec.name);
     /// ```
-    pub fn get_packet_spec(&self, channel: u8, destination_address: u16, source_address: u16, command: u16) -> Rc<PacketSpec> {
+    pub fn get_packet_spec(
+        &self,
+        channel: u8,
+        destination_address: u16,
+        source_address: u16,
+        command: u16,
+    ) -> Rc<PacketSpec> {
         let mut devices = self.devices.borrow_mut();
         let mut packets = self.packets.borrow_mut();
-        get_or_create_cached_packet_spec(&mut packets, channel, destination_address, source_address, command, &mut devices, &self.file, self.language)
+        get_or_create_cached_packet_spec(
+            &mut packets,
+            channel,
+            destination_address,
+            source_address,
+            command,
+            &mut devices,
+            &self.file,
+            self.language,
+        )
     }
 
     /// Get a `PacketSpec`.
@@ -549,7 +625,6 @@ impl Specification {
         self.get_packet_spec(packet_id.0, packet_id.1, packet_id.2, packet_id.3)
     }
 
-
     /// Returns an iterator that iterates over all known packet fields in the data set.
     ///
     /// # Examples
@@ -570,7 +645,10 @@ impl Specification {
     ///     }
     /// }
     /// ```
-    pub fn fields_in_data_set<'a, T: AsRef<[Data]> + 'a>(&'a self, data_set: &'a T) -> DataSetPacketFieldIterator<'a, T> {
+    pub fn fields_in_data_set<'a, T: AsRef<[Data]> + 'a>(
+        &'a self,
+        data_set: &'a T,
+    ) -> DataSetPacketFieldIterator<'a, T> {
         DataSetPacketFieldIterator {
             spec: self,
             data_set: data_set,
@@ -606,32 +684,30 @@ impl Specification {
             unit_text: "",
         }
     }
-
 }
 
-
 impl PacketSpec {
-
     /// Get the position of a `PacketFieldSpec` by its field ID.
     pub fn get_field_spec_position(&self, id: &str) -> Option<usize> {
-        self.fields.iter().position(|field_spec| field_spec.field_id == id)
+        self.fields
+            .iter()
+            .position(|field_spec| field_spec.field_id == id)
     }
 
     /// Get a `PacketFieldSpec` by its position.
     pub fn get_field_spec_by_position(&self, pos: usize) -> &PacketFieldSpec {
-        &self.fields [pos]
+        &self.fields[pos]
     }
 
     /// Get a `PacketFieldSpec` by its field ID.
     pub fn get_field_spec(&self, id: &str) -> Option<&PacketFieldSpec> {
-        self.fields.iter().find(|field_spec| field_spec.field_id == id)
+        self.fields
+            .iter()
+            .find(|field_spec| field_spec.field_id == id)
     }
-
 }
 
-
 impl PacketFieldSpec {
-
     /// Construct an `i64` raw value from a slice of bytes.
     pub fn raw_value_i64(&self, buf: &[u8]) -> Option<i64> {
         let length = buf.len();
@@ -644,9 +720,9 @@ impl PacketFieldSpec {
 
             if offset < length {
                 let mut part_value = if part.is_signed {
-                    (buf [offset] as i8) as i64
+                    (buf[offset] as i8) as i64
                 } else {
-                    buf [offset] as i64
+                    buf[offset] as i64
                 };
                 if part.mask != 0xFF {
                     part_value &= part.mask as i64;
@@ -669,18 +745,14 @@ impl PacketFieldSpec {
     /// Construct a `f64` raw value from a slice of bytes.
     pub fn raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
         match self.raw_value_i64(buf) {
-            Some(raw_value) => Some(raw_value as f64 * power_of_ten_f64(- self.precision)),
-            None => None
+            Some(raw_value) => Some(raw_value as f64 * power_of_ten_f64(-self.precision)),
+            None => None,
         }
     }
 
     /// Format a raw value into its textual representation.
     pub fn fmt_raw_value(&self, raw_value: Option<i64>, append_unit: bool) -> PacketFieldFormatter {
-        let unit_text = if append_unit {
-            &self.unit_text
-        } else {
-            ""
-        };
+        let unit_text = if append_unit { &self.unit_text } else { "" };
         PacketFieldFormatter {
             language: self.language,
             typ: self.typ,
@@ -689,47 +761,23 @@ impl PacketFieldSpec {
             unit_text: unit_text,
         }
     }
-
 }
 
+const WEEKDAYS_EN: [&'static str; 7] = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-const WEEKDAYS_EN: [&'static str; 7] = [
-    "Mo",
-    "Tu",
-    "We",
-    "Th",
-    "Fr",
-    "Sa",
-    "Su",
-];
+const WEEKDAYS_DE: [&'static str; 7] = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-
-const WEEKDAYS_DE: [&'static str; 7] = [
-    "Mo",
-    "Di",
-    "Mi",
-    "Do",
-    "Fr",
-    "Sa",
-    "So",
-];
-
-
-const WEEKDAYS_FR: [&'static str; 7] = [
-    "Lu",
-    "Ma",
-    "Me",
-    "Je",
-    "Ve",
-    "Sa",
-    "Di",
-];
-
+const WEEKDAYS_FR: [&'static str; 7] = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
 
 impl<'a> RawValueFormatter<'a> {
-
     /// Construct a `RawValueFormatter` to help format a raw value into its textual representation.
-    pub fn new(language: Language, typ: Type, precision: i32, raw_value: i64, unit_text: &'a str) -> RawValueFormatter<'a> {
+    pub fn new(
+        language: Language,
+        typ: Type,
+        precision: i32,
+        raw_value: i64,
+        unit_text: &'a str,
+    ) -> RawValueFormatter<'a> {
         RawValueFormatter {
             language: language,
             typ: typ,
@@ -738,21 +786,14 @@ impl<'a> RawValueFormatter<'a> {
             unit_text: unit_text,
         }
     }
-
 }
 
-
 impl<'a> fmt::Display for RawValueFormatter<'a> {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.typ {
             Type::Number => {
                 if self.precision > 0 {
-                    let sign = if self.raw_value < 0 {
-                        "-"
-                    } else {
-                        ""
-                    };
+                    let sign = if self.raw_value < 0 { "-" } else { "" };
                     let raw_value = self.raw_value.abs();
                     let factor = power_of_ten_i64(self.precision as u32);
                     let left_part = raw_value / factor;
@@ -775,8 +816,8 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                         9 => write!(f, "{:09}", right_part)?,
                         _ => {
                             let s = format!("{}", right_part + factor);
-                            write!(f, "{}", &s [1..])?;
-                        },
+                            write!(f, "{}", &s[1..])?;
+                        }
                     };
                     write!(f, "{}", self.unit_text)
                 } else {
@@ -793,9 +834,21 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                 let hours = (self.raw_value / 60) % 24;
                 let minutes = self.raw_value % 60;
                 match self.language {
-                    Language::En => write!(f, "{},{:02}:{:02}", WEEKDAYS_EN [weekday_idx], hours, minutes),
-                    Language::De => write!(f, "{},{:02}:{:02}", WEEKDAYS_DE [weekday_idx], hours, minutes),
-                    Language::Fr => write!(f, "{},{:02}:{:02}", WEEKDAYS_FR [weekday_idx], hours, minutes),
+                    Language::En => write!(
+                        f,
+                        "{},{:02}:{:02}",
+                        WEEKDAYS_EN[weekday_idx], hours, minutes
+                    ),
+                    Language::De => write!(
+                        f,
+                        "{},{:02}:{:02}",
+                        WEEKDAYS_DE[weekday_idx], hours, minutes
+                    ),
+                    Language::Fr => write!(
+                        f,
+                        "{},{:02}:{:02}",
+                        WEEKDAYS_FR[weekday_idx], hours, minutes
+                    ),
                 }
             }
             Type::DateTime => {
@@ -804,30 +857,29 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                     Language::En | Language::Fr => {
                         write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))
                     }
-                    Language::De => {
-                        write!(f, "{}", timestamp.format("%d.%m.%Y %H:%M:%S"))
-                    }
+                    Language::De => write!(f, "{}", timestamp.format("%d.%m.%Y %H:%M:%S")),
                 }
             }
         }
     }
-
 }
 
-
 impl<'a> fmt::Display for PacketFieldFormatter<'a> {
-
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(raw_value) = self.raw_value {
-            let formatter = RawValueFormatter::new(self.language, self.typ, self.precision, raw_value, self.unit_text);
+            let formatter = RawValueFormatter::new(
+                self.language,
+                self.typ,
+                self.precision,
+                raw_value,
+                self.unit_text,
+            );
             formatter.fmt(f)
         } else {
             Ok(())
         }
     }
-
 }
-
 
 impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
     type Item = DataSetPacketField<'a, T>;
@@ -837,16 +889,21 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
         let data_slice_len = data_slice.len();
 
         while self.data_index < data_slice_len {
-            let data = &data_slice [self.data_index];
+            let data = &data_slice[self.data_index];
             if let Data::Packet(ref packet) = *data {
-                let packet_spec = self.spec.get_packet_spec(packet.header.channel, packet.header.destination_address, packet.header.source_address, packet.command);
+                let packet_spec = self.spec.get_packet_spec(
+                    packet.header.channel,
+                    packet.header.destination_address,
+                    packet.header.source_address,
+                    packet.command,
+                );
                 if self.field_index < packet_spec.fields.len() {
                     let field_index = self.field_index;
                     self.field_index += 1;
 
-                    let frame_data = &packet.frame_data [0..packet.frame_count as usize * 4];
+                    let frame_data = &packet.frame_data[0..packet.frame_count as usize * 4];
 
-                    let field_spec = &packet_spec.fields [field_index];
+                    let field_spec = &packet_spec.fields[field_index];
                     let raw_value = field_spec.raw_value_i64(frame_data);
 
                     return Some(DataSetPacketField {
@@ -867,11 +924,15 @@ impl<'a, T: AsRef<[Data]> + 'a> Iterator for DataSetPacketFieldIterator<'a, T> {
     }
 }
 
-
 impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
-
     /// Construct new `DataSetPacketField` value.
-    pub fn new(data_set: &'a T, data_index: usize, packet_spec: Rc<PacketSpec>, field_index: usize, raw_value: Option<i64>) -> DataSetPacketField<'a, T> {
+    pub fn new(
+        data_set: &'a T,
+        data_index: usize,
+        packet_spec: Rc<PacketSpec>,
+        field_index: usize,
+        raw_value: Option<i64>,
+    ) -> DataSetPacketField<'a, T> {
         DataSetPacketField {
             data_set: data_set,
             data_index: data_index,
@@ -893,7 +954,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the `Data` associated with this field.
     pub fn data(&self) -> &Data {
-        &self.data_set.as_ref() [self.data_index]
+        &self.data_set.as_ref()[self.data_index]
     }
 
     /// Return the `PacketSpec` associated with this field.
@@ -908,7 +969,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the `PacketFieldSpec` associated with this field.
     pub fn field_spec(&self) -> &PacketFieldSpec {
-        &self.packet_spec.fields [self.field_index]
+        &self.packet_spec.fields[self.field_index]
     }
 
     /// Return the `PacketId` associated with this field.
@@ -923,7 +984,10 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the `PacketFieldId` associated with this field.
     pub fn packet_field_id(&self) -> PacketFieldId {
-        PacketFieldId(self.data().as_packet().packet_id(), &self.field_spec().field_id)
+        PacketFieldId(
+            self.data().as_packet().packet_id(),
+            &self.field_spec().field_id,
+        )
     }
 
     /// Return the raw value associated with this field.
@@ -943,9 +1007,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     pub fn fmt_raw_value(&self, append_unit: bool) -> PacketFieldFormatter {
         self.field_spec().fmt_raw_value(self.raw_value, append_unit)
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -985,21 +1047,57 @@ mod tests {
         assert_eq!("12345.68", fmt_to_string(En, Number, 2, 1234568, ""));
         assert_eq!("12345.679", fmt_to_string(En, Number, 3, 12345679, ""));
         assert_eq!("12345.6789", fmt_to_string(En, Number, 4, 123456789, ""));
-        assert_eq!("1.2345678900", fmt_to_string(En, Number, 10, 12345678900, ""));
-        assert_eq!("1,2345678900", fmt_to_string(De, Number, 10, 12345678900, ""));
-        assert_eq!("1,2345678900", fmt_to_string(Fr, Number, 10, 12345678900, ""));
+        assert_eq!(
+            "1.2345678900",
+            fmt_to_string(En, Number, 10, 12345678900, "")
+        );
+        assert_eq!(
+            "1,2345678900",
+            fmt_to_string(De, Number, 10, 12345678900, "")
+        );
+        assert_eq!(
+            "1,2345678900",
+            fmt_to_string(Fr, Number, 10, 12345678900, "")
+        );
 
-        assert_eq!("12:01", fmt_to_string(En, Time, 10, 721, " ignore this unit"));
-        assert_eq!("12:01", fmt_to_string(De, Time, 10, 721, " ignore this unit"));
-        assert_eq!("12:01", fmt_to_string(Fr, Time, 10, 721, " ignore this unit"));
+        assert_eq!(
+            "12:01",
+            fmt_to_string(En, Time, 10, 721, " ignore this unit")
+        );
+        assert_eq!(
+            "12:01",
+            fmt_to_string(De, Time, 10, 721, " ignore this unit")
+        );
+        assert_eq!(
+            "12:01",
+            fmt_to_string(Fr, Time, 10, 721, " ignore this unit")
+        );
 
-        assert_eq!("Th,12:01", fmt_to_string(En, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
-        assert_eq!("Do,12:01", fmt_to_string(De, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
-        assert_eq!("Je,12:01", fmt_to_string(Fr, WeekTime, 10, 3 * 1440 + 721, " ignore this unit"));
+        assert_eq!(
+            "Th,12:01",
+            fmt_to_string(En, WeekTime, 10, 3 * 1440 + 721, " ignore this unit")
+        );
+        assert_eq!(
+            "Do,12:01",
+            fmt_to_string(De, WeekTime, 10, 3 * 1440 + 721, " ignore this unit")
+        );
+        assert_eq!(
+            "Je,12:01",
+            fmt_to_string(Fr, WeekTime, 10, 3 * 1440 + 721, " ignore this unit")
+        );
 
-        assert_eq!("22/12/2013 15:17:42", fmt_to_string(En, DateTime, 10, 409418262, " ignore this unit"));
-        assert_eq!("22.12.2013 15:17:42", fmt_to_string(De, DateTime, 10, 409418262, " ignore this unit"));
-        assert_eq!("22/12/2013 15:17:42", fmt_to_string(Fr, DateTime, 10, 409418262, " ignore this unit"));
+        assert_eq!(
+            "22/12/2013 15:17:42",
+            fmt_to_string(En, DateTime, 10, 409418262, " ignore this unit")
+        );
+        assert_eq!(
+            "22.12.2013 15:17:42",
+            fmt_to_string(De, DateTime, 10, 409418262, " ignore this unit")
+        );
+        assert_eq!(
+            "22/12/2013 15:17:42",
+            fmt_to_string(Fr, DateTime, 10, 409418262, " ignore this unit")
+        );
     }
 
     #[test]
@@ -1070,11 +1168,14 @@ mod tests {
         assert_eq!(0x7E31, packet_spec.source_address);
         assert_eq!(0x0100, packet_spec.command);
         assert_eq!("VBus 1: DFA", packet_spec.destination_device.name);
-        assert_eq!("VBus 1: DeltaSol MX [WMZ #1]", packet_spec.source_device.name);
+        assert_eq!(
+            "VBus 1: DeltaSol MX [WMZ #1]",
+            packet_spec.source_device.name
+        );
         assert_eq!("VBus 1: DeltaSol MX [WMZ #1]", packet_spec.name);
         assert_eq!(8, packet_spec.fields.len());
 
-        let field_spec = &packet_spec.fields [0];
+        let field_spec = &packet_spec.fields[0];
         assert_eq!("000_4_0", field_spec.field_id);
         assert_eq!("01_0010_7E31_10_0100_000_4_0", field_spec.packet_field_id);
         assert_eq!("Heat quantity", field_spec.name);
@@ -1154,18 +1255,58 @@ mod tests {
         let packet_spec = spec.get_packet_spec(0x01, 0x0010, 0x7F61, 0x0100);
 
         let buf = &[
-            0x78, 0x56, 0x34, 0x12,
-            0xB8, 0x22, 0x00, 0x00,
-            0x48, 0xDD, 0xFF, 0xFF,
+            0x78, 0x56, 0x34, 0x12, 0xB8, 0x22, 0x00, 0x00, 0x48, 0xDD, 0xFF, 0xFF,
         ];
 
-        assert_eq!(Some(0x12345678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(buf));
-        assert_eq!(Some(8888), packet_spec.get_field_spec("004_4_0").unwrap().raw_value_i64(buf));
-        assert_eq!(Some(-8888), packet_spec.get_field_spec("008_4_0").unwrap().raw_value_i64(buf));
-        assert_eq!(Some(0x345678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..3]));
-        assert_eq!(Some(0x5678), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..2]));
-        assert_eq!(Some(0x78), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..1]));
-        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().raw_value_i64(&buf [0..0]));
+        assert_eq!(
+            Some(0x12345678),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_i64(buf)
+        );
+        assert_eq!(
+            Some(8888),
+            packet_spec
+                .get_field_spec("004_4_0")
+                .unwrap()
+                .raw_value_i64(buf)
+        );
+        assert_eq!(
+            Some(-8888),
+            packet_spec
+                .get_field_spec("008_4_0")
+                .unwrap()
+                .raw_value_i64(buf)
+        );
+        assert_eq!(
+            Some(0x345678),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_i64(&buf[0..3])
+        );
+        assert_eq!(
+            Some(0x5678),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_i64(&buf[0..2])
+        );
+        assert_eq!(
+            Some(0x78),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_i64(&buf[0..1])
+        );
+        assert_eq!(
+            None,
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_i64(&buf[0..0])
+        );
     }
 
     #[test]
@@ -1179,36 +1320,74 @@ mod tests {
         let packet_spec = spec.get_packet_spec(0x01, 0x0010, 0x7F61, 0x0100);
 
         let buf = &[
-            0x78, 0x56, 0x34, 0x12,
-            0xB8, 0x22, 0x00, 0x00,
-            0x48, 0xDD, 0xFF, 0xFF,
+            0x78, 0x56, 0x34, 0x12, 0xB8, 0x22, 0x00, 0x00, 0x48, 0xDD, 0xFF, 0xFF,
         ];
 
-        assert_eq!(Some(0x12345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(buf));
-        assert_eq!(Some(888.8000000000001), packet_spec.get_field_spec("004_4_0").unwrap().raw_value_f64(buf));
-        assert_eq!(Some(-888.8000000000001), packet_spec.get_field_spec("008_4_0").unwrap().raw_value_f64(buf));
-        assert_eq!(Some(0x345678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..3]));
-        assert_eq!(Some(0x5678 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..2]));
-        assert_eq!(Some(0x78 as f64), packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..1]));
-        assert_eq!(None, packet_spec.get_field_spec("000_4_0").unwrap().raw_value_f64(&buf [0..0]));
+        assert_eq!(
+            Some(0x12345678 as f64),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_f64(buf)
+        );
+        assert_eq!(
+            Some(888.8000000000001),
+            packet_spec
+                .get_field_spec("004_4_0")
+                .unwrap()
+                .raw_value_f64(buf)
+        );
+        assert_eq!(
+            Some(-888.8000000000001),
+            packet_spec
+                .get_field_spec("008_4_0")
+                .unwrap()
+                .raw_value_f64(buf)
+        );
+        assert_eq!(
+            Some(0x345678 as f64),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_f64(&buf[0..3])
+        );
+        assert_eq!(
+            Some(0x5678 as f64),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_f64(&buf[0..2])
+        );
+        assert_eq!(
+            Some(0x78 as f64),
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_f64(&buf[0..1])
+        );
+        assert_eq!(
+            None,
+            packet_spec
+                .get_field_spec("000_4_0")
+                .unwrap()
+                .raw_value_f64(&buf[0..0])
+        );
     }
 
     #[test]
     fn test_fmt_raw_value() {
-        let fake_field_spec = |precision, typ, unit_text: &str| {
-            PacketFieldSpec {
-                field_id: "".to_string(),
-                packet_field_id: "".to_string(),
-                name: "".to_string(),
-                unit_id: UnitId(0),
-                unit_family: UnitFamily::None,
-                unit_code: "unit code".to_string(),
-                unit_text: unit_text.to_string(),
-                precision: precision,
-                typ: typ,
-                parts: Vec::new(),
-                language: Language::En,
-            }
+        let fake_field_spec = |precision, typ, unit_text: &str| PacketFieldSpec {
+            field_id: "".to_string(),
+            packet_field_id: "".to_string(),
+            name: "".to_string(),
+            unit_id: UnitId(0),
+            unit_family: UnitFamily::None,
+            unit_code: "unit code".to_string(),
+            unit_text: unit_text.to_string(),
+            precision: precision,
+            typ: typ,
+            parts: Vec::new(),
+            language: Language::En,
         };
 
         let fmt_raw_value = |field_spec: &PacketFieldSpec, raw_value, append_unit| {
@@ -1238,7 +1417,10 @@ mod tests {
         assert_eq!("12345.0009", fmt_raw_value(&field_spec, 123450009, false));
 
         let field_spec = fake_field_spec(10, Type::Number, "don't append unit");
-        assert_eq!("1.2345678900", fmt_raw_value(&field_spec, 12345678900, false));
+        assert_eq!(
+            "1.2345678900",
+            fmt_raw_value(&field_spec, 12345678900, false)
+        );
 
         let field_spec = fake_field_spec(10, Type::Time, "don't append unit");
         assert_eq!("12:01", fmt_raw_value(&field_spec, 721, true));
@@ -1247,7 +1429,10 @@ mod tests {
         assert_eq!("Th,12:01", fmt_raw_value(&field_spec, 3 * 1440 + 721, true));
 
         let field_spec = fake_field_spec(10, Type::DateTime, "don't append unit");
-        assert_eq!("22/12/2013 15:17:42", fmt_raw_value(&field_spec, 409418262, true));
+        assert_eq!(
+            "22/12/2013 15:17:42",
+            fmt_raw_value(&field_spec, 409418262, true)
+        );
     }
 
     #[test]
@@ -1264,9 +1449,9 @@ mod tests {
 
         assert_eq!(8, fields.len());
 
-        let field = &fields [0];
+        let field = &fields[0];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(0, field.field_index());
         assert_eq!("000_4_0", field.field_spec().field_id);
@@ -1274,9 +1459,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [1];
+        let field = &fields[1];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(1, field.field_index());
         assert_eq!("008_4_0", field.field_spec().field_id);
@@ -1284,9 +1469,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [2];
+        let field = &fields[2];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(2, field.field_index());
         assert_eq!("012_4_0", field.field_spec().field_id);
@@ -1294,9 +1479,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [3];
+        let field = &fields[3];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(3, field.field_index());
         assert_eq!("020_4_0", field.field_spec().field_id);
@@ -1304,9 +1489,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 Wh", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [4];
+        let field = &fields[4];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(4, field.field_index());
         assert_eq!("016_4_0", field.field_spec().field_id);
@@ -1314,9 +1499,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [5];
+        let field = &fields[5];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(5, field.field_index());
         assert_eq!("024_4_0", field.field_spec().field_id);
@@ -1324,9 +1509,9 @@ mod tests {
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
 
-        let field = &fields [6];
+        let field = &fields[6];
         assert_eq!(1, field.data_index());
-        assert_eq!(&data_set.as_data_slice() [1], field.data());
+        assert_eq!(&data_set.as_data_slice()[1], field.data());
         assert_eq!("00_0010_7E31_10_0100", field.packet_spec().packet_id);
         assert_eq!(6, field.field_index());
         assert_eq!("028_4_0", field.field_spec().field_id);

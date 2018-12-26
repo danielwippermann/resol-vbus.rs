@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::{Read, Result};
 use std::path::Path;
 
-
 /// Chains multiple files together in a single `Read` object.
 ///
 /// The main advantage of this type compared to multiple `chain`ed `Read` values is, that only
@@ -37,9 +36,7 @@ pub struct FileListReader<T: AsRef<Path>> {
     file: Option<File>,
 }
 
-
 impl<T: AsRef<Path>> FileListReader<T> {
-
     /// Construct a new `FileListReader` from a list of paths.
     pub fn new(file_list: Vec<T>) -> FileListReader<T> {
         FileListReader {
@@ -50,9 +47,7 @@ impl<T: AsRef<Path>> FileListReader<T> {
     }
 }
 
-
 impl<T: AsRef<Path>> Read for FileListReader<T> {
-
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
         loop {
             if let Some(ref mut file) = self.file {
@@ -63,13 +58,12 @@ impl<T: AsRef<Path>> Read for FileListReader<T> {
             }
 
             if self.file_index >= self.file_list.len() {
-                return Ok(0)
+                return Ok(0);
             } else {
-                let file = File::open(&self.file_list [self.file_index])?;
+                let file = File::open(&self.file_list[self.file_index])?;
                 self.file = Some(file);
                 self.file_index += 1;
             }
         }
     }
-
 }

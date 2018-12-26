@@ -2,8 +2,7 @@ use std::io::Write;
 
 use data::Data;
 use error::Result;
-use live_data_encoder::{length_from_data, bytes_from_data};
-
+use live_data_encoder::{bytes_from_data, length_from_data};
 
 /// Allows writing the live represenation of `Data` variants to a `Write` trait object.
 #[derive(Debug)]
@@ -11,14 +10,10 @@ pub struct LiveDataWriter<W: Write> {
     writer: W,
 }
 
-
 impl<W: Write> LiveDataWriter<W> {
-
     /// Construct a new `LiveDataWriter`.
     pub fn new(writer: W) -> LiveDataWriter<W> {
-        LiveDataWriter {
-            writer: writer,
-        }
+        LiveDataWriter { writer: writer }
     }
 
     /// Gets a reference to the underlying writer.
@@ -44,7 +39,6 @@ impl<W: Write> LiveDataWriter<W> {
 
         Ok(())
     }
-
 }
 
 impl<W: Write> AsRef<W> for LiveDataWriter<W> {
@@ -53,7 +47,7 @@ impl<W: Write> AsRef<W> for LiveDataWriter<W> {
     }
 }
 
-impl<W: Write> AsMut<W> for LiveDataWriter<W>  {
+impl<W: Write> AsMut<W> for LiveDataWriter<W> {
     fn as_mut(&mut self) -> &mut W {
         &mut self.writer
     }
@@ -76,31 +70,31 @@ mod tests {
         let timestamp = UTC.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [0..]);
+        let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
 
         {
             buf.truncate(0);
             let mut writer = LiveDataWriter::new(&mut buf);
             writer.write_data(&data1).unwrap();
         }
-        assert_eq!(&LIVE_DATA_1 [0..172], &buf [0..172]);
+        assert_eq!(&LIVE_DATA_1[0..172], &buf[0..172]);
 
-        let data2 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1 [352..]);
+        let data2 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
 
         {
             buf.truncate(0);
             let mut writer = LiveDataWriter::new(&mut buf);
             writer.write_data(&data2).unwrap();
         }
-        assert_eq!(&LIVE_DATA_1 [352..368], &buf [0..16]);
+        assert_eq!(&LIVE_DATA_1[352..368], &buf[0..16]);
 
-        let data3 = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1 [0..]);
+        let data3 = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
 
         {
             buf.truncate(0);
             let mut writer = LiveDataWriter::new(&mut buf);
             writer.write_data(&data3).unwrap();
         }
-        assert_eq!(&LIVE_TELEGRAM_1 [0..17], &buf [0..17]);
+        assert_eq!(&LIVE_TELEGRAM_1[0..17], &buf[0..17]);
     }
 }
