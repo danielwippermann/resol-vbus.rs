@@ -186,6 +186,9 @@ mod test_data;
 #[cfg(test)]
 mod test_utils;
 
+mod error;
+pub use error::{Error, Result};
+
 pub mod utils;
 
 mod stream_blob_length;
