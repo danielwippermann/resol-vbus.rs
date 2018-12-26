@@ -5,7 +5,7 @@ use std::clone::Clone;
 use std::fmt;
 use std::rc::Rc;
 
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 
 use data::Data;
 use packet::{PacketFieldId, PacketId};
@@ -832,7 +832,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                 }
             }
             Type::DateTime => {
-                let timestamp = UTC.timestamp(self.raw_value + 978_307_200, 0);
+                let timestamp = Utc.timestamp(self.raw_value + 978_307_200, 0);
                 match self.language {
                     Language::En | Language::Fr => {
                         write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))

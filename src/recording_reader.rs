@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::io::Read;
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 
 use blob_reader::BlobReader;
 use data_set::DataSet;
@@ -36,8 +36,8 @@ pub struct RecordingReader<R: Read> {
     current_channel: u8,
     reader: BlobReader<R>,
     previous_length: usize,
-    min_timestamp: Option<DateTime<UTC>>,
-    max_timestamp: Option<DateTime<UTC>>,
+    min_timestamp: Option<DateTime<Utc>>,
+    max_timestamp: Option<DateTime<Utc>>,
 }
 
 impl<R: Read> RecordingReader<R> {
@@ -55,8 +55,8 @@ impl<R: Read> RecordingReader<R> {
     /// Set optional minimum and maximum timestamps for prefiltering data.
     pub fn set_min_max_timestamps(
         &mut self,
-        min_timestamp: Option<DateTime<UTC>>,
-        max_timestamp: Option<DateTime<UTC>>,
+        min_timestamp: Option<DateTime<Utc>>,
+        max_timestamp: Option<DateTime<Utc>>,
     ) {
         self.min_timestamp = min_timestamp;
         self.max_timestamp = max_timestamp;
@@ -91,7 +91,7 @@ impl<R: Read> RecordingReader<R> {
         Ok(&bytes[0..self.previous_length])
     }
 
-    fn read_to_next_data_set_record(&mut self) -> Result<Option<DateTime<UTC>>> {
+    fn read_to_next_data_set_record(&mut self) -> Result<Option<DateTime<Utc>>> {
         let min_timestamp = self.min_timestamp;
         let max_timestamp = self.max_timestamp;
         let has_timestamps = min_timestamp.is_some() || max_timestamp.is_some();

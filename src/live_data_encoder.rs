@@ -75,7 +75,7 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
+    use chrono::{TimeZone, Utc};
 
     use live_data_decoder::data_from_checked_bytes;
 
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_length_from_data() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_bytes_from_data() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);

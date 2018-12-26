@@ -2,7 +2,7 @@
 //! VBus protocol specification into the respective `Data` variants.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 
 use data::Data;
 use datagram::Datagram;
@@ -96,7 +96,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
 }
 
 /// Convert slice of bytes to respective `Data` variant.
-pub fn data_from_checked_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]) -> Data {
+pub fn data_from_checked_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]) -> Data {
     let protocol_version = buf[5];
     let major = protocol_version & 0xF0;
 
@@ -162,7 +162,7 @@ pub fn data_from_checked_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]
 }
 
 /// Convert slice of bytes to respective `Data` variant.
-pub fn data_from_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]) -> Option<Data> {
+pub fn data_from_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]) -> Option<Data> {
     match length_from_bytes(buf) {
         BlobLength(_) => Some(data_from_checked_bytes(timestamp, channel, buf)),
         Partial | Malformed => None,
@@ -171,7 +171,7 @@ pub fn data_from_bytes(timestamp: DateTime<UTC>, channel: u8, buf: &[u8]) -> Opt
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
+    use chrono::TimeZone;
 
     use stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial};
 
@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn test_data_from_checked_bytes() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);

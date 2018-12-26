@@ -1,5 +1,5 @@
 //! A module containing utitlities functions for processing VBus data.
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 
 /// Calc checksum according to VBus protocol version x.0.
 ///
@@ -187,7 +187,7 @@ pub fn calc_crc16(buf: &[u8]) -> u16 {
     crc ^ 0xFFFF
 }
 
-/// Return a UTC timestamp for the given UNIX epoch seconds.
+/// Return a Utc timestamp for the given UNIX epoch seconds.
 ///
 /// # Examples
 ///
@@ -196,6 +196,6 @@ pub fn calc_crc16(buf: &[u8]) -> u16 {
 ///
 /// assert_eq!("2017-01-29 11:22:13 UTC", utc_timestamp(1485688933).to_string());
 /// ```
-pub fn utc_timestamp(secs: i64) -> DateTime<UTC> {
-    UTC.timestamp(secs, 0)
+pub fn utc_timestamp(secs: i64) -> DateTime<Utc> {
+    Utc.timestamp(secs, 0)
 }

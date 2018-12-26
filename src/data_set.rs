@@ -1,12 +1,12 @@
-use std::cmp::{Ord, Ordering};
-use std::hash::Hasher;
-use std::slice::{Iter, IterMut};
+use std::{
+    cmp::{Ord, Ordering},
+    hash::Hasher,
+    slice::{Iter, IterMut},
+};
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 
-use data::Data;
-use id_hash::IdHash;
-use packet::PacketId;
+use crate::{data::Data, id_hash::IdHash, packet::PacketId};
 
 /// A `DataSet` contains a set of unique (non-identical) `Data` values.
 ///
@@ -40,7 +40,7 @@ use packet::PacketId;
 #[derive(Clone, Debug)]
 pub struct DataSet {
     /// The timestamp that corresponds to the contained set of `Data` values.
-    pub timestamp: DateTime<UTC>,
+    pub timestamp: DateTime<Utc>,
     set: Vec<Data>,
 }
 
@@ -48,13 +48,13 @@ impl DataSet {
     /// Construct an empty `DataSet`.
     pub fn new() -> DataSet {
         DataSet {
-            timestamp: UTC::now(),
+            timestamp: Utc::now(),
             set: Vec::new(),
         }
     }
 
     /// Construct a `DataSet` from a list of `Data` values.
-    pub fn from_data(timestamp: DateTime<UTC>, set: Vec<Data>) -> DataSet {
+    pub fn from_data(timestamp: DateTime<Utc>, set: Vec<Data>) -> DataSet {
         DataSet { timestamp, set }
     }
 
@@ -108,7 +108,7 @@ impl DataSet {
     }
 
     /// Remove `Data` values with timestamps older than `min_timestamp`.
-    pub fn remove_data_older_than(&mut self, min_timestamp: DateTime<UTC>) {
+    pub fn remove_data_older_than(&mut self, min_timestamp: DateTime<Utc>) {
         self.set
             .retain(|data| data.as_header().timestamp >= min_timestamp);
     }
@@ -127,7 +127,7 @@ impl DataSet {
 
     /// Find all `Packet` values with timestamps older than `min_timestamp` and set their
     /// `frame_count` to zero effectively hiding their `frame_data` payload.
-    pub fn clear_packets_older_than(&mut self, min_timestamp: DateTime<UTC>) {
+    pub fn clear_packets_older_than(&mut self, min_timestamp: DateTime<Utc>) {
         for data in self.set.iter_mut() {
             if let Data::Packet(ref mut packet) = *data {
                 if packet.header.timestamp < min_timestamp && packet.frame_count > 0 {
@@ -212,18 +212,19 @@ impl AsRef<[Data]> for DataSet {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Duration, TimeZone, UTC};
+    use chrono::{Duration, TimeZone};
 
-    use id_hash::id_hash;
-    use live_data_decoder::data_from_checked_bytes;
+    use crate::{
+        id_hash::id_hash,
+        live_data_decoder::data_from_checked_bytes,
+        test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+    };
 
     use super::*;
 
-    use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
-
     #[test]
     fn test_add_data() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -231,7 +232,7 @@ mod tests {
         let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         assert_eq!(0, data_set.as_data_slice().len());
 
         data_set.add_data(packet_data.clone());
@@ -307,11 +308,11 @@ mod tests {
 
     #[test]
     fn test_add_data_set() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel,
@@ -329,7 +330,7 @@ mod tests {
         ));
 
         let mut other_data_set = DataSet::new();
-        other_data_set.timestamp = UTC.timestamp(0, 0);
+        other_data_set.timestamp = Utc.timestamp(0, 0);
         other_data_set.add_data_set(data_set);
 
         assert_eq!(timestamp, other_data_set.timestamp);
@@ -350,11 +351,11 @@ mod tests {
 
     #[test]
     fn test_remove_data_older_than() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp + Duration::seconds(10),
             channel,
@@ -386,11 +387,11 @@ mod tests {
 
     #[test]
     fn test_clear_packets_older_than() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp + Duration::seconds(10),
             channel,
@@ -424,11 +425,11 @@ mod tests {
 
     #[test]
     fn test_sort() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel + 1,
@@ -530,11 +531,11 @@ mod tests {
 
     #[test]
     fn test_sort_by() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel + 1,
@@ -640,11 +641,11 @@ mod tests {
 
     #[test]
     fn test_id_hash() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = UTC.timestamp(0, 0);
+        data_set.timestamp = Utc.timestamp(0, 0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel,

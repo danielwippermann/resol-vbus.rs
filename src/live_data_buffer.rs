@@ -1,4 +1,4 @@
-use chrono::UTC;
+use chrono::Utc;
 
 use crate::{
     blob_buffer::BlobBuffer,
@@ -68,7 +68,7 @@ impl LiveDataBuffer {
     pub fn read_data(&mut self) -> Option<Data> {
         let channel = self.channel;
         if let Some(bytes) = self.read_bytes() {
-            Some(data_from_checked_bytes(UTC::now(), channel, bytes))
+            Some(data_from_checked_bytes(Utc::now(), channel, bytes))
         } else {
             None
         }

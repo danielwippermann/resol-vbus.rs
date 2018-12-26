@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
-use chrono::UTC;
+use chrono::Utc;
 
 use data::Data;
 use datagram::Datagram;
@@ -40,7 +40,7 @@ impl<R: Read + ReadWithTimeout, W: Write> LiveDataStream<R, W> {
     ) -> Data {
         Data::Datagram(Datagram {
             header: Header {
-                timestamp: UTC::now(),
+                timestamp: Utc::now(),
                 channel: self.channel,
                 destination_address,
                 source_address: self.self_address,
@@ -530,7 +530,7 @@ mod tests {
     ) {
         let data = Data::Datagram(Datagram {
             header: Header {
-                timestamp: UTC::now(),
+                timestamp: Utc::now(),
                 channel: 0,
                 destination_address,
                 source_address,

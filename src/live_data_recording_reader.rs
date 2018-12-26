@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::io::Read;
 
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 
 use data::Data;
 use data_set::DataSet;
@@ -42,10 +42,10 @@ pub struct LiveDataRecordingStats {
 #[derive(Debug)]
 pub struct LiveDataRecordingReader<T: Read> {
     reader: RecordingReader<T>,
-    min_timestamp: Option<DateTime<UTC>>,
-    max_timestamp: Option<DateTime<UTC>>,
+    min_timestamp: Option<DateTime<Utc>>,
+    max_timestamp: Option<DateTime<Utc>>,
     buf: Vec<u8>,
-    timestamp: DateTime<UTC>,
+    timestamp: DateTime<Utc>,
 }
 
 impl<T: Read> LiveDataRecordingReader<T> {
@@ -56,15 +56,15 @@ impl<T: Read> LiveDataRecordingReader<T> {
             min_timestamp: None,
             max_timestamp: None,
             buf: Vec::new(),
-            timestamp: UTC.timestamp(0, 0),
+            timestamp: Utc.timestamp(0, 0),
         }
     }
 
     /// Set optional minimum and maximum timestamps for prefiltering data.
     pub fn set_min_max_timestamps(
         &mut self,
-        min_timestamp: Option<DateTime<UTC>>,
-        max_timestamp: Option<DateTime<UTC>>,
+        min_timestamp: Option<DateTime<Utc>>,
+        max_timestamp: Option<DateTime<Utc>>,
     ) {
         self.min_timestamp = min_timestamp;
         self.max_timestamp = max_timestamp;

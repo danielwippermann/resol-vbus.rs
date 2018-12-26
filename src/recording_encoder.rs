@@ -2,7 +2,7 @@
 //! representation according to the VBus Recording File Format.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 
 use data::Data;
 use header::Header;
@@ -17,7 +17,7 @@ pub fn length_from_data(data: &Data) -> usize {
 }
 
 /// Stores the timestamp in the provided byte slice.
-pub fn bytes_from_timestamp(timestamp: DateTime<UTC>, buf: &mut [u8]) {
+pub fn bytes_from_timestamp(timestamp: DateTime<Utc>, buf: &mut [u8]) {
     let timestamp_s = timestamp.timestamp();
     let timestamp_ms = timestamp.timestamp_subsec_millis();
     let timestamp = timestamp_s * 1000 + i64::from(timestamp_ms);
@@ -26,7 +26,7 @@ pub fn bytes_from_timestamp(timestamp: DateTime<UTC>, buf: &mut [u8]) {
 }
 
 /// Stores the record header in the provided byte slice.
-pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<UTC>, buf: &mut [u8]) {
+pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<Utc>, buf: &mut [u8]) {
     buf[0] = 0xA5;
     buf[1] = typ;
     LittleEndian::write_u16(&mut buf[2..4], length);
@@ -36,7 +36,7 @@ pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<UTC>, buf: &m
 
 /// Stores a "VBus channel marker" record in the provided byte slice.
 pub fn bytes_from_channel(channel: u8, buf: &mut [u8]) {
-    bytes_from_record(0x77, 16, UTC.timestamp(0, 0), buf);
+    bytes_from_record(0x77, 16, Utc.timestamp(0, 0), buf);
     buf[14] = channel;
     buf[15] = 0;
 }
@@ -90,7 +90,7 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
+    use chrono::TimeZone;
 
     use super::*;
 
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_bytes_from_timestamp() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
 
         let mut buf = [0u8; 8];
 
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_bytes_from_record() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
 
         let mut buf = [0u8; 14];
 

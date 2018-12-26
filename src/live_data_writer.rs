@@ -55,7 +55,7 @@ impl<W: Write> AsMut<W> for LiveDataWriter<W> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
+    use chrono::{TimeZone, Utc};
 
     use live_data_decoder::data_from_checked_bytes;
 
@@ -67,7 +67,7 @@ mod tests {
     fn test_write_data() {
         let mut buf = Vec::new();
 
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);

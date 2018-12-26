@@ -362,7 +362,7 @@ impl AsRef<Header> for Data {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, UTC};
+    use chrono::{TimeZone, Utc};
 
     use id_hash::id_hash;
     use live_data_decoder::data_from_checked_bytes;
@@ -373,7 +373,7 @@ mod tests {
 
     #[test]
     fn test_is_packet() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn test_is_datagram() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -403,7 +403,7 @@ mod tests {
 
     #[test]
     fn test_is_telegram() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn test_into_packet() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -433,7 +433,7 @@ mod tests {
 
     #[test]
     fn test_into_datagram() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
@@ -448,7 +448,7 @@ mod tests {
 
     #[test]
     fn test_into_telegram() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
@@ -463,7 +463,7 @@ mod tests {
 
     #[test]
     fn test_as_header() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -508,7 +508,7 @@ mod tests {
         let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
         let tgram = tgram_data.clone().into_telegram();
 
-        let other_timestamp = UTC.timestamp(0, 0);
+        let other_timestamp = Utc.timestamp(0, 0);
 
         // Between variants
         assert_eq!(false, packet_data.eq(&dgram_data));
@@ -622,7 +622,7 @@ mod tests {
 
     #[test]
     fn test_partial_cmp() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -643,7 +643,7 @@ mod tests {
             _ => unreachable!(),
         };
 
-        let other_timestamp = UTC.timestamp(0, 0);
+        let other_timestamp = Utc.timestamp(0, 0);
 
         // Between variants
         assert_eq!(Some(Greater), packet_data.partial_cmp(&dgram_data));
@@ -847,7 +847,7 @@ mod tests {
 
     #[test]
     fn test_id_hash() {
-        let timestamp = UTC.timestamp(1485688933, 0);
+        let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
         let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);

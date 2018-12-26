@@ -1,7 +1,7 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 
 use id_hash::IdHash;
 
@@ -34,7 +34,7 @@ use id_hash::IdHash;
 #[derive(Clone)]
 pub struct Header {
     /// The timestamp when this `Header` was received.
-    pub timestamp: DateTime<UTC>,
+    pub timestamp: DateTime<Utc>,
 
     /// The channel number on which this `Header` was received.
     pub channel: u8,
