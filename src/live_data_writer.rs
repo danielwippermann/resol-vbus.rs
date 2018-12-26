@@ -46,14 +46,17 @@ impl<W: Write> LiveDataWriter<W> {
 
 }
 
+impl<W: Write> AsRef<W> for LiveDataWriter<W> {
+    fn as_ref(&self) -> &W {
+        &self.writer
+    }
+}
 
-#[cfg(test)]
-impl<W: Write> AsMut<W> for LiveDataWriter<W> {
+impl<W: Write> AsMut<W> for LiveDataWriter<W>  {
     fn as_mut(&mut self) -> &mut W {
         &mut self.writer
     }
 }
-
 
 #[cfg(test)]
 mod tests {
