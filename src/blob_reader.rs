@@ -1,11 +1,12 @@
 use std::{
-    io::{Read, Result},
+    io::Read,
     ops::{Deref, DerefMut},
     time::Duration,
 };
 
 use crate::{
     blob_buffer::BlobBuffer,
+    error::Result,
     read_with_timeout::ReadWithTimeout,
 };
 

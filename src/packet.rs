@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use id_hash::IdHash;
@@ -468,9 +468,9 @@ impl ToPacketId for Packet {
 }
 
 
-impl Debug for Packet {
+impl fmt::Debug for Packet {
 
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Packet")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:04X}", self.command))

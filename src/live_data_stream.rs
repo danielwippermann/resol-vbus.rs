@@ -1,10 +1,11 @@
-use std::io::{Read, Result, Write};
+use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
 use chrono::UTC;
 
 use data::Data;
 use datagram::Datagram;
+use error::Result;
 use header::Header;
 use live_data_reader::LiveDataReader;
 use live_data_writer::LiveDataWriter;

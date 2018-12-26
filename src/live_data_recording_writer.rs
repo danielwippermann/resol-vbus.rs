@@ -1,7 +1,8 @@
-use std::io::{Result, Write};
+use std::io::Write;
 
 use chrono::{DateTime, UTC};
 
+use error::Result;
 use recording_encoder::{bytes_from_timestamp, bytes_from_record};
 
 

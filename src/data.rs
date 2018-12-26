@@ -13,9 +13,9 @@ use telegram::Telegram;
 /// # Examples
 ///
 /// ```rust
-/// use std::io::{Read, Result};
+/// use std::io::Read;
 ///
-/// use resol_vbus::LiveDataReader;
+/// use resol_vbus::{LiveDataReader, Result};
 ///
 /// # #[allow(dead_code)]
 /// fn print_data_ids<R: Read>(r: R) -> Result<()> {

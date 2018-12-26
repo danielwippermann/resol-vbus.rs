@@ -1,10 +1,11 @@
 use std::{
-    io::{Error, ErrorKind, Read, Result},
+    io::Read,
     time::{Duration, Instant},
 };
 
 use crate::{
     data::Data,
+    error::{Error, Result},
     live_data_buffer::LiveDataBuffer,
     read_with_timeout::ReadWithTimeout,
 };
@@ -96,7 +97,7 @@ impl<R: Read + ReadWithTimeout> LiveDataReader<R> {
             Some(end) => {
                 let now = Instant::now();
                 if now >= end {
-                    return Err(Error::new(ErrorKind::TimedOut, "Timed out"));
+                    return Err(Error::new("Timed out"));
                 }
                 Some(end - now)
             },

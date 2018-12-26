@@ -1,10 +1,11 @@
 use std::collections::HashSet;
-use std::io::{Read, Result};
+use std::io::Read;
 
 use chrono::{DateTime, TimeZone, UTC};
 
 use data::Data;
 use data_set::DataSet;
+use error::Result;
 use live_data_decoder;
 use recording_decoder;
 use recording_reader::RecordingReader;

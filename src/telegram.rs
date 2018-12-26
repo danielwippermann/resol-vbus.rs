@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use id_hash::IdHash;
@@ -231,9 +231,9 @@ impl IdHash for Telegram {
 }
 
 
-impl Debug for Telegram {
+impl fmt::Debug for Telegram {
 
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Telegram")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:02X}", self.command))

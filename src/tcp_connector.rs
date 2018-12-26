@@ -1,6 +1,7 @@
 use std::net::TcpStream;
-use std::io::{BufRead, BufReader, Error, ErrorKind, Read, Result, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 
+use error::{Error, Result};
 
 /// The `TcpConnector` wraps a `TcpStream` to perform the handshake according to the
 /// "VBus over TCP specification".
@@ -91,9 +92,9 @@ impl TcpConnector {
         if line.starts_with('+') {
             Ok(())
         } else if line.starts_with('-') {
-            Err(Error::new(ErrorKind::Other, line))
+            Err(Error::new(line))
         } else {
-            Err(Error::new(ErrorKind::Other, line))
+            Err(Error::new(line))
         }
     }
 

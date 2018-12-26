@@ -1,6 +1,7 @@
-use std::io::{Result, Write};
+use std::io::Write;
 
 use data::Data;
+use error::Result;
 use live_data_encoder::{length_from_data, bytes_from_data};
 
 

@@ -1,7 +1,8 @@
 use std::cmp::max;
-use std::io::{Result, Write};
+use std::io::Write;
 
 use data_set::DataSet;
+use error::Result;
 use recording_encoder::{length_from_data, bytes_from_record, bytes_from_channel, bytes_from_data};
 
 

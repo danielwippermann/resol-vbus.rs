@@ -1,9 +1,10 @@
 use std::collections::HashSet;
-use std::io::{Read, Result};
+use std::io::Read;
 
 use chrono::{DateTime, UTC};
 
 use blob_reader::BlobReader;
+use error::Result;
 use stream_blob_length::StreamBlobLength::{BlobLength, Partial, Malformed};
 use data_set::DataSet;
 use recording_decoder::{length_from_bytes, timestamp_from_checked_bytes, data_from_bytes};

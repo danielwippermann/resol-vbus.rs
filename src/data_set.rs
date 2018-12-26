@@ -14,9 +14,9 @@ use data::Data;
 /// # Examples
 ///
 /// ```rust
-/// use std::io::{Read, Result};
+/// use std::io::Read;
 ///
-/// use resol_vbus::{DataSet, RecordingReader};
+/// use resol_vbus::{DataSet, RecordingReader, Result};
 ///
 /// # #[allow(dead_code)]
 /// fn print_data_ids<R: Read>(r: R) -> Result<()> {

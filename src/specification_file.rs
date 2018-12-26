@@ -5,16 +5,15 @@
 //!
 //! See the [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
 //! for details.
-use std;
-
 use byteorder::{LittleEndian, ByteOrder};
 
+use error::{Error, Result};
 use utils::{calc_crc16};
 
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
 #[derive(Debug)]
-pub enum Error {
+pub enum ErrorKind {
     /// The data is too small for a valid FILEHEADER.
     InvalidFileHeader,
 
@@ -77,10 +76,9 @@ pub enum Error {
     InvalidPacketTemplateFieldPartTable,
 }
 
-
-/// A specialized Result for this module.
-pub type Result<T> = std::result::Result<T, Error>;
-
+fn err<T>(kind: ErrorKind) -> Result<T> {
+    Err(Error::new(format!("Unable to parse VSF: {:?}", kind)))
+}
 
 fn check_offset(buf: &[u8], offset: usize, length: usize, count: usize) -> bool {
     let end_offset = offset + length * count;
@@ -365,7 +363,7 @@ impl SpecificationFile {
         };
 
         if !check_offset(bytes, 0, 0x10, 1) {
-            Err(Error::InvalidFileHeader)
+            err(ErrorKind::InvalidFileHeader)
         } else {
             let fileheader = slice_entry(bytes, 0, 0x10);
             let checksum_a = LittleEndian::read_u16(&fileheader [0x00..0x02]);
@@ -375,15 +373,15 @@ impl SpecificationFile {
             let specification_offset = LittleEndian::read_i32(&fileheader [0x0C..0x10]) as usize;
 
             if total_length != bytes.len() {
-                Err(Error::InvalidFileHeaderTotalLength)
+                err(ErrorKind::InvalidFileHeaderTotalLength)
             } else if calc_crc16(&bytes [0x04..total_length]) != checksum_a {
-                Err(Error::InvalidFileHeaderChecksumA)
+                err(ErrorKind::InvalidFileHeaderChecksumA)
             } else if checksum_a != checksum_b {
-                Err(Error::InvalidFileHeaderChecksumB)
+                err(ErrorKind::InvalidFileHeaderChecksumB)
             } else if data_version != 1 {
-                Err(Error::InvalidFileHeaderDataVersion)
+                err(ErrorKind::InvalidFileHeaderDataVersion)
             } else if !check_offset(bytes, specification_offset, 0x2C, 1) {
-                Err(Error::InvalidFileHeaderSpecificationOffset)
+                err(ErrorKind::InvalidFileHeaderSpecificationOffset)
             } else {
                 spec_file.parse_specification_block(bytes, specification_offset)?;
                 Ok(spec_file)
@@ -510,15 +508,15 @@ impl SpecificationFile {
         let packet_template_table_offset = LittleEndian::read_i32(&block [0x28..0x2C]) as usize;
 
         if !check_offset(bytes, text_table_offset, 0x04, text_count) {
-            Err(Error::InvalidSpecificationTextTable)
+            err(ErrorKind::InvalidSpecificationTextTable)
         } else if !check_offset(bytes, localized_text_table_offset, 0x0C, localized_text_count) {
-            Err(Error::InvalidSpecificationLocalizedTextTable)
+            err(ErrorKind::InvalidSpecificationLocalizedTextTable)
         } else if !check_offset(bytes, unit_table_offset, 0x10, unit_count) {
-            Err(Error::InvalidSpecificationUnitTable)
+            err(ErrorKind::InvalidSpecificationUnitTable)
         } else if !check_offset(bytes, device_template_table_offset, 0x0C, device_template_count) {
-            Err(Error::InvalidSpecificationDeviceTemplateTable)
+            err(ErrorKind::InvalidSpecificationDeviceTemplateTable)
         } else if !check_offset(bytes, packet_template_table_offset, 0x14, packet_template_count) {
-            Err(Error::InvalidSpecificationPacketTemplateTable)
+            err(ErrorKind::InvalidSpecificationPacketTemplateTable)
         } else {
             self.datecode = datecode;
 
@@ -558,7 +556,7 @@ impl SpecificationFile {
         let string_offset = LittleEndian::read_i32(&block [0x00..0x04]) as usize;
 
         if !check_offset(bytes, string_offset, 0x01, 1) {
-            Err(Error::InvalidTextStringOffset)
+            err(ErrorKind::InvalidTextStringOffset)
         } else {
             let mut string_end = string_offset;
             while string_end < bytes.len() && bytes [string_end] != 0 {
@@ -566,7 +564,7 @@ impl SpecificationFile {
             }
             match str::from_utf8(&bytes [string_offset..string_end]) {
                 Ok(string) => Ok(string.to_string()),
-                Err(_) => Err(Error::InvalidTextContent),
+                Err(_) => err(ErrorKind::InvalidTextContent),
             }
         }
     }
@@ -578,11 +576,11 @@ impl SpecificationFile {
         let text_index_fr = LittleEndian::read_i32(&block [0x08..0x0C]);
 
         if !self.check_text_index(text_index_en) {
-            Err(Error::InvalidLocalizedTextTextIndexEn)
+            err(ErrorKind::InvalidLocalizedTextTextIndexEn)
         } else if !self.check_text_index(text_index_de) {
-            Err(Error::InvalidLocalizedTextTextIndexDe)
+            err(ErrorKind::InvalidLocalizedTextTextIndexDe)
         } else if !self.check_text_index(text_index_fr) {
-            Err(Error::InvalidLocalizedTextTextIndexFr)
+            err(ErrorKind::InvalidLocalizedTextTextIndexFr)
         } else {
             Ok(LocalizedText {
                 text_index_en: TextIndex(text_index_en),
@@ -600,11 +598,11 @@ impl SpecificationFile {
         let unit_text_text_index = LittleEndian::read_i32(&block [0x0C..0x10]);
 
         if !self.check_unit_family_id(unit_family_id) {
-            Err(Error::InvalidUnitUnitFamilyId)
+            err(ErrorKind::InvalidUnitUnitFamilyId)
         } else if !self.check_text_index(unit_code_text_index) {
-            Err(Error::InvalidUnitUnitCodeTextIndex)
+            err(ErrorKind::InvalidUnitUnitCodeTextIndex)
         } else if !self.check_text_index(unit_text_text_index) {
-            Err(Error::InvalidUnitUnitTextTextIndex)
+            err(ErrorKind::InvalidUnitUnitTextTextIndex)
         } else {
             Ok(Unit {
                 unit_id: UnitId(unit_id),
@@ -624,7 +622,7 @@ impl SpecificationFile {
         let name_localized_text_index = LittleEndian::read_i32(&block [0x08..0x0C]);
 
         if !self.check_localized_text_index(name_localized_text_index) {
-            Err(Error::InvalidDeviceTemplateNameLocalizedTextIndex)
+            err(ErrorKind::InvalidDeviceTemplateNameLocalizedTextIndex)
         } else {
             Ok(DeviceTemplate {
                 self_address: self_address,
@@ -647,7 +645,7 @@ impl SpecificationFile {
         let field_table_offset = LittleEndian::read_i32(&block [0x10..0x14]) as usize;
 
         if !check_offset(bytes, field_table_offset, 0x1C, field_count) {
-            Err(Error::InvalidPacketTemplateFieldTable)
+            err(ErrorKind::InvalidPacketTemplateFieldTable)
         } else {
             let mut fields = Vec::<PacketTemplateField>::with_capacity(field_count);
             for index in 0..field_count {
@@ -677,15 +675,15 @@ impl SpecificationFile {
         let part_table_offset = LittleEndian::read_i32(&block [0x18..0x1C]) as usize;
 
         if !self.check_text_index(id_text_index) {
-            Err(Error::InvalidPacketTemplateFieldIdTextIndex)
+            err(ErrorKind::InvalidPacketTemplateFieldIdTextIndex)
         } else if !self.check_localized_text_index(name_localized_text_index) {
-            Err(Error::InvalidPacketTemplateFieldNameLocalizedTextIndex)
+            err(ErrorKind::InvalidPacketTemplateFieldNameLocalizedTextIndex)
         } else if !self.check_unit_id(unit_id) {
-            Err(Error::InvalidPacketTemplateFieldUnitId)
+            err(ErrorKind::InvalidPacketTemplateFieldUnitId)
         } else if !self.check_type_id(type_id) {
-            Err(Error::InvalidPacketTemplateFieldTypeId)
+            err(ErrorKind::InvalidPacketTemplateFieldTypeId)
         } else if !check_offset(bytes, part_table_offset, 0x10, part_count) {
-            Err(Error::InvalidPacketTemplateFieldPartTable)
+            err(ErrorKind::InvalidPacketTemplateFieldPartTable)
         } else {
             let mut parts = Vec::<PacketTemplateFieldPart>::with_capacity(part_count);
             for index in 0..part_count {

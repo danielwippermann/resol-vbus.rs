@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Error, Formatter};
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 use chrono::{DateTime, UTC};
@@ -122,9 +122,9 @@ impl IdHash for Header {
 }
 
 
-impl Debug for Header {
+impl fmt::Debug for Header {
 
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Header")
             .field("timestamp", &self.timestamp)
             .field("channel", &format_args!("0x{:02X}", self.channel))
