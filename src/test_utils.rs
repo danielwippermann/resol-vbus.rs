@@ -1,7 +1,6 @@
-use std::io::{Error, ErrorKind, Read, Result, Write};
-use std::time::Duration;
+#![allow(dead_code)]
 
-use read_with_timeout::ReadWithTimeout;
+use std::io::{Read, Result, Write};
 
 pub struct Buffer {
     bytes: Vec<u8>,
@@ -61,7 +60,9 @@ impl Buffer {
 
 impl Read for Buffer {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        self.read_with_timeout(buf, None)
+        let len = (&self.bytes [self.read_index..]).read(buf)?;
+        self.read_index += len;
+        Ok(len)
     }
 }
 
@@ -74,25 +75,6 @@ impl Write for Buffer {
 
     fn flush(&mut self) -> Result<()> {
         self.bytes.flush()
-    }
-}
-
-impl ReadWithTimeout for Buffer {
-    fn read_with_timeout(&mut self, buf: &mut [u8], timeout: Option<Duration>) -> Result<usize> {
-        self.read_call_count += 1;
-
-        let mut bytes = &self.bytes[self.read_index..];
-        if bytes.len() > 0 {
-            let size = bytes.read(buf)?;
-            self.read_index += size;
-            Ok(size)
-        } else if self.is_eof {
-            Ok(0)
-        } else if timeout.is_some() {
-            Err(Error::new(ErrorKind::WouldBlock, "Simulated timeout"))
-        } else {
-            panic!("Reading empty buffer without timeout");
-        }
     }
 }
 

@@ -1,5 +1,5 @@
 // This is part of resol-vbus.rs.
-// Copyright (c) 2017, Daniel Wippermann.
+// Copyright (c) 2017-2019, Daniel Wippermann.
 // See README.md and LICENSE.txt for details.
 
 //! # resol-vbus.rs
@@ -173,8 +173,9 @@
 //! ```
 
 #![warn(missing_docs)]
+#![deny(bare_trait_objects)]
 #![deny(missing_debug_implementations)]
-// #![deny(warnings)]
+#![deny(warnings)]
 #![allow(clippy::if_same_then_else)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::needless_bool)]
@@ -233,17 +234,11 @@ pub mod live_data_encoder;
 mod live_data_buffer;
 pub use live_data_buffer::LiveDataBuffer;
 
-mod read_with_timeout;
-pub use read_with_timeout::ReadWithTimeout;
-
 mod live_data_reader;
 pub use live_data_reader::LiveDataReader;
 
 mod live_data_writer;
 pub use live_data_writer::LiveDataWriter;
-
-mod live_data_stream;
-pub use live_data_stream::LiveDataStream;
 
 pub mod recording_decoder;
 
