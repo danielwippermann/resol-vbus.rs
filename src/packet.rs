@@ -496,10 +496,26 @@ impl AsRef<Header> for Packet {
 
 #[cfg(test)]
 mod tests {
-    use header::Header;
-    use utils::utc_timestamp;
+    use crate::{
+        error::Error,
+        utils::utc_timestamp,
+    };
 
     use super::*;
+
+    #[test]
+    fn test_packet_id_string() {
+        assert_eq!("11_1213_1415_10_1718", PacketId(0x11, 0x1213, 0x1415, 0x1718).packet_id_string()); 
+    }
+
+    #[test]
+    fn test_packet_id_to_packet_id() {
+        let packet_id = PacketId(0x11, 0x1213, 0x1415, 0x1718);
+
+        let result = packet_id.to_packet_id().expect("Must not fail");
+
+        assert_eq!(packet_id, result);
+    }
 
     #[test]
     fn test_str_to_packet_id() {
@@ -512,53 +528,93 @@ mod tests {
             "11_1213_1415_10_1718_XXX_X_X".to_packet_id().unwrap()
         );
         assert_eq!(
-            "Invalid length of input \"11_1213_1415_10_171\"",
+            Error::new("Invalid length of input \"11_1213_1415_10_171\""),
             "11_1213_1415_10_171".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid length of channel \"111\"",
+            Error::new("Invalid length of channel \"111\""),
             "111_1213_1415_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid characters in channel \"1G\"",
+            Error::new("Invalid characters in channel \"1G\""),
             "1G_1213_1415_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid length of destination address \"12131\"",
+            Error::new("Invalid length of destination address \"12131\""),
             "11_12131_1415_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid characters in destination address \"121G\"",
+            Error::new("Invalid characters in destination address \"121G\""),
             "11_121G_1415_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid length of source address \"14151\"",
+            Error::new("Invalid length of source address \"14151\""),
             "11_1213_14151_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid characters in source address \"141G\"",
+            Error::new("Invalid characters in source address \"141G\""),
             "11_1213_141G_10_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid length of protocol version \"101\"",
+            Error::new("Invalid length of protocol version \"101\""),
             "11_1213_1415_101_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid characters in protocol version \"1G\"",
+            Error::new("Invalid characters in protocol version \"1G\""),
             "11_1213_1415_1G_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Unsupported protocol version 0x20",
+            Error::new("Unsupported protocol version 0x20"),
             "11_1213_1415_20_1718".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid length of command \"17181\"",
+            Error::new("Invalid length of command \"17181\""),
             "11_1213_1415_10_17181".to_packet_id().unwrap_err()
         );
         assert_eq!(
-            "Invalid characters in command \"171G\"",
+            Error::new("Invalid characters in command \"171G\""),
             "11_1213_1415_10_171G".to_packet_id().unwrap_err()
         );
+    }
+
+    #[test]
+    fn test_packet_field_id_packet_id_string() {
+        let packet_field_id = PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "019_2_0");
+
+        let result = packet_field_id.packet_id_string();
+
+        assert_eq!("11_1213_1415_10_1718", result);
+    }
+
+    #[test]
+    fn test_packet_field_id_packet_field_id_string() {
+        let packet_field_id = PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "019_2_0");
+
+        let result = packet_field_id.packet_field_id_string();
+
+        assert_eq!("11_1213_1415_10_1718_019_2_0", result);
+    }
+
+    #[test]
+    fn test_packet_field_id_to_packet_field_id() {
+        let packet_field_id = PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "019_2_0");
+        
+        let result = packet_field_id.to_packet_field_id().expect("Must not fail");
+
+        assert_eq!(packet_field_id, result);
+    }
+
+    #[test]
+    fn test_str_to_packet_field_id() {
+        let packet_field_id_string = "11_1213_1415_10_1718_019_2_0";
+        
+        let result = packet_field_id_string.to_packet_field_id().expect("Must not fail");
+
+        assert_eq!(packet_field_id_string, result.packet_field_id_string());
+
+        let result = "11_1213_1415_10_1718".to_packet_field_id().unwrap_err();
+
+        assert_eq!(Error::new("Invalid length of input \"11_1213_1415_10_1718\""), result);
     }
 
     #[test]

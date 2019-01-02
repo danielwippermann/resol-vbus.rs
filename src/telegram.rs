@@ -254,10 +254,85 @@ impl AsRef<Header> for Telegram {
 
 #[cfg(test)]
 mod tests {
-    use header::Header;
     use utils::utc_timestamp;
 
     use super::*;
+
+    #[test]
+    fn test_frame_count_from_command() {
+        assert_eq!(0, Telegram::frame_count_from_command(0x1F)); 
+        assert_eq!(1, Telegram::frame_count_from_command(0x3F)); 
+        assert_eq!(2, Telegram::frame_count_from_command(0x5F)); 
+        assert_eq!(3, Telegram::frame_count_from_command(0x7F)); 
+    }
+
+    #[test]
+    fn test_frame_count() {
+        let tgram = Telegram {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x36,
+            },
+            command: 0x37,
+            frame_data: [0u8; 21],
+        };
+        
+        assert_eq!(1, tgram.frame_count());
+    }
+
+    #[test]
+    fn test_valid_frame_data_len() {
+        let tgram = Telegram {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x36,
+            },
+            command: 0x37,
+            frame_data: [0u8; 21],
+        };
+
+        assert_eq!(7, tgram.valid_frame_data_len());
+    }
+
+    #[test]
+    fn test_valid_frame_data() {
+        let tgram = Telegram {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x36,
+            },
+            command: 0x37,
+            frame_data: [0u8; 21],
+        };
+
+        assert_eq!(7, tgram.valid_frame_data().len());
+    }
+
+    #[test]
+    fn test_valid_frame_data_mut() {
+        let mut tgram = Telegram {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x36,
+            },
+            command: 0x37,
+            frame_data: [0u8; 21],
+        };
+
+        assert_eq!(7, tgram.valid_frame_data_mut().len());
+    }
 
     #[test]
     fn test_debug_fmt() {

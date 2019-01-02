@@ -11,7 +11,7 @@ use recording_decoder;
 use recording_reader::RecordingReader;
 use stream_blob_length::StreamBlobLength::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct LiveDataRecordingStats {
     total_record_count: usize,
     live_data_record_count: usize,
@@ -370,5 +370,21 @@ mod tests {
 
         let data = ldrr.read_data().unwrap();
         assert_eq!(None, data);
+    }
+
+    #[test]
+    fn test_read_to_stats() {
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        let stats = ldrr.read_to_stats().expect("No error");
+
+        assert_eq!(LiveDataRecordingStats {
+            total_record_count: 18,
+            live_data_record_count: 18,
+            live_data_record_byte_count: 610,
+            malformed_byte_count: 0,
+            data_count: 7,
+            data_byte_count: 610,
+        }, stats);
     }
 }

@@ -44,3 +44,44 @@ from_other_error!(::std::io::Error);
 
 /// A common result type.
 pub type Result<T> = std::result::Result<T, Error>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let error = Error::new("Test");
+
+        assert_eq!("Test", &error.description);
+    }
+
+    #[test]
+    fn test_from_cause() {
+        let cause = Error::new("Cause");
+
+        let error = Error::from_cause(cause);
+
+        assert_eq!("Cause", &error.description);
+    }
+
+    #[test]
+    fn test_display_fmt() {
+        let error = Error::new("Test");
+
+        let result = format!("{}", error);
+
+        assert_eq!("Test", result);
+    }
+
+    #[test]
+    fn test_from_other_error() {
+        use std::io;
+
+        let cause = io::Error::new(io::ErrorKind::Other, "Other error");
+
+        let error = Error::from(cause);
+
+        assert_eq!("Other error", &error.description);
+    }
+}

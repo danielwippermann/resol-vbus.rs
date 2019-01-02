@@ -67,3 +67,53 @@ impl<T: AsRef<Path>> Read for FileListReader<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        let file_list = vec![ "src/stream_blob_length.rs", "src/id_hash.rs" ];
+
+        let flr = FileListReader::new(file_list.clone());
+
+        assert_eq!(file_list, flr.file_list);
+        assert_eq!(0, flr.file_index);
+        assert!(flr.file.is_none());
+    }
+
+    #[test]
+    fn test_read() {
+        let file_list = vec![ "src/stream_blob_length.rs", "src/id_hash.rs" ];
+
+        let mut flr = FileListReader::new(file_list.clone());
+
+        assert_eq!(0, flr.file_index);
+        assert!(flr.file.is_none());
+
+        let mut buf = Vec::new();
+        buf.resize(4096, 0);
+
+        let length = flr.read(&mut buf).expect("No error");
+
+        // NOTE(daniel): assuming that "src/stream_blob_length.rs" does not get larger than 4K
+        assert!((length > 0) && (length < 4096));
+
+        assert_eq!(1, flr.file_index);
+        assert!(flr.file.is_some());
+
+        let length = flr.read(&mut buf).expect("No error");
+
+        // NOTE(daniel): assuming that "src/id_hash.rs" does not get larger than 4K
+        assert!((length > 0) && (length < 4096));
+
+        assert_eq!(2, flr.file_index);
+        assert!(flr.file.is_some());
+
+        let length = flr.read(&mut buf).expect("No error");
+
+        assert_eq!(0, length);
+    }
+
+}

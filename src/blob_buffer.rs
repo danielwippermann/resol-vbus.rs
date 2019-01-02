@@ -82,6 +82,7 @@ mod tests {
         assert_eq!(0, bb.start);
         assert_eq!(0, bb.offset);
         assert_eq!(0, bb.len());
+        assert_eq!(true, bb.is_empty());
 
         bb.extend_from_slice(&[0x00, 0x01, 0x02, 0x03]);
 
@@ -89,6 +90,7 @@ mod tests {
         assert_eq!(0, bb.start);
         assert_eq!(0, bb.offset);
         assert_eq!(4, bb.len());
+        assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x00, 0x01, 0x02, 0x03], &*bb);
 
         bb.consume(2);
@@ -97,6 +99,7 @@ mod tests {
         assert_eq!(2, bb.start);
         assert_eq!(2, bb.offset);
         assert_eq!(2, bb.len());
+        assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x02, 0x03], &*bb);
 
         bb.consume(1);
@@ -105,6 +108,7 @@ mod tests {
         assert_eq!(3, bb.start);
         assert_eq!(3, bb.offset);
         assert_eq!(1, bb.len());
+        assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x03], &*bb);
 
         bb.extend_from_slice(&[0x04, 0x05, 0x06, 0x07]);
@@ -113,6 +117,7 @@ mod tests {
         assert_eq!(0, bb.start);
         assert_eq!(3, bb.offset);
         assert_eq!(5, bb.len());
+        assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x03, 0x04, 0x05, 0x06, 0x07], &*bb);
 
         // Deref trait impl

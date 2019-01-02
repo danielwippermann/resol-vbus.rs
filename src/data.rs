@@ -362,7 +362,7 @@ impl AsRef<Header> for Data {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
+    use chrono::{DateTime, TimeZone, Utc};
 
     use id_hash::id_hash;
     use live_data_decoder::data_from_checked_bytes;
@@ -371,18 +371,30 @@ mod tests {
 
     use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
 
+    fn packet_data(timestamp: DateTime<Utc>, channel: u8) -> Data {
+        data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..])
+    }
+
+    fn datagram_data(timestamp: DateTime<Utc>, channel: u8) -> Data {
+        data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..])
+    }
+
+    fn telegram_data(timestamp: DateTime<Utc>, channel: u8) -> Data {
+        data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..])
+    }
+
     #[test]
     fn test_is_packet() {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         assert_eq!(true, packet_data.is_packet());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         assert_eq!(false, dgram_data.is_packet());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         assert_eq!(false, tgram_data.is_packet());
     }
 
@@ -391,13 +403,13 @@ mod tests {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         assert_eq!(false, packet_data.is_datagram());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         assert_eq!(true, dgram_data.is_datagram());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         assert_eq!(false, tgram_data.is_datagram());
     }
 
@@ -406,13 +418,13 @@ mod tests {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         assert_eq!(false, packet_data.is_telegram());
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         assert_eq!(false, dgram_data.is_telegram());
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         assert_eq!(true, tgram_data.is_telegram());
     }
 
@@ -421,7 +433,7 @@ mod tests {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         let packet = packet_data.into_packet();
 
         assert_eq!(timestamp, packet.header.timestamp);
@@ -432,11 +444,21 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_into_packet_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let dgram_data = datagram_data(timestamp, channel);
+        dgram_data.into_packet();
+    }
+
+    #[test]
     fn test_into_datagram() {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         let dgram = dgram_data.into_datagram();
 
         assert_eq!(timestamp, dgram.header.timestamp);
@@ -447,11 +469,21 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_into_datagram_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let tgram_data = telegram_data(timestamp, channel);
+        tgram_data.into_datagram();
+    }
+
+    #[test]
     fn test_into_telegram() {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         let tgram = tgram_data.into_telegram();
 
         assert_eq!(timestamp, tgram.header.timestamp);
@@ -462,11 +494,21 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_into_telegram_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let packet_data = packet_data(timestamp, channel);
+        packet_data.into_telegram();
+    }
+
+    #[test]
     fn test_as_header() {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
 
         let header = packet_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -475,7 +517,7 @@ mod tests {
         assert_eq!(0x7E11, header.source_address);
         assert_eq!(0x10, header.protocol_version);
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
 
         let header = dgram_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -484,7 +526,7 @@ mod tests {
         assert_eq!(0x7E11, header.source_address);
         assert_eq!(0x20, header.protocol_version);
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
 
         let header = tgram_data.as_header();
         assert_eq!(timestamp, header.timestamp);
@@ -495,17 +537,74 @@ mod tests {
     }
 
     #[test]
+    fn test_as_packet() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let packet_data = packet_data(timestamp, channel);
+        packet_data.as_packet();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_as_packet_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let datagram_data = datagram_data(timestamp, channel);
+        datagram_data.as_packet();
+    }
+
+    #[test]
+    fn test_as_datagram() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let datagram_data = datagram_data(timestamp, channel);
+        datagram_data.as_datagram();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_as_datagram_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let telegram_data = telegram_data(timestamp, channel);
+        telegram_data.as_datagram();
+    }
+
+    #[test]
+    fn test_as_telegram() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let telegram_data = telegram_data(timestamp, channel);
+        telegram_data.as_telegram();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_as_telegram_panic() {
+        let timestamp = Utc.timestamp(1485688933, 0);
+        let channel = 0x11;
+
+        let packet_data = packet_data(timestamp, channel);
+        packet_data.as_telegram();
+    }
+
+    #[test]
     fn test_eq() {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         let packet = packet_data.clone().into_packet();
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         let dgram = dgram_data.clone().into_datagram();
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         let tgram = tgram_data.clone().into_telegram();
 
         let other_timestamp = Utc.timestamp(0, 0);
@@ -625,19 +724,19 @@ mod tests {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let packet_data = packet_data(timestamp, channel);
         let packet = match packet_data {
             Data::Packet(ref packet) => packet,
             _ => unreachable!(),
         };
 
-        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let dgram_data = datagram_data(timestamp, channel);
         let dgram = match dgram_data {
             Data::Datagram(ref dgram) => dgram,
             _ => unreachable!(),
         };
 
-        let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let tgram_data = telegram_data(timestamp, channel);
         let tgram = match tgram_data {
             Data::Telegram(ref tgram) => tgram,
             _ => unreachable!(),
@@ -850,17 +949,17 @@ mod tests {
         let timestamp = Utc.timestamp(1485688933, 0);
         let channel = 0x11;
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let data = packet_data(timestamp, channel);
 
         let result = id_hash(&data);
         assert_eq!(541127499104566154, result);
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+        let data = datagram_data(timestamp, channel);
 
         let result = id_hash(&data);
         assert_eq!(6066488998843577430, result);
 
-        let data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
+        let data = telegram_data(timestamp, channel);
 
         let result = id_hash(&data);
         assert_eq!(2688669052981416192, result);
