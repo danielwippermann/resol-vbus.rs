@@ -1,8 +1,11 @@
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use header::Header;
-use id_hash::IdHash;
+use crate::{
+    error::Result,
+    header::Header,
+    id_hash::IdHash,
+};
 
 /// A tuple of identification information about a `Packet` value.
 ///
@@ -36,11 +39,11 @@ impl PacketId {
 /// A trait to get a `PacketId` for a given value.
 pub trait ToPacketId {
     /// Get the `PacketId` for a given value.
-    fn to_packet_id(&self) -> Result<PacketId, String>;
+    fn to_packet_id(&self) -> Result<PacketId>;
 }
 
 impl ToPacketId for PacketId {
-    fn to_packet_id(&self) -> Result<PacketId, String> {
+    fn to_packet_id(&self) -> Result<PacketId> {
         Ok(*self)
     }
 }
@@ -55,24 +58,24 @@ impl ToPacketId for str {
     ///
     /// assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), "11_1213_1415_10_1718".to_packet_id().unwrap());
     /// ```
-    fn to_packet_id(&self) -> Result<PacketId, String> {
+    fn to_packet_id(&self) -> Result<PacketId> {
         let is_not_hex_char = |c| match c {
             '0'...'9' | 'A'...'F' | 'a'...'f' => false,
             _ => true,
         };
 
         if self.len() < 20 {
-            return Err(format!("Invalid length of input {:?}", self));
+            return Err(format!("Invalid length of input {:?}", self).into());
         }
 
         let mut parts = self.split('_');
 
         let channel_str = parts.next().unwrap();
         if channel_str.len() != 2 {
-            return Err(format!("Invalid length of channel {:?}", channel_str));
+            return Err(format!("Invalid length of channel {:?}", channel_str).into());
         }
         if channel_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in channel {:?}", channel_str));
+            return Err(format!("Invalid characters in channel {:?}", channel_str).into());
         }
         let channel = u8::from_str_radix(channel_str, 16).unwrap();
 
@@ -81,13 +84,13 @@ impl ToPacketId for str {
             return Err(format!(
                 "Invalid length of destination address {:?}",
                 destination_address_str
-            ));
+            ).into());
         }
         if destination_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in destination address {:?}",
                 destination_address_str
-            ));
+            ).into());
         }
         let destination_address = u16::from_str_radix(destination_address_str, 16).unwrap();
 
@@ -96,13 +99,13 @@ impl ToPacketId for str {
             return Err(format!(
                 "Invalid length of source address {:?}",
                 source_address_str
-            ));
+            ).into());
         }
         if source_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in source address {:?}",
                 source_address_str
-            ));
+            ).into());
         }
         let source_address = u16::from_str_radix(source_address_str, 16).unwrap();
 
@@ -111,28 +114,28 @@ impl ToPacketId for str {
             return Err(format!(
                 "Invalid length of protocol version {:?}",
                 protocol_version_str
-            ));
+            ).into());
         }
         if protocol_version_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in protocol version {:?}",
                 protocol_version_str
-            ));
+            ).into());
         }
         let protocol_version = u8::from_str_radix(protocol_version_str, 16).unwrap();
         if (protocol_version & 0xF0) != 0x10 {
             return Err(format!(
                 "Unsupported protocol version 0x{:02X}",
                 protocol_version
-            ));
+            ).into());
         }
 
         let command_str = parts.next().unwrap();
         if command_str.len() != 4 {
-            return Err(format!("Invalid length of command {:?}", command_str));
+            return Err(format!("Invalid length of command {:?}", command_str).into());
         }
         if command_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in command {:?}", command_str));
+            return Err(format!("Invalid characters in command {:?}", command_str).into());
         }
         let command = u16::from_str_radix(command_str, 16).unwrap();
 
@@ -187,11 +190,11 @@ impl<'a> PacketFieldId<'a> {
 /// A trait to get a `PacketFieldId` for a given value.
 pub trait ToPacketFieldId {
     /// Get the `PacketFieldId` for a given value.
-    fn to_packet_field_id(&self) -> Result<PacketFieldId, String>;
+    fn to_packet_field_id(&self) -> Result<PacketFieldId>;
 }
 
 impl<'a> ToPacketFieldId for PacketFieldId<'a> {
-    fn to_packet_field_id(&self) -> Result<PacketFieldId, String> {
+    fn to_packet_field_id(&self) -> Result<PacketFieldId> {
         Ok(*self)
     }
 }
@@ -206,9 +209,9 @@ impl ToPacketFieldId for str {
     ///
     /// assert_eq!(PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "012_4_0"), "11_1213_1415_10_1718_012_4_0".to_packet_field_id().unwrap());
     /// ```
-    fn to_packet_field_id(&self) -> Result<PacketFieldId, String> {
+    fn to_packet_field_id(&self) -> Result<PacketFieldId> {
         if self.len() < 21 {
-            return Err(format!("Invalid length of input {:?}", self));
+            return Err(format!("Invalid length of input {:?}", self).into());
         }
 
         let packet_id = self.to_packet_id()?;
@@ -458,7 +461,7 @@ impl IdHash for Packet {
 }
 
 impl ToPacketId for Packet {
-    fn to_packet_id(&self) -> Result<PacketId, String> {
+    fn to_packet_id(&self) -> Result<PacketId> {
         Ok(self.packet_id())
     }
 }
