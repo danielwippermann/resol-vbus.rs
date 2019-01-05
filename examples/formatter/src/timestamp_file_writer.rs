@@ -1,31 +1,30 @@
-use std::fs::File;
-use std::io::{Error, ErrorKind, Result, Write};
+use std::{
+    fs::File,
+    io::{Error, ErrorKind, Result, Write},
+};
 
-use resol_vbus::chrono::{DateTime, UTC};
-
+use resol_vbus::chrono::{DateTime, Utc};
 
 pub struct TimestampFileWriter {
     filename_pattern: String,
-    timestamp: DateTime<UTC>,
+    timestamp: DateTime<Utc>,
     timestamp_changed: bool,
     current_filename: Option<String>,
     current_file: Option<File>,
 }
 
-
 impl TimestampFileWriter {
-
     pub fn new(filename_pattern: String) -> TimestampFileWriter {
         TimestampFileWriter {
             filename_pattern: filename_pattern,
-            timestamp: UTC::now(),
+            timestamp: Utc::now(),
             timestamp_changed: true,
             current_filename: None,
             current_file: None,
         }
     }
 
-    pub fn set_timestamp(&mut self, timestamp: DateTime<UTC>) -> Result<bool> {
+    pub fn set_timestamp(&mut self, timestamp: DateTime<Utc>) -> Result<bool> {
         self.timestamp = timestamp;
         self.timestamp_changed = true;
 
@@ -34,8 +33,8 @@ impl TimestampFileWriter {
 
     pub fn filename(&self) -> Option<&str> {
         match self.current_filename {
+            Some(ref s) => Some(s.as_str()),
             None => None,
-            Some(ref filename) => Some(filename),
         }
     }
 
@@ -58,12 +57,9 @@ impl TimestampFileWriter {
             Ok(false)
         }
     }
-
 }
 
-
 impl Write for TimestampFileWriter {
-
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         self.check_timestamp_change()?;
 
@@ -81,5 +77,4 @@ impl Write for TimestampFileWriter {
             Ok(())
         }
     }
-
 }

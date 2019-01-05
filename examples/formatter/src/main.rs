@@ -1,91 +1,80 @@
-extern crate clap;
-extern crate env_logger;
-#[macro_use] extern crate log;
-extern crate resol_vbus;
+use std::{fs::File, io::Read};
 
-
-use std::fs::{File};
-use std::io::Read;
-
-use clap::{Arg, App};
-
-use resol_vbus::*;
-use resol_vbus::chrono::{DateTime, Duration, Local, UTC};
-
+use clap::{App, Arg};
+use log::{log, trace};
+use resol_vbus::{
+    chrono::{DateTime, Duration, Local, Utc},
+    *,
+};
 
 mod app_error;
-use app_error::{AppError, Result};
-
-mod field_iterator;
-
-mod timestamp_interval;
-
-mod timestamp_file_writer;
-
-mod data_set_reader;
-
 mod config;
-use config::Config;
-
-mod stats_generator;
-use stats_generator::print_stats;
-
-mod packet_list_generator;
-use packet_list_generator::print_data_set_packets;
-
-mod field_list_generator;
-use field_list_generator::print_data_set_fields;
-
-mod filter_template_generator;
-use filter_template_generator::print_filter_template;
-
 mod csv_generator;
-use csv_generator::convert_to_text_data;
-
+mod data_set_reader;
+mod field_iterator;
+mod field_list_generator;
+mod filter_template_generator;
+mod packet_list_generator;
 mod simple_json_generator;
+mod stats_generator;
+mod timestamp_file_writer;
+mod timestamp_interval;
+mod vbus_generator;
 
+use crate::{
+    app_error::{Error, Result},
+    config::Config,
+    csv_generator::convert_to_text_data,
+    field_list_generator::print_data_set_fields,
+    filter_template_generator::print_filter_template,
+    packet_list_generator::print_data_set_packets,
+    stats_generator::print_stats,
+};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum SourceType {
     Type44,
     Type88,
 }
 
-
-fn read_topology_data_set(input_filenames: Vec<String>, min_timestamp: Option<DateTime<UTC>>, max_timestamp: Option<DateTime<UTC>>) -> Result<(SourceType, DataSet)> {
+fn read_topology_data_set(
+    input_filenames: Vec<String>,
+    min_timestamp: Option<DateTime<Utc>>,
+    max_timestamp: Option<DateTime<Utc>>,
+) -> Result<(SourceType, DataSet)> {
     let flr = FileListReader::new(input_filenames.clone());
     let mut rr = RecordingReader::new(flr);
 
     let record = rr.read_record()?;
     if record.len() < 2 {
-        Err(AppError::from("No valid record found in file"))
+        Err(Error::from("No valid record found in file"))
     } else {
-        match record [1] {
+        match record[1] {
             0x44 => {
-                let flr = FileListReader::new(input_filenames.clone());
+                let flr = FileListReader::new(input_filenames);
                 let mut rr = RecordingReader::new(flr);
                 rr.set_min_max_timestamps(min_timestamp, max_timestamp);
 
                 let topology_data_set = rr.read_topology_data_set()?;
 
                 Ok((SourceType::Type44, topology_data_set))
-            },
+            }
             0x88 => {
-                let flr = FileListReader::new(input_filenames.clone());
+                let flr = FileListReader::new(input_filenames);
                 let mut rr = LiveDataRecordingReader::new(flr);
                 rr.set_min_max_timestamps(min_timestamp, max_timestamp);
 
                 let topology_data_set = rr.read_topology_data_set()?;
 
                 Ok((SourceType::Type88, topology_data_set))
-            },
-            _ => {
-                Err(AppError::from(format!("Unexpected record type 0x{:02X}", record [1])))
             }
+            _ => Err(Error::from(format!(
+                "Unexpected record type 0x{:02X}",
+                record[1]
+            ))),
         }
     }
 }
-
 
 fn process_data_set_stream(typ: &str, config: &mut Config) -> Result<bool> {
     let mut handled = true;
@@ -96,12 +85,12 @@ fn process_data_set_stream(typ: &str, config: &mut Config) -> Result<bool> {
         "filter-template" => print_filter_template(config),
         "csv" => convert_to_text_data(config)?,
         "simple-json" => simple_json_generator::generate(config)?,
+        "vbus" => vbus_generator::generate(config)?,
         _ => handled = false,
     }
 
     Ok(handled)
 }
-
 
 fn run() -> Result<()> {
     env_logger::init().unwrap();
@@ -112,58 +101,78 @@ fn run() -> Result<()> {
         .version("1.0")
         .author("Daniel Wippermann <Daniel.Wippermann@gmail.com>")
         .about("Formats recorded VBus data")
-        .arg(Arg::with_name("type")
-            .help("Sets the output type")
-            .required(true)
-            .takes_value(true)
-            .value_name("TYPE")
-            .possible_values(&[
-                "stats",
-                "packets",
-                "fields",
-                "filter-template",
-                "csv",
-                "simple-json",
-            ]))
-        .arg(Arg::with_name("sieve_interval")
-            .help("Sieves input data and removes multiple data sets within the same interval")
-            .long("sieve-interval")
-            .takes_value(true)
-            .value_name("SECONDS"))
-        .arg(Arg::with_name("ttl")
-            .help("Remove data from data sets if it was not updated for this amount of time")
-            .long("ttl")
-            .takes_value(true)
-            .value_name("SECONDS"))
-        .arg(Arg::with_name("min_timestamp")
-            .help("Ignore data sets before this point in time")
-            .long("min-timestamp")
-            .takes_value(true)
-            .value_name("DATETIME"))
-        .arg(Arg::with_name("max_timestamp")
-            .help("Ignore data sets after this point in time")
-            .long("max-timestamp")
-            .takes_value(true)
-            .value_name("DATETIME"))
-        .arg(Arg::with_name("vsf_filename")
-            .help("Location of the VSF file")
-            .long("vsf")
-            .takes_value(true)
-            .value_name("FILENAME"))
-        .arg(Arg::with_name("language")
-            .help("Language")
-            .long("language")
-            .takes_value(true)
-            .value_name("LANGUAGE"))
-        .arg(Arg::with_name("output_pattern")
-            .help("Output filename pattern, optionally containing strftime placeholders")
-            .long("output")
-            .takes_value(true)
-            .value_name("PATTERN"))
-        .arg(Arg::with_name("INPUT")
-            .help("Sets the input files to use")
-            .required(true)
-            .multiple(true))
+        .arg(
+            Arg::with_name("type")
+                .help("Sets the output type")
+                .required(true)
+                .takes_value(true)
+                .value_name("TYPE")
+                .possible_values(&[
+                    "raw-stats",
+                    "stats",
+                    "packets",
+                    "fields",
+                    "filter-template",
+                    "csv",
+                    "simple-json",
+                    "vbus",
+                ]),
+        )
+        .arg(
+            Arg::with_name("sieve_interval")
+                .help("Sieves input data and removes multiple data sets within the same interval")
+                .long("sieve-interval")
+                .takes_value(true)
+                .value_name("SECONDS"),
+        )
+        .arg(
+            Arg::with_name("ttl")
+                .help("Remove data from data sets if it was not updated for this amount of time")
+                .long("ttl")
+                .takes_value(true)
+                .value_name("SECONDS"),
+        )
+        .arg(
+            Arg::with_name("min_timestamp")
+                .help("Ignore data sets before this point in time")
+                .long("min-timestamp")
+                .takes_value(true)
+                .value_name("DATETIME"),
+        )
+        .arg(
+            Arg::with_name("max_timestamp")
+                .help("Ignore data sets after this point in time")
+                .long("max-timestamp")
+                .takes_value(true)
+                .value_name("DATETIME"),
+        )
+        .arg(
+            Arg::with_name("vsf_filename")
+                .help("Location of the VSF file")
+                .long("vsf")
+                .takes_value(true)
+                .value_name("FILENAME"),
+        )
+        .arg(
+            Arg::with_name("language")
+                .help("Language")
+                .long("language")
+                .takes_value(true)
+                .value_name("LANGUAGE"),
+        )
+        .arg(
+            Arg::with_name("output_pattern")
+                .help("Output filename pattern, optionally containing strftime placeholders")
+                .long("output")
+                .takes_value(true)
+                .value_name("PATTERN"),
+        )
+        .arg(
+            Arg::with_name("INPUT")
+                .help("Sets the input files to use")
+                .required(true)
+                .multiple(true),
+        )
         .get_matches();
 
     let typ = matches.value_of("type").unwrap();
@@ -210,7 +219,11 @@ fn run() -> Result<()> {
 
     let output_pattern = matches.value_of("output_pattern");
 
-    let input_filenames = matches.values_of("INPUT").unwrap().map(|s| s.to_string()).collect::<Vec<_>>();
+    let input_filenames = matches
+        .values_of("INPUT")
+        .unwrap()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
 
     let spec_file = match vsf_filename {
         Some(filename) => {
@@ -219,16 +232,15 @@ fn run() -> Result<()> {
             let mut buf = Vec::new();
             let size = f.read_to_end(&mut buf)?;
 
-            SpecificationFile::from_bytes(&buf [0..size])?
-        },
-        None => {
-            SpecificationFile::new_default()
+            SpecificationFile::from_bytes(&buf[0..size])?
         }
+        None => SpecificationFile::new_default(),
     };
 
     let spec = Specification::from_file(spec_file, language);
 
-    let (source_type, topology_data_set) = read_topology_data_set(input_filenames.clone(), min_timestamp, max_timestamp)?;
+    let (source_type, topology_data_set) =
+        read_topology_data_set(input_filenames.clone(), min_timestamp, max_timestamp)?;
 
     let flr = FileListReader::new(input_filenames.clone());
 
@@ -257,22 +269,27 @@ fn run() -> Result<()> {
         let mut ldrr = LiveDataRecordingReader::new(flr);
         ldrr.set_min_max_timestamps(min_timestamp, max_timestamp);
 
-        let mut config = Config {
-            sieve_interval: sieve_interval,
-            ttl: ttl_duration,
-            min_timestamp: min_timestamp,
-            max_timestamp: max_timestamp,
-            language: language,
-            specification: &spec,
-            topology_data_set: &topology_data_set,
-            data_set_reader: &mut ldrr,
-            output_pattern: output_pattern,
-        };
-
-        if process_data_set_stream(typ, &mut config)? {
-            // nop
+        if typ == "raw-stats" {
+            let stats = ldrr.read_to_stats()?;
+            println!("{:?}", stats);
         } else {
-            panic!("Unsupported output type {} for Type 0x88 stream", typ);
+            let mut config = Config {
+                sieve_interval: sieve_interval,
+                ttl: ttl_duration,
+                min_timestamp: min_timestamp,
+                max_timestamp: max_timestamp,
+                language: language,
+                specification: &spec,
+                topology_data_set: &topology_data_set,
+                data_set_reader: &mut ldrr,
+                output_pattern: output_pattern,
+            };
+
+            if process_data_set_stream(typ, &mut config)? {
+                // nop
+            } else {
+                panic!("Unsupported output type {} for Type 0x88 stream", typ);
+            }
         }
     } else {
         panic!("Unsupported source record type {:?}", source_type);
@@ -284,7 +301,6 @@ fn run() -> Result<()> {
 
     Ok(())
 }
-
 
 fn main() {
     run().unwrap();

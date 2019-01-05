@@ -1,8 +1,6 @@
 use resol_vbus::*;
 
-use app_error::Result;
-use config::Config;
-
+use crate::{app_error::Result, config::Config};
 
 pub fn print_stats(config: &mut Config) -> Result<()> {
     let dsr = &mut config.data_set_reader;
@@ -34,7 +32,11 @@ pub fn print_stats(config: &mut Config) -> Result<()> {
         println!("Data IDs:");
         for data in config.topology_data_set.as_data_slice() {
             let description = match *data {
-                Data::Packet(ref packet) => config.specification.get_packet_spec_by_id(packet.packet_id()).name.to_owned(),
+                Data::Packet(ref packet) => config
+                    .specification
+                    .get_packet_spec_by_id(packet.packet_id())
+                    .name
+                    .to_owned(),
                 _ => "".to_owned(),
             };
             println!("- {}: {}", data.id_string(), description);

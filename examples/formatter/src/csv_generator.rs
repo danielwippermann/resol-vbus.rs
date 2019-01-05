@@ -1,13 +1,11 @@
 use std::io::Write;
 
-use resol_vbus::chrono::{Local};
+use resol_vbus::chrono::Local;
 
-use app_error::Result;
-use config::Config;
-use field_iterator::*;
-use timestamp_file_writer::TimestampFileWriter;
-use timestamp_interval::TimestampInterval;
-
+use crate::{
+    app_error::Result, config::Config, field_iterator::*,
+    timestamp_file_writer::TimestampFileWriter, timestamp_interval::TimestampInterval,
+};
 
 pub fn convert_to_text_data(config: &mut Config) -> Result<()> {
     let dsr = &mut config.data_set_reader;

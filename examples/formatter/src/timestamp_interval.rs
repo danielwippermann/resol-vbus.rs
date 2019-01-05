@@ -1,14 +1,11 @@
 use resol_vbus::chrono::{DateTime, Duration, Local};
 
-
 pub struct TimestampInterval {
     interval: Option<Duration>,
     last_interval: Option<i64>,
 }
 
-
 impl TimestampInterval {
-
     pub fn new(interval: Option<Duration>) -> TimestampInterval {
         TimestampInterval {
             interval: interval,
@@ -32,5 +29,4 @@ impl TimestampInterval {
             true
         }
     }
-
 }

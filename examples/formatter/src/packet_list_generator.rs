@@ -1,8 +1,9 @@
 use resol_vbus::*;
 
-use config::Config;
-use field_iterator::{AllFieldsIterator, FieldIterator};
-
+use crate::{
+    config::Config,
+    field_iterator::{AllFieldsIterator, FieldIterator},
+};
 
 pub fn print_data_set_packets(config: &mut Config) {
     let mut last_packet_id = None;
@@ -15,9 +16,14 @@ pub fn print_data_set_packets(config: &mut Config) {
         if last_packet_id != Some(packet_id) {
             last_packet_id = Some(packet_id);
 
-            println!("PacketId(0x{:02X}, 0x{:04X}, 0x{:04X}, 0x{:04X}),  // {}",
-            packet_id.0, packet_id.1, packet_id.2, packet_id.3, field.packet_spec().name);
+            println!(
+                "PacketId(0x{:02X}, 0x{:04X}, 0x{:04X}, 0x{:04X}),  // {}",
+                packet_id.0,
+                packet_id.1,
+                packet_id.2,
+                packet_id.3,
+                field.packet_spec().name
+            );
         }
     }
-
 }

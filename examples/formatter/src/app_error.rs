@@ -1,58 +1,35 @@
-use std;
-use chrono;
-use resol_vbus;
-
+use std::fmt;
 
 #[derive(Debug)]
-pub enum AppError {
-    GenericString(String),
-    IoError(std::io::Error),
-    NumParseIntError(std::num::ParseIntError),
-    ChronoParseError(chrono::ParseError),
-    ResolVBusSpecFileError(resol_vbus::specification_file::Error),
-}
+pub struct Error(String);
 
-
-impl From<String> for AppError {
-    fn from(err: String) -> AppError {
-        AppError::GenericString(err)
+impl Error {
+    pub fn new(description: String) -> Error {
+        Error(description)
     }
 }
 
-
-impl<'a> From<&'a str> for AppError {
-    fn from(err: &'a str) -> AppError {
-        AppError::GenericString(err.to_owned())
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(&self.0)
     }
 }
 
+impl std::error::Error for Error {}
 
-impl From<std::io::Error> for AppError {
-    fn from(err: std::io::Error) -> AppError {
-        AppError::IoError(err)
+pub trait ErrorCause: fmt::Display {}
+
+impl<T: ErrorCause> From<T> for Error {
+    fn from(cause: T) -> Error {
+        Error::new(format!("{}", cause))
     }
 }
 
+impl ErrorCause for &'static str {}
+impl ErrorCause for String {}
+impl ErrorCause for std::io::Error {}
+impl ErrorCause for std::num::ParseIntError {}
+impl ErrorCause for resol_vbus::chrono::format::ParseError {}
+impl ErrorCause for resol_vbus::Error {}
 
-impl From<std::num::ParseIntError> for AppError {
-    fn from(err: std::num::ParseIntError) -> AppError {
-        AppError::NumParseIntError(err)
-    }
-}
-
-
-impl From<chrono::ParseError> for AppError {
-    fn from(err: chrono::ParseError) -> AppError {
-        AppError::ChronoParseError(err)
-    }
-}
-
-
-impl From<resol_vbus::specification_file::Error> for AppError {
-    fn from(err: resol_vbus::specification_file::Error) -> AppError {
-        AppError::ResolVBusSpecFileError(err)
-    }
-}
-
-
-pub type Result<T> = std::result::Result<T, AppError>;
+pub type Result<T> = std::result::Result<T, Error>;

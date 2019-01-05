@@ -1,8 +1,9 @@
 use resol_vbus::*;
 
-use config::Config;
-use field_iterator::{AllFieldsIterator, FieldIterator};
-
+use crate::{
+    config::Config,
+    field_iterator::{AllFieldsIterator, FieldIterator},
+};
 
 pub fn print_filter_template(config: &mut Config) {
     let field_iterator = AllFieldsIterator::new(config.specification);
