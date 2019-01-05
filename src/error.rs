@@ -1,7 +1,7 @@
 use std::{error::Error as StdError, fmt};
 
 /// A common error type.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Error {
     description: String,
 }
@@ -17,7 +17,7 @@ impl Error {
     /// Construct a new `Error` using the provided cause's description.
     pub fn from_cause<T: StdError>(cause: T) -> Error {
         Error {
-            description: cause.description().to_string(),
+            description: format!("{}", cause),
         }
     }
 }
@@ -30,11 +30,23 @@ impl fmt::Display for Error {
 
 impl StdError for Error {}
 
+impl From<&str> for Error {
+    fn from(cause: &str) -> Error {
+        Error::new(cause)
+    }
+}
+
+impl From<String> for Error {
+    fn from(cause: String) -> Error {
+        Error::new(cause)
+    }
+}
+
 macro_rules! from_other_error {
     ($type:path) => {
         impl From<$type> for Error {
             fn from(cause: $type) -> Error {
-                Error::new(cause.description().to_string())
+                Error::from_cause(cause)
             }
         }
     };
