@@ -43,55 +43,6 @@
 //! * [RESOL DL2 (v2) & DL3 Data Download API](http://danielwippermann.github.io/resol-vbus/dlx-data-download-api.html)
 //!
 //!
-//! ## Examples
-//!
-//! ### Recorder of live VBus data into a persistent file format
-//!
-//! ```rust,no_run
-//! //! A recorder of live VBus data into the binary recorded VBus file format.
-//! extern crate resol_vbus;
-//!
-//!
-//! use std::fs::File;
-//! use std::net::TcpStream;
-//!
-//! use resol_vbus::*;
-//!
-//!
-//!
-//! fn main() {
-//!     // Create a TCP connection to the DL2
-//!     let stream = TcpStream::connect("192.168.178.101:7053").expect("Unable to connect to DL2");
-//!
-//!     // Use a `TcpConnector` to perform the login handshake into the DL2
-//!     let mut connector = TcpConnector::new(stream);
-//!     connector.password = "vbus".to_owned();
-//!     connector.connect().expect("Unable to connect to DL2");
-//!
-//!     // Get back the original TCP connection and hand it to a `LiveDataReader`
-//!     let stream = connector.into_inner();
-//!     let mut ldr = LiveDataReader::new(0, stream);
-//!
-//!     // Create an recording file and hand it to a `RecordingWriter`
-//!     let file = File::create("test.vbus").expect("Unable to create output file");
-//!     let mut rw = RecordingWriter::new(file);
-//!
-//!     // Read VBus `Data` values from the `LiveDataReader`
-//!     while let Some(data) = ldr.read_data().expect("Unable to read data") {
-//!         println!("{}", data.id_string());
-//!
-//!         // Add `Data` value into `DataSet` to be stored
-//!         let mut data_set = DataSet::new();
-//!         data_set.timestamp = data.as_ref().timestamp;
-//!         data_set.add_data(data);
-//!
-//!         // Write the `DataSet` into the `RecordingWriter` for permanent storage
-//!         rw.write_data_set(&data_set).expect("Unable to write data set");
-//!     }
-//! }
-//! ```
-//!
-//!
 //! ### Converter for recorded VBus data to CSV.
 //!
 //! ```rust
@@ -183,8 +134,7 @@
 #![allow(clippy::trivially_copy_pass_by_ref)]
 #![allow(clippy::write_with_newline)]
 
-extern crate byteorder;
-pub extern crate chrono;
+pub use chrono;
 
 #[cfg(test)]
 mod test_data;
@@ -192,78 +142,53 @@ mod test_data;
 #[cfg(test)]
 mod test_utils;
 
+mod blob_buffer;
+mod blob_reader;
+mod data;
+mod data_set;
+mod datagram;
 mod error;
-pub use error::{Error, Result};
-
+mod file_list_reader;
+mod header;
+mod id_hash;
+mod live_data_buffer;
+pub mod live_data_decoder;
+pub mod live_data_encoder;
+mod live_data_reader;
+mod live_data_recording_reader;
+mod live_data_recording_writer;
+mod live_data_writer;
+mod packet;
+pub mod recording_decoder;
+pub mod recording_encoder;
+mod recording_reader;
+mod recording_writer;
+pub mod specification;
+pub mod specification_file;
+mod stream_blob_length;
+mod telegram;
 pub mod utils;
 
-mod stream_blob_length;
-pub use stream_blob_length::StreamBlobLength;
-
-mod blob_buffer;
-pub use blob_buffer::BlobBuffer;
-
-mod blob_reader;
-pub use blob_reader::BlobReader;
-
-mod id_hash;
-pub use id_hash::{id_hash, IdHash};
-
-mod header;
-pub use header::Header;
-
-mod packet;
-pub use packet::{Packet, PacketFieldId, PacketId, ToPacketFieldId, ToPacketId};
-
-mod datagram;
-pub use datagram::Datagram;
-
-mod telegram;
-pub use telegram::Telegram;
-
-mod data;
-pub use data::Data;
-
-mod data_set;
-pub use data_set::DataSet;
-
-pub mod live_data_decoder;
-
-pub mod live_data_encoder;
-
-mod live_data_buffer;
-pub use live_data_buffer::LiveDataBuffer;
-
-mod live_data_reader;
-pub use live_data_reader::LiveDataReader;
-
-mod live_data_writer;
-pub use live_data_writer::LiveDataWriter;
-
-pub mod recording_decoder;
-
-pub mod recording_encoder;
-
-mod recording_reader;
-pub use recording_reader::RecordingReader;
-
-mod recording_writer;
-pub use recording_writer::RecordingWriter;
-
-mod live_data_recording_reader;
-pub use live_data_recording_reader::LiveDataRecordingReader;
-
-mod live_data_recording_writer;
-pub use live_data_recording_writer::LiveDataRecordingWriter;
-
-pub mod specification_file;
-pub use specification_file::{Language, SpecificationFile};
-
-pub mod specification;
-pub use specification::Specification;
-
-mod file_list_reader;
-pub use file_list_reader::FileListReader;
-
-mod tcp_connector;
-pub use tcp_connector::TcpConnector;
+pub use crate::{
+    blob_buffer::BlobBuffer,
+    blob_reader::BlobReader,
+    data::Data,
+    data_set::DataSet,
+    datagram::Datagram,
+    error::{Error, Result},
+    file_list_reader::FileListReader,
+    header::Header,
+    id_hash::{id_hash, IdHash},
+    live_data_buffer::LiveDataBuffer,
+    live_data_reader::LiveDataReader,
+    live_data_recording_reader::LiveDataRecordingReader,
+    live_data_recording_writer::LiveDataRecordingWriter,
+    live_data_writer::LiveDataWriter,
+    packet::{Packet, PacketFieldId, PacketId, ToPacketFieldId, ToPacketId},
+    recording_reader::RecordingReader,
+    recording_writer::RecordingWriter,
+    specification::Specification,
+    specification_file::{Language, SpecificationFile},
+    stream_blob_length::StreamBlobLength,
+    telegram::Telegram,
+};

@@ -1,5 +1,4 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::Hasher;
+use std::{collections::hash_map::DefaultHasher, hash::Hasher};
 
 /// A trait to generate an identification hash for any of the VBus data types.
 pub trait IdHash {

@@ -1,8 +1,9 @@
-use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 
-use header::Header;
-use id_hash::IdHash;
+use crate::{header::Header, id_hash::IdHash};
 
 /// The `Telegram` type stores information according to the VBus protocol version 3.x.
 ///
@@ -254,16 +255,16 @@ impl AsRef<Header> for Telegram {
 
 #[cfg(test)]
 mod tests {
-    use utils::utc_timestamp;
-
     use super::*;
+
+    use crate::utils::utc_timestamp;
 
     #[test]
     fn test_frame_count_from_command() {
-        assert_eq!(0, Telegram::frame_count_from_command(0x1F)); 
-        assert_eq!(1, Telegram::frame_count_from_command(0x3F)); 
-        assert_eq!(2, Telegram::frame_count_from_command(0x5F)); 
-        assert_eq!(3, Telegram::frame_count_from_command(0x7F)); 
+        assert_eq!(0, Telegram::frame_count_from_command(0x1F));
+        assert_eq!(1, Telegram::frame_count_from_command(0x3F));
+        assert_eq!(2, Telegram::frame_count_from_command(0x5F));
+        assert_eq!(3, Telegram::frame_count_from_command(0x7F));
     }
 
     #[test]
@@ -279,7 +280,7 @@ mod tests {
             command: 0x37,
             frame_data: [0u8; 21],
         };
-        
+
         assert_eq!(1, tgram.frame_count());
     }
 

@@ -94,7 +94,7 @@ impl<R: Read> AsMut<R> for LiveDataReader<R> {
 mod tests {
     use super::*;
 
-    use test_data::LIVE_DATA_1;
+    use crate::test_data::LIVE_DATA_1;
 
     #[test]
     fn test_read_bytes() {

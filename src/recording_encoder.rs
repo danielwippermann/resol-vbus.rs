@@ -4,8 +4,7 @@
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, TimeZone, Utc};
 
-use data::Data;
-use header::Header;
+use crate::{data::Data, header::Header};
 
 /// Returns the number of bytes that the recorded representation of the Data needs.
 pub fn length_from_data(data: &Data) -> usize {
@@ -90,14 +89,15 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
     use super::*;
 
-    use recording_decoder::data_from_checked_bytes;
+    use chrono::TimeZone;
 
-    use test_data::{RECORDING_1, RECORDING_3};
-    use test_utils::to_hex_string;
+    use crate::{
+        recording_decoder::data_from_checked_bytes,
+        test_data::{RECORDING_1, RECORDING_3},
+        test_utils::to_hex_string,
+    };
 
     #[test]
     fn test_length_from_data() {

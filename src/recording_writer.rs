@@ -1,9 +1,10 @@
-use std::cmp::max;
-use std::io::Write;
+use std::{cmp::max, io::Write};
 
-use data_set::DataSet;
-use error::Result;
-use recording_encoder::{bytes_from_channel, bytes_from_data, bytes_from_record, length_from_data};
+use crate::{
+    data_set::DataSet,
+    error::Result,
+    recording_encoder::{bytes_from_channel, bytes_from_data, bytes_from_record, length_from_data},
+};
 
 /// Allows writing the recorded representation of `DataSet` values to a `Write` trait object.
 #[derive(Debug)]
@@ -68,11 +69,9 @@ impl<W: Write> RecordingWriter<W> {
 
 #[cfg(test)]
 mod tests {
-    use recording_reader::RecordingReader;
-
     use super::*;
 
-    use test_data::RECORDING_1;
+    use crate::{recording_reader::RecordingReader, test_data::RECORDING_1};
 
     #[test]
     fn test_write_data_set() {

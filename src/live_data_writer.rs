@@ -1,8 +1,10 @@
 use std::io::Write;
 
-use data::Data;
-use error::Result;
-use live_data_encoder::{bytes_from_data, length_from_data};
+use crate::{
+    data::Data,
+    error::Result,
+    live_data_encoder::{bytes_from_data, length_from_data},
+};
 
 /// Allows writing the live represenation of `Data` variants to a `Write` trait object.
 #[derive(Debug)]
@@ -55,13 +57,14 @@ impl<W: Write> AsMut<W> for LiveDataWriter<W> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
-
-    use live_data_decoder::data_from_checked_bytes;
-
     use super::*;
 
-    use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
+    use chrono::{TimeZone, Utc};
+
+    use crate::{
+        live_data_decoder::data_from_checked_bytes,
+        test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+    };
 
     #[test]
     fn test_write_data() {

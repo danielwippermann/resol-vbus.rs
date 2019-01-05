@@ -1,9 +1,11 @@
-use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 
 use chrono::{DateTime, Utc};
 
-use id_hash::IdHash;
+use crate::id_hash::IdHash;
 
 /// All VBus data types consist of a `Header` element.
 ///
@@ -140,9 +142,9 @@ impl fmt::Debug for Header {
 
 #[cfg(test)]
 mod tests {
-    use utils::utc_timestamp;
-
     use super::*;
+
+    use crate::utils::utc_timestamp;
 
     #[test]
     fn test_debug_fmt() {

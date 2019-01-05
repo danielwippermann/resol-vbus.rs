@@ -1,16 +1,15 @@
 //! This module provides the `Specification` and its associated types to allow interpretation
 //! of the fields contained within the `frame_data` payload of `Packet` values.
-use std::cell::RefCell;
-use std::clone::Clone;
-use std::fmt;
-use std::rc::Rc;
+use std::{cell::RefCell, clone::Clone, fmt, rc::Rc};
 
 use chrono::{DateTime, TimeZone, Utc};
 
-use data::Data;
-use packet::{PacketFieldId, PacketId};
-use specification_file::{
-    Language, PacketTemplateFieldPart, SpecificationFile, Type, UnitFamily, UnitId,
+use crate::{
+    data::Data,
+    packet::{PacketFieldId, PacketId},
+    specification_file::{
+        Language, PacketTemplateFieldPart, SpecificationFile, Type, UnitFamily, UnitId,
+    },
 };
 
 /// Contains information about a VBus device.
@@ -991,11 +990,12 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use recording_reader::RecordingReader;
-
     use super::*;
 
-    use test_data::{RECORDING_2, SPEC_FILE_1};
+    use crate::{
+        recording_reader::RecordingReader,
+        test_data::{RECORDING_2, SPEC_FILE_1},
+    };
 
     #[test]
     fn test_power_of_ten_i64() {
@@ -1013,8 +1013,7 @@ mod tests {
 
     #[test]
     fn test_raw_value_formatter() {
-        use specification_file::Language::*;
-        use specification_file::Type::*;
+        use crate::specification_file::{Language::*, Type::*};
 
         let fmt_to_string = |language, typ, prec, value, unit| {
             let formatter = RawValueFormatter::new(language, typ, prec, value, unit);

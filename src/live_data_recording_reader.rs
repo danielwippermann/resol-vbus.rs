@@ -1,15 +1,11 @@
-use std::collections::HashSet;
-use std::io::Read;
+use std::{collections::HashSet, io::Read};
 
 use chrono::{DateTime, TimeZone, Utc};
 
-use data::Data;
-use data_set::DataSet;
-use error::Result;
-use live_data_decoder;
-use recording_decoder;
-use recording_reader::RecordingReader;
-use stream_blob_length::StreamBlobLength::*;
+use crate::{
+    data::Data, data_set::DataSet, error::Result, live_data_decoder, recording_decoder,
+    recording_reader::RecordingReader, stream_blob_length::StreamBlobLength::*,
+};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct LiveDataRecordingStats {
@@ -328,7 +324,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
 mod tests {
     use super::*;
 
-    use test_data::LIVE_DATA_RECORDING_1;
+    use crate::test_data::LIVE_DATA_RECORDING_1;
 
     #[test]
     fn test_read_topology_data_set() {
@@ -378,13 +374,16 @@ mod tests {
 
         let stats = ldrr.read_to_stats().expect("No error");
 
-        assert_eq!(LiveDataRecordingStats {
-            total_record_count: 18,
-            live_data_record_count: 18,
-            live_data_record_byte_count: 610,
-            malformed_byte_count: 0,
-            data_count: 7,
-            data_byte_count: 610,
-        }, stats);
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 18,
+                live_data_record_count: 18,
+                live_data_record_byte_count: 610,
+                malformed_byte_count: 0,
+                data_count: 7,
+                data_byte_count: 610,
+            },
+            stats
+        );
     }
 }

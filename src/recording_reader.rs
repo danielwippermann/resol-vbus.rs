@@ -1,13 +1,14 @@
-use std::collections::HashSet;
-use std::io::Read;
+use std::{collections::HashSet, io::Read};
 
 use chrono::{DateTime, Utc};
 
-use blob_reader::BlobReader;
-use data_set::DataSet;
-use error::Result;
-use recording_decoder::{data_from_bytes, length_from_bytes, timestamp_from_checked_bytes};
-use stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial};
+use crate::{
+    blob_reader::BlobReader,
+    data_set::DataSet,
+    error::Result,
+    recording_decoder::{data_from_bytes, length_from_bytes, timestamp_from_checked_bytes},
+    stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
+};
 
 /// Allows reading `Data` variants from a `Read` trait object.
 ///
@@ -274,7 +275,7 @@ impl<R: Read> RecordingReader<R> {
 mod tests {
     use super::*;
 
-    use test_data::RECORDING_1;
+    use crate::test_data::RECORDING_1;
 
     #[test]
     fn test_read_record() {

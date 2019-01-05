@@ -60,7 +60,7 @@ impl Buffer {
 
 impl Read for Buffer {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let len = (&self.bytes [self.read_index..]).read(buf)?;
+        let len = (&self.bytes[self.read_index..]).read(buf)?;
         self.read_index += len;
         Ok(len)
     }

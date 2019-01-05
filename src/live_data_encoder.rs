@@ -3,9 +3,11 @@
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use data::Data;
-use telegram::Telegram;
-use utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett};
+use crate::{
+    data::Data,
+    telegram::Telegram,
+    utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett},
+};
 
 /// Returns the number of bytes that the live representation of the Data needs.
 pub fn length_from_data(data: &Data) -> usize {
@@ -75,13 +77,14 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
-
-    use live_data_decoder::data_from_checked_bytes;
-
     use super::*;
 
-    use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
+    use chrono::{TimeZone, Utc};
+
+    use crate::{
+        live_data_decoder::data_from_checked_bytes,
+        test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+    };
 
     #[test]
     fn test_length_from_data() {

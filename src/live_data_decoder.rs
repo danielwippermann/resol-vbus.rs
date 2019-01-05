@@ -4,13 +4,15 @@
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Utc};
 
-use data::Data;
-use datagram::Datagram;
-use header::Header;
-use packet::Packet;
-use stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial};
-use telegram::Telegram;
-use utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set};
+use crate::{
+    data::Data,
+    datagram::Datagram,
+    header::Header,
+    packet::Packet,
+    stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
+    telegram::Telegram,
+    utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set},
+};
 
 /// Checks the provided slice of bytes whether it contains valid VBus live data.
 pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
@@ -171,16 +173,16 @@ pub fn data_from_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]) -> Opt
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
-    use stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial};
-
-    use data::Data;
-
     use super::*;
 
-    use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
-    use test_utils::to_hex_string;
+    use chrono::TimeZone;
+
+    use crate::{
+        data::Data,
+        stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
+        test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+        test_utils::to_hex_string,
+    };
 
     #[test]
     fn test_length_from_bytes() {

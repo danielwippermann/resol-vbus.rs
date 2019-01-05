@@ -7,8 +7,10 @@
 //! for details.
 use byteorder::{ByteOrder, LittleEndian};
 
-use error::{Error, Result};
-use utils::calc_crc16;
+use crate::{
+    error::{Error, Result},
+    utils::calc_crc16,
+};
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
 #[derive(Clone, Copy, Debug)]
@@ -553,8 +555,6 @@ impl SpecificationFile {
     }
 
     fn parse_text_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<String> {
-        use std::str;
-
         let block = slice_table_entry(bytes, offset, 0x04, index);
         let string_offset = LittleEndian::read_i32(&block[0x00..0x04]) as usize;
 
@@ -565,7 +565,7 @@ impl SpecificationFile {
             while string_end < bytes.len() && bytes[string_end] != 0 {
                 string_end += 1;
             }
-            match str::from_utf8(&bytes[string_offset..string_end]) {
+            match std::str::from_utf8(&bytes[string_offset..string_end]) {
                 Ok(string) => Ok(string.to_string()),
                 Err(_) => err(ErrorKind::InvalidTextContent),
             }
@@ -754,7 +754,7 @@ impl SpecificationFile {
 mod tests {
     use super::*;
 
-    use test_data::SPEC_FILE_1;
+    use crate::test_data::SPEC_FILE_1;
 
     fn check_spec_file_fixture(spec_file: &SpecificationFile) {
         let mut text_index = 0;

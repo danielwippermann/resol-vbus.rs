@@ -1,8 +1,9 @@
-use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 
-use header::Header;
-use id_hash::IdHash;
+use crate::{header::Header, id_hash::IdHash};
 
 /// The `Datagram` type stores information according to the VBus protocol version 2.x.
 ///
@@ -162,10 +163,9 @@ impl AsRef<Header> for Datagram {
 
 #[cfg(test)]
 mod tests {
-    use header::Header;
-    use utils::utc_timestamp;
-
     use super::*;
+
+    use crate::{header::Header, utils::utc_timestamp};
 
     #[test]
     fn test_debug_fmt() {

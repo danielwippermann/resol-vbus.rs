@@ -1,11 +1,11 @@
-use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::hash::Hasher;
+use std::{
+    cmp::Ordering::{self, Equal, Greater, Less},
+    hash::Hasher,
+};
 
-use datagram::Datagram;
-use header::Header;
-use id_hash::IdHash;
-use packet::Packet;
-use telegram::Telegram;
+use crate::{
+    datagram::Datagram, header::Header, id_hash::IdHash, packet::Packet, telegram::Telegram,
+};
 
 /// `Data` is a type that contains one of the supported VBus protocol data variants.
 ///
@@ -362,14 +362,15 @@ impl AsRef<Header> for Data {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, TimeZone, Utc};
-
-    use id_hash::id_hash;
-    use live_data_decoder::data_from_checked_bytes;
-
     use super::*;
 
-    use test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1};
+    use chrono::{DateTime, TimeZone, Utc};
+
+    use crate::{
+        id_hash::id_hash,
+        live_data_decoder::data_from_checked_bytes,
+        test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+    };
 
     fn packet_data(timestamp: DateTime<Utc>, channel: u8) -> Data {
         data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..])

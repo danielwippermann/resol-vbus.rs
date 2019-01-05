@@ -212,6 +212,8 @@ impl AsRef<[Data]> for DataSet {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use chrono::{Duration, TimeZone};
 
     use crate::{
@@ -219,8 +221,6 @@ mod tests {
         live_data_decoder::data_from_checked_bytes,
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
     };
-
-    use super::*;
 
     #[test]
     fn test_add_data() {

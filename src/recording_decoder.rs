@@ -4,11 +4,13 @@
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, TimeZone, Utc};
 
-use data::Data;
-use datagram::Datagram;
-use header::Header;
-use packet::Packet;
-use stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial};
+use crate::{
+    data::Data,
+    datagram::Datagram,
+    header::Header,
+    packet::Packet,
+    stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
+};
 
 /// Checks the provided slice of bytes whether it contains a valid VBus record.
 pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
@@ -137,7 +139,7 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
 mod tests {
     use super::*;
 
-    use test_data::{RECORDING_1, RECORDING_3};
+    use crate::test_data::{RECORDING_1, RECORDING_3};
 
     #[test]
     fn test_length_from_bytes() {

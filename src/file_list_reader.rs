@@ -1,6 +1,8 @@
-use std::fs::File;
-use std::io::{Read, Result};
-use std::path::Path;
+use std::{
+    fs::File,
+    io::{Read, Result},
+    path::Path,
+};
 
 /// Chains multiple files together in a single `Read` object.
 ///
@@ -74,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let file_list = vec![ "src/stream_blob_length.rs", "src/id_hash.rs" ];
+        let file_list = vec!["src/stream_blob_length.rs", "src/id_hash.rs"];
 
         let flr = FileListReader::new(file_list.clone());
 
@@ -85,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let file_list = vec![ "src/stream_blob_length.rs", "src/id_hash.rs" ];
+        let file_list = vec!["src/stream_blob_length.rs", "src/id_hash.rs"];
 
         let mut flr = FileListReader::new(file_list.clone());
 

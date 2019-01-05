@@ -2,8 +2,10 @@ use std::io::Write;
 
 use chrono::{DateTime, Utc};
 
-use error::Result;
-use recording_encoder::{bytes_from_record, bytes_from_timestamp};
+use crate::{
+    error::Result,
+    recording_encoder::{bytes_from_record, bytes_from_timestamp},
+};
 
 /// A `RecordingWriter` for type 0x88 live data recordings.
 #[derive(Debug)]
@@ -54,11 +56,11 @@ impl<W: Write> LiveDataRecordingWriter<W> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
     use super::*;
 
-    use test_data::LIVE_DATA_RECORDING_1;
+    use chrono::TimeZone;
+
+    use crate::test_data::LIVE_DATA_RECORDING_1;
 
     #[test]
     fn test_write_live_data() {

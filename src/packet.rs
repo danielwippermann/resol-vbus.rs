@@ -1,11 +1,9 @@
-use std::fmt;
-use std::hash::{Hash, Hasher};
-
-use crate::{
-    error::Result,
-    header::Header,
-    id_hash::IdHash,
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
 };
+
+use crate::{error::Result, header::Header, id_hash::IdHash};
 
 /// A tuple of identification information about a `Packet` value.
 ///
@@ -84,28 +82,28 @@ impl ToPacketId for str {
             return Err(format!(
                 "Invalid length of destination address {:?}",
                 destination_address_str
-            ).into());
+            )
+            .into());
         }
         if destination_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in destination address {:?}",
                 destination_address_str
-            ).into());
+            )
+            .into());
         }
         let destination_address = u16::from_str_radix(destination_address_str, 16).unwrap();
 
         let source_address_str = parts.next().unwrap();
         if source_address_str.len() != 4 {
-            return Err(format!(
-                "Invalid length of source address {:?}",
-                source_address_str
-            ).into());
+            return Err(format!("Invalid length of source address {:?}", source_address_str).into());
         }
         if source_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in source address {:?}",
                 source_address_str
-            ).into());
+            )
+            .into());
         }
         let source_address = u16::from_str_radix(source_address_str, 16).unwrap();
 
@@ -114,20 +112,19 @@ impl ToPacketId for str {
             return Err(format!(
                 "Invalid length of protocol version {:?}",
                 protocol_version_str
-            ).into());
+            )
+            .into());
         }
         if protocol_version_str.chars().any(&is_not_hex_char) {
             return Err(format!(
                 "Invalid characters in protocol version {:?}",
                 protocol_version_str
-            ).into());
+            )
+            .into());
         }
         let protocol_version = u8::from_str_radix(protocol_version_str, 16).unwrap();
         if (protocol_version & 0xF0) != 0x10 {
-            return Err(format!(
-                "Unsupported protocol version 0x{:02X}",
-                protocol_version
-            ).into());
+            return Err(format!("Unsupported protocol version 0x{:02X}", protocol_version).into());
         }
 
         let command_str = parts.next().unwrap();
@@ -499,16 +496,16 @@ impl AsRef<Header> for Packet {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        error::Error,
-        utils::utc_timestamp,
-    };
-
     use super::*;
+
+    use crate::{error::Error, utils::utc_timestamp};
 
     #[test]
     fn test_packet_id_string() {
-        assert_eq!("11_1213_1415_10_1718", PacketId(0x11, 0x1213, 0x1415, 0x1718).packet_id_string()); 
+        assert_eq!(
+            "11_1213_1415_10_1718",
+            PacketId(0x11, 0x1213, 0x1415, 0x1718).packet_id_string()
+        );
     }
 
     #[test]
@@ -601,7 +598,7 @@ mod tests {
     #[test]
     fn test_packet_field_id_to_packet_field_id() {
         let packet_field_id = PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "019_2_0");
-        
+
         let result = packet_field_id.to_packet_field_id().expect("Must not fail");
 
         assert_eq!(packet_field_id, result);
@@ -610,14 +607,19 @@ mod tests {
     #[test]
     fn test_str_to_packet_field_id() {
         let packet_field_id_string = "11_1213_1415_10_1718_019_2_0";
-        
-        let result = packet_field_id_string.to_packet_field_id().expect("Must not fail");
+
+        let result = packet_field_id_string
+            .to_packet_field_id()
+            .expect("Must not fail");
 
         assert_eq!(packet_field_id_string, result.packet_field_id_string());
 
         let result = "11_1213_1415_10_1718".to_packet_field_id().unwrap_err();
 
-        assert_eq!(Error::new("Invalid length of input \"11_1213_1415_10_1718\""), result);
+        assert_eq!(
+            Error::new("Invalid length of input \"11_1213_1415_10_1718\""),
+            result
+        );
     }
 
     #[test]
