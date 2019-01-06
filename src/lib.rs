@@ -16,8 +16,6 @@
 //!
 //! ## Planned, but not yet implemented features
 //!
-//! - Discovers LAN-enabled RESOL devices on the local network
-//! - Allows to send parameterization commands to a controller
 //! - Improve filtering and conversion of VBus data fields
 //!
 //!
