@@ -119,6 +119,18 @@ impl IdHash for Header {
     }
 }
 
+impl Default for Header {
+    fn default() -> Header {
+        Header {
+            timestamp: Utc::now(),
+            channel: 0x00,
+            destination_address: 0x0000,
+            source_address: 0x0000,
+            protocol_version: 0x00,
+        }
+    }
+}
+
 impl fmt::Debug for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Header")
