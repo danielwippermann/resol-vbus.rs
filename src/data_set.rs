@@ -6,7 +6,7 @@ use std::{
 
 use chrono::{DateTime, Utc};
 
-use crate::{data::Data, id_hash::IdHash, packet::PacketId};
+use crate::{data::Data, id_hash::IdHash, packet::PacketId, utils::current_timestamp};
 
 /// A `DataSet` contains a set of unique (non-identical) `Data` values.
 ///
@@ -48,7 +48,7 @@ impl DataSet {
     /// Construct an empty `DataSet`.
     pub fn new() -> DataSet {
         DataSet {
-            timestamp: Utc::now(),
+            timestamp: current_timestamp(),
             set: Vec::new(),
         }
     }

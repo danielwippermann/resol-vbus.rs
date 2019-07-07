@@ -1,10 +1,9 @@
-use chrono::Utc;
-
 use crate::{
     blob_buffer::BlobBuffer,
     data::Data,
     live_data_decoder::{data_from_checked_bytes, length_from_bytes},
     stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
+    utils::current_timestamp,
 };
 
 /// A size-adapting buffer that supports decoding VBus live data. See
@@ -68,7 +67,7 @@ impl LiveDataBuffer {
     pub fn read_data(&mut self) -> Option<Data> {
         let channel = self.channel;
         if let Some(bytes) = self.read_bytes() {
-            Some(data_from_checked_bytes(Utc::now(), channel, bytes))
+            Some(data_from_checked_bytes(current_timestamp(), channel, bytes))
         } else {
             None
         }

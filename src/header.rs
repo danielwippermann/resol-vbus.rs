@@ -5,7 +5,7 @@ use std::{
 
 use chrono::{DateTime, Utc};
 
-use crate::id_hash::IdHash;
+use crate::{id_hash::IdHash, utils::current_timestamp};
 
 /// All VBus data types consist of a `Header` element.
 ///
@@ -122,7 +122,7 @@ impl IdHash for Header {
 impl Default for Header {
     fn default() -> Header {
         Header {
-            timestamp: Utc::now(),
+            timestamp: current_timestamp(),
             channel: 0x00,
             destination_address: 0x0000,
             source_address: 0x0000,

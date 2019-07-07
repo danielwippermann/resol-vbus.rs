@@ -199,3 +199,18 @@ pub fn calc_crc16(buf: &[u8]) -> u16 {
 pub fn utc_timestamp(secs: i64) -> DateTime<Utc> {
     Utc.timestamp(secs, 0)
 }
+
+/// Return the current timestamp if the platform supports that.
+pub fn current_timestamp() -> DateTime<Utc> {
+    current_timestamp_internal()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn current_timestamp_internal() -> DateTime<Utc> {
+    Utc.timestamp(0, 0)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn current_timestamp_internal() -> DateTime<Utc> {
+    Utc::now()
+}
