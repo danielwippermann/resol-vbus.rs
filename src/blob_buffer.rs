@@ -1,4 +1,5 @@
 use std::{
+    io,
     ops::{Deref, Index},
     slice::SliceIndex,
 };
@@ -6,7 +7,7 @@ use std::{
 /// A size-adating buffer to store bytes in. The buffer grows when data is
 /// stored into it. The contents can then be consumed which results in
 /// the buffer dropping the consumed data before new data are appended.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct BlobBuffer {
     buf: Vec<u8>,
     start: usize,
@@ -67,6 +68,33 @@ where
 
     fn index(&self, index: I) -> &Self::Output {
         &self.deref()[index]
+    }
+}
+
+impl io::Read for BlobBuffer {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let src_len = self.len();
+        let dst_len = buf.len();
+        let len = if src_len < dst_len {
+            src_len
+        } else {
+            dst_len
+        };
+        buf [0..len].copy_from_slice(&self [0..len]);
+        self.consume(len);
+        Ok(len)
+    }
+}
+
+impl io::Write for BlobBuffer {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        // nop
+        Ok(())
     }
 }
 
