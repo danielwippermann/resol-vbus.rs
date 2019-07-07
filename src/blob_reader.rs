@@ -58,6 +58,16 @@ impl<R: Read> BlobReader<R> {
         }
     }
 
+    /// Get a reference to the underlying reader.
+    pub fn get_ref(&self) -> &R {
+        &self.reader
+    }
+
+    /// Get a mutable reference to the underlying reader.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.reader
+    }
+
     /// Consumes this `BlobReader`, returning its inner `Read` value.
     pub fn into_inner(self) -> R {
         self.reader

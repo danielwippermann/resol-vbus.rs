@@ -53,6 +53,16 @@ impl<R: Read> RecordingReader<R> {
         }
     }
 
+    /// Get a reference to the underlying reader.
+    pub fn get_ref(&self) -> &R {
+        self.reader.get_ref()
+    }
+
+    /// Get a mutable reference to the underlying reader.
+    pub fn get_mut(&mut self) -> &mut R {
+        self.reader.get_mut()
+    }
+
     /// Set optional minimum and maximum timestamps for prefiltering data.
     pub fn set_min_max_timestamps(
         &mut self,

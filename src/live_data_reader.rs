@@ -35,6 +35,16 @@ impl<R: Read> LiveDataReader<R> {
         }
     }
 
+    /// Get a reference to the underlying reader.
+    pub fn get_ref(&self) -> &R {
+        &self.reader
+    }
+
+    /// Get a mutable reference to the underlying reader.
+    pub fn get_mut(&mut self) -> &mut R {
+        &mut self.reader
+    }
+
     fn read_to_buf(&mut self) -> Result<usize> {
         let mut buf = Vec::new();
         buf.resize(4096, 0);
