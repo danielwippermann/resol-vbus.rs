@@ -30,29 +30,17 @@ impl fmt::Display for Error {
 
 impl StdError for Error {}
 
-impl From<&str> for Error {
-    fn from(cause: &str) -> Error {
-        Error::new(cause)
+pub trait IntoError: fmt::Display {}
+
+impl<T: IntoError> From<T> for Error {
+    fn from(cause: T) -> Error {
+        Error::new(format!("{}", cause))
     }
 }
 
-impl From<String> for Error {
-    fn from(cause: String) -> Error {
-        Error::new(cause)
-    }
-}
-
-macro_rules! from_other_error {
-    ($type:path) => {
-        impl From<$type> for Error {
-            fn from(cause: $type) -> Error {
-                Error::from_cause(cause)
-            }
-        }
-    };
-}
-
-from_other_error!(::std::io::Error);
+impl IntoError for &str {}
+impl IntoError for String {}
+impl IntoError for std::io::Error {}
 
 /// A common result type.
 pub type Result<T> = std::result::Result<T, Error>;
