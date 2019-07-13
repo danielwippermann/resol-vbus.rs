@@ -419,6 +419,14 @@ impl SpecificationFile {
         self.units.iter().find(|&unit| &unit.unit_id == id).unwrap()
     }
 
+    /// Get `Unit` by unit code.
+    pub fn unit_by_unit_code(&self, unit_code: &str) -> Option<&Unit> {
+        self.units.iter().find(|&unit| {
+            let current_unit_code = self.text_by_index(&unit.unit_code_text_index);
+            current_unit_code == unit_code
+        })
+    }
+
     /// Get `Type` by its ID.
     pub fn type_by_id(&self, id: &TypeId) -> Type {
         match id.0 {
