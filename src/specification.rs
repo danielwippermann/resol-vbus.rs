@@ -6,9 +6,10 @@ use chrono::{DateTime, TimeZone, Utc};
 
 use crate::{
     data::Data,
+    error::Result,
     packet::{PacketFieldId, PacketId},
     specification_file::{
-        Language, PacketTemplateFieldPart, SpecificationFile, Type, UnitFamily, UnitId,
+        Language, PacketTemplateFieldPart, SpecificationFile, Type, Unit, UnitFamily, UnitId,
     },
 };
 
@@ -510,6 +511,16 @@ impl Specification {
         }
     }
 
+    /// Get the `SpecificationFile` that was used to construct this `Specification`.
+    pub fn specification_file(&self) -> &SpecificationFile {
+        &self.file
+    }
+
+    /// Get the `Language` that was used to construct this `Specification`.
+    pub fn language(&self) -> Language {
+        self.language
+    }
+
     /// Get a `DeviceSpec`.
     ///
     /// # Examples
@@ -662,6 +673,40 @@ impl Specification {
             raw_value: timestamp.timestamp() - 978_307_200,
             unit_text: "",
         }
+    }
+
+    /// Get `Unit` by its unit code.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    /// use resol_vbus::specification_file::UnitId;
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+    ///
+    /// assert_eq!(UnitId(62), spec.unit_by_unit_code("DegreesCelsius").unwrap().unit_id);
+    /// assert!(spec.unit_by_unit_code("SomeUnknownUnitCode").is_none());
+    /// ```
+    pub fn unit_by_unit_code(&self, unit_code: &str) -> Option<&Unit> {
+        self.file.unit_by_unit_code(unit_code)
+    }
+
+    /// Convert a value from one `Unit` to another.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+    ///
+    /// let src_unit = spec.unit_by_unit_code("DegreesCelsius").unwrap();
+    /// let dst_unit = spec.unit_by_unit_code("DegreesFahrenheit").unwrap();
+    /// assert_eq!(Ok(32.0), spec.convert_value(0.0, src_unit, dst_unit));
+    /// ```
+    pub fn convert_value(&self, value: f64, src_unit: &Unit, dst_unit: &Unit) -> Result<f64> {
+        self.file.convert_value(value, src_unit, dst_unit)
     }
 }
 
