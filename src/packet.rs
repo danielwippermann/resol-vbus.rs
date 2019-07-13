@@ -58,7 +58,7 @@ impl ToPacketId for str {
     /// ```
     fn to_packet_id(&self) -> Result<PacketId> {
         let is_not_hex_char = |c| match c {
-            '0'...'9' | 'A'...'F' | 'a'...'f' => false,
+            '0'..='9' | 'A'..='F' | 'a'..='f' => false,
             _ => true,
         };
 
