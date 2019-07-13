@@ -187,7 +187,7 @@ pub enum UnitFamily {
 pub struct UnitId(pub i32);
 
 /// A physical unit.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Unit {
     /// The numeric ID of the `Unit`.
     pub unit_id: UnitId,
@@ -325,6 +325,12 @@ pub struct SpecificationFile {
     /// List of packet templates.
     pub packet_templates: Vec<PacketTemplate>,
 }
+
+const BTUS_PER_WATT_HOUR: f64 = 3.412_128;
+const GALLONS_PER_LITER: f64 = 0.264_172;
+const GRAMS_CO2_GAS_PER_WATT_HOUR: f64 = 0.2536;
+const GRAMS_CO2_OIL_PER_WATT_HOUR: f64 = 0.568;
+const POUNDS_FORCE_PER_SQUARE_INCH_PER_BAR: f64 = 14.503_773_8;
 
 impl SpecificationFile {
     /// Construct a new `SpecificationFile` from a byte slice of VSF1 data.
@@ -748,6 +754,129 @@ impl SpecificationFile {
             factor,
         })
     }
+
+    /// Convert a value from one `Unit` to another.
+    pub fn convert_value(&self, value: f64, src_unit: &Unit, dst_unit: &Unit) -> Result<f64> {
+        if src_unit.unit_family_id != dst_unit.unit_family_id {
+            return Err("Unit families differ".into());
+        }
+
+        let unit_family = self.unit_family_by_id(&src_unit.unit_family_id);
+        let src_unit_code = self.text_by_index(&src_unit.unit_code_text_index);
+        let dst_unit_code = self.text_by_index(&dst_unit.unit_code_text_index);
+
+        let value = match unit_family {
+            UnitFamily::None => return Err("Cannot convert values with UnitFamily::None".into()),
+            UnitFamily::Temperature => {
+                let value = match src_unit_code {
+                    "DegreesCelsius" => value,
+                    "DegreesFahrenheit" => (value - 32.0) / 1.8,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                };
+                match dst_unit_code {
+                    "DegreesCelsius" => value,
+                    "DegreesFahrenheit" => value * 1.8 + 32.0,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                }
+            }
+            UnitFamily::Energy => {
+                let value = match src_unit_code {
+                    "Btus" => value / BTUS_PER_WATT_HOUR,
+                    "GramsCO2Gas" => value / GRAMS_CO2_GAS_PER_WATT_HOUR,
+                    "GramsCO2Oil" => value / GRAMS_CO2_OIL_PER_WATT_HOUR,
+                    "KiloBtus" => value / BTUS_PER_WATT_HOUR * 1000.0,
+                    "KilogramsCO2Gas" => value * 1000.0 / GRAMS_CO2_GAS_PER_WATT_HOUR,
+                    "KilogramsCO2Oil" => value * 1000.0 / GRAMS_CO2_OIL_PER_WATT_HOUR,
+                    "KilowattHours" => value * 1000.0,
+                    "MegaBtus" => value / BTUS_PER_WATT_HOUR * 1_000_000.0,
+                    "MegawattHours" => value * 1_000_000.0,
+                    "TonsCO2Gas" => value * 1_000_000.0 / GRAMS_CO2_GAS_PER_WATT_HOUR,
+                    "TonsCO2Oil" => value * 1_000_000.0 / GRAMS_CO2_OIL_PER_WATT_HOUR,
+                    "WattHours" => value,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                };
+                match dst_unit_code {
+                    "Btus" => value * BTUS_PER_WATT_HOUR,
+                    "GramsCO2Gas" => value * GRAMS_CO2_GAS_PER_WATT_HOUR,
+                    "GramsCO2Oil" => value * GRAMS_CO2_OIL_PER_WATT_HOUR,
+                    "KiloBtus" => value * BTUS_PER_WATT_HOUR / 1000.0,
+                    "KilogramsCO2Gas" => value * GRAMS_CO2_GAS_PER_WATT_HOUR / 1000.0,
+                    "KilogramsCO2Oil" => value * GRAMS_CO2_OIL_PER_WATT_HOUR / 1000.0,
+                    "KilowattHours" => value / 1000.0,
+                    "MegaBtus" => value * BTUS_PER_WATT_HOUR / 1_000_000.0,
+                    "MegawattHours" => value / 1_000_000.0,
+                    "TonsCO2Gas" => value * GRAMS_CO2_GAS_PER_WATT_HOUR / 1_000_000.0,
+                    "TonsCO2Oil" => value * GRAMS_CO2_OIL_PER_WATT_HOUR / 1_000_000.0,
+                    "WattHours" => value,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                }
+            }
+            UnitFamily::VolumeFlow => {
+                let value = match src_unit_code {
+                    "CubicMetersPerHour" => value * 1000.0,
+                    "GallonsPerHour" => value / GALLONS_PER_LITER,
+                    "GallonsPerMinute" => value / GALLONS_PER_LITER * 60.0,
+                    "LitersPerHour" => value,
+                    "LitersPerMinute" => value * 60.0,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                };
+                match dst_unit_code {
+                    "CubicMetersPerHour" => value / 1000.0,
+                    "GallonsPerHour" => value * GALLONS_PER_LITER,
+                    "GallonsPerMinute" => value * GALLONS_PER_LITER / 60.0,
+                    "LitersPerHour" => value,
+                    "LitersPerMinute" => value / 60.0,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                }
+            }
+            UnitFamily::Pressure => {
+                let value = match src_unit_code {
+                    "Bars" => value,
+                    "PoundsForcePerSquareInch" => value / POUNDS_FORCE_PER_SQUARE_INCH_PER_BAR,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                };
+                match dst_unit_code {
+                    "Bars" => value,
+                    "PoundsForcePerSquareInch" => value * POUNDS_FORCE_PER_SQUARE_INCH_PER_BAR,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                }
+            }
+            UnitFamily::Volume => {
+                let value = match src_unit_code {
+                    "CubicMeters" => value * 1000.0,
+                    "Gallons" => value / GALLONS_PER_LITER,
+                    "Liters" => value,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                };
+                match dst_unit_code {
+                    "CubicMeters" => value / 1000.0,
+                    "Gallons" => value * GALLONS_PER_LITER,
+                    "Liters" => value,
+                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                }
+            }
+            UnitFamily::Time => {
+                // let value = match src_unit_code {
+                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                // };
+                // match dst_unit_code {
+                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                // }
+                return Err(format!("Unexpected unit code {}", src_unit_code).into());
+            }
+            UnitFamily::Power => {
+                // let value = match src_unit_code {
+                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                // };
+                // match dst_unit_code {
+                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                // }
+                return Err(format!("Unexpected unit code {}", src_unit_code).into());
+            }
+        };
+
+        Ok(value)
+    }
 }
 
 #[cfg(test)]
@@ -1107,7 +1236,7 @@ mod tests {
 
         let mut unit_index = 0;
 
-        let mut check_next_unit = |unit_id, unit_family, unit_code, unit_text| {
+        let mut check_next_unit = |unit_id, unit_family, unit_code, unit_text, ref_value: f64| {
             let unit = &spec_file.units[unit_index];
 
             assert_eq!(UnitId(unit_id), unit.unit_id);
@@ -1124,78 +1253,209 @@ mod tests {
                 spec_file.text_by_index(&unit.unit_text_text_index)
             );
 
+            if unit_family != UnitFamily::None {
+                let ref_unit_code = match unit_family {
+                    UnitFamily::Temperature => 62,
+                    UnitFamily::Energy => 18,
+                    UnitFamily::VolumeFlow => 136,
+                    UnitFamily::Pressure => 55,
+                    UnitFamily::Volume => 82,
+                    UnitFamily::Time => unimplemented!(),
+                    UnitFamily::Power => unimplemented!(),
+                    UnitFamily::None => unreachable!(),
+                };
+
+                let ref_unit = spec_file.unit_by_id(&UnitId(ref_unit_code));
+
+                match spec_file.convert_value(1.0, &ref_unit, &unit) {
+                    Ok(value) => {
+                        if (value - ref_value).abs() > 0.00001 {
+                            assert_eq!(ref_value, value);
+                        }
+                    }
+                    Err(err) => {
+                        assert_eq!(Ok(1.0), Err(err));
+                    }
+                }
+
+                match spec_file.convert_value(1.0, &unit, &unit) {
+                    Ok(value) => {
+                        if (value - 1.0).abs() > 0.00001 {
+                            assert_eq!(1.0, value);
+                        }
+                    }
+                    Err(err) => {
+                        assert_eq!(Ok(1.0), Err(err));
+                    }
+                }
+            }
+
             unit_index += 1;
         };
 
         assert_eq!(48, spec_file.units.len());
-        check_next_unit(55, UnitFamily::Pressure, "Bars", " bar");
-        check_next_unit(20, UnitFamily::Energy, "Btus", " BTU");
-        check_next_unit(80, UnitFamily::Volume, "CubicMeters", " m³");
-        check_next_unit(135, UnitFamily::VolumeFlow, "CubicMetersPerHour", " m³/h");
-        check_next_unit(70, UnitFamily::None, "Days", " d");
-        check_next_unit(90, UnitFamily::None, "DegreesAngular", " °");
-        check_next_unit(62, UnitFamily::Temperature, "DegreesCelsius", " °C");
-        check_next_unit(64, UnitFamily::Temperature, "DegreesFahrenheit", " °F");
-        check_next_unit(63, UnitFamily::None, "DegreesKelvin", " K");
-        check_next_unit(1042, UnitFamily::Volume, "Gallons", " gal");
-        check_next_unit(1041, UnitFamily::VolumeFlow, "GallonsPerHour", " gal/h");
-        check_next_unit(1040, UnitFamily::VolumeFlow, "GallonsPerMinute", " gal/min");
-        check_next_unit(1035, UnitFamily::Energy, "GramsCO2Gas", " g CO₂ (Gas)");
-        check_next_unit(1032, UnitFamily::Energy, "GramsCO2Oil", " g CO₂ (Oil)");
-        check_next_unit(133, UnitFamily::None, "Hectopascals", " hPa");
-        check_next_unit(27, UnitFamily::None, "Hertz", " Hz");
-        check_next_unit(71, UnitFamily::None, "Hours", " h");
-        check_next_unit(1030, UnitFamily::Energy, "KiloBtus", " MBTU");
+        check_next_unit(55, UnitFamily::Pressure, "Bars", " bar", 1.0);
+        check_next_unit(20, UnitFamily::Energy, "Btus", " BTU", 3.412_128);
+        check_next_unit(80, UnitFamily::Volume, "CubicMeters", " m³", 1.0 / 1000.0);
+        check_next_unit(
+            135,
+            UnitFamily::VolumeFlow,
+            "CubicMetersPerHour",
+            " m³/h",
+            1.0 / 1000.0,
+        );
+        check_next_unit(70, UnitFamily::None, "Days", " d", 0.0);
+        check_next_unit(90, UnitFamily::None, "DegreesAngular", " °", 0.0);
+        check_next_unit(62, UnitFamily::Temperature, "DegreesCelsius", " °C", 1.0);
+        check_next_unit(
+            64,
+            UnitFamily::Temperature,
+            "DegreesFahrenheit",
+            " °F",
+            33.8,
+        );
+        check_next_unit(63, UnitFamily::None, "DegreesKelvin", " K", 0.0);
+        check_next_unit(1042, UnitFamily::Volume, "Gallons", " gal", 0.264_172);
+        check_next_unit(
+            1041,
+            UnitFamily::VolumeFlow,
+            "GallonsPerHour",
+            " gal/h",
+            0.264_172,
+        );
+        check_next_unit(
+            1040,
+            UnitFamily::VolumeFlow,
+            "GallonsPerMinute",
+            " gal/min",
+            0.264_172 / 60.0,
+        );
+        check_next_unit(
+            1035,
+            UnitFamily::Energy,
+            "GramsCO2Gas",
+            " g CO₂ (Gas)",
+            0.2536,
+        );
+        check_next_unit(
+            1032,
+            UnitFamily::Energy,
+            "GramsCO2Oil",
+            " g CO₂ (Oil)",
+            0.568,
+        );
+        check_next_unit(133, UnitFamily::None, "Hectopascals", " hPa", 0.0);
+        check_next_unit(27, UnitFamily::None, "Hertz", " Hz", 0.0);
+        check_next_unit(71, UnitFamily::None, "Hours", " h", 0.0);
+        check_next_unit(
+            1030,
+            UnitFamily::Energy,
+            "KiloBtus",
+            " MBTU",
+            3.412_128 / 1000.0,
+        );
         check_next_unit(
             1024,
             UnitFamily::None,
             "KiloWattHoursPerSquareMeterPerDay",
             " kWh/(m²*d)",
+            0.0,
         );
         check_next_unit(
             1036,
             UnitFamily::Energy,
             "KilogramsCO2Gas",
             " kg CO₂ (Gas)",
+            0.2536 / 1000.0,
         );
         check_next_unit(
             1033,
             UnitFamily::Energy,
             "KilogramsCO2Oil",
             " kg CO₂ (Oil)",
+            0.568 / 1000.0,
         );
-        check_next_unit(186, UnitFamily::None, "KilogramsPerCubicMeter", " kg/m³");
-        check_next_unit(44, UnitFamily::None, "KilogramsPerHour", " kg/h");
-        check_next_unit(19, UnitFamily::Energy, "KilowattHours", " kWh");
-        check_next_unit(48, UnitFamily::None, "Kilowatts", " kW");
-        check_next_unit(82, UnitFamily::Volume, "Liters", " l");
-        check_next_unit(136, UnitFamily::VolumeFlow, "LitersPerHour", " l/h");
-        check_next_unit(88, UnitFamily::VolumeFlow, "LitersPerMinute", " l/min");
+        check_next_unit(
+            186,
+            UnitFamily::None,
+            "KilogramsPerCubicMeter",
+            " kg/m³",
+            0.0,
+        );
+        check_next_unit(44, UnitFamily::None, "KilogramsPerHour", " kg/h", 0.0);
+        check_next_unit(
+            19,
+            UnitFamily::Energy,
+            "KilowattHours",
+            " kWh",
+            1.0 / 1000.0,
+        );
+        check_next_unit(48, UnitFamily::None, "Kilowatts", " kW", 0.0);
+        check_next_unit(82, UnitFamily::Volume, "Liters", " l", 1.0);
+        check_next_unit(136, UnitFamily::VolumeFlow, "LitersPerHour", " l/h", 1.0);
+        check_next_unit(
+            88,
+            UnitFamily::VolumeFlow,
+            "LitersPerMinute",
+            " l/min",
+            1.0 / 60.0,
+        );
         check_next_unit(
             1025,
             UnitFamily::None,
             "LitersPerSquareMeterPerDay",
             " l/(m²*d)",
+            0.0,
         );
-        check_next_unit(1031, UnitFamily::Energy, "MegaBtus", " MMBTU");
-        check_next_unit(146, UnitFamily::Energy, "MegawattHours", " MWh");
-        check_next_unit(74, UnitFamily::None, "MetersPerSecond", " m/s");
-        check_next_unit(1100, UnitFamily::None, "Microvolts", " µV");
-        check_next_unit(2, UnitFamily::None, "Milliamperes", " mA");
-        check_next_unit(159, UnitFamily::None, "Milliseconds", " ms");
-        check_next_unit(72, UnitFamily::None, "Minutes", " min");
-        check_next_unit(-1, UnitFamily::None, "None", "");
-        check_next_unit(4, UnitFamily::None, "Ohms", " \u{2126}");
-        check_next_unit(98, UnitFamily::None, "Percent", "%");
-        check_next_unit(56, UnitFamily::Pressure, "PoundsForcePerSquareInch", " psi");
-        check_next_unit(73, UnitFamily::None, "Seconds", " s");
-        check_next_unit(0, UnitFamily::None, "SquareMeters", " m²");
-        check_next_unit(1037, UnitFamily::Energy, "TonsCO2Gas", " t CO₂ (Gas)");
-        check_next_unit(1034, UnitFamily::Energy, "TonsCO2Oil", " t CO₂ (Oil)");
-        check_next_unit(5, UnitFamily::None, "Volts", " V");
-        check_next_unit(18, UnitFamily::Energy, "WattHours", " Wh");
-        check_next_unit(47, UnitFamily::None, "Watts", " W");
-        check_next_unit(35, UnitFamily::None, "WattsPerSquareMeter", " W/m²");
+        check_next_unit(
+            1031,
+            UnitFamily::Energy,
+            "MegaBtus",
+            " MMBTU",
+            3.412_128 / 1_000_000.0,
+        );
+        check_next_unit(
+            146,
+            UnitFamily::Energy,
+            "MegawattHours",
+            " MWh",
+            1.0 / 1_000_000.0,
+        );
+        check_next_unit(74, UnitFamily::None, "MetersPerSecond", " m/s", 0.0);
+        check_next_unit(1100, UnitFamily::None, "Microvolts", " µV", 0.0);
+        check_next_unit(2, UnitFamily::None, "Milliamperes", " mA", 0.0);
+        check_next_unit(159, UnitFamily::None, "Milliseconds", " ms", 0.0);
+        check_next_unit(72, UnitFamily::None, "Minutes", " min", 0.0);
+        check_next_unit(-1, UnitFamily::None, "None", "", 0.0);
+        check_next_unit(4, UnitFamily::None, "Ohms", " \u{2126}", 0.0);
+        check_next_unit(98, UnitFamily::None, "Percent", "%", 0.0);
+        check_next_unit(
+            56,
+            UnitFamily::Pressure,
+            "PoundsForcePerSquareInch",
+            " psi",
+            14.503_773_8,
+        );
+        check_next_unit(73, UnitFamily::None, "Seconds", " s", 0.0);
+        check_next_unit(0, UnitFamily::None, "SquareMeters", " m²", 0.0);
+        check_next_unit(
+            1037,
+            UnitFamily::Energy,
+            "TonsCO2Gas",
+            " t CO₂ (Gas)",
+            0.2536 / 1_000_000.0,
+        );
+        check_next_unit(
+            1034,
+            UnitFamily::Energy,
+            "TonsCO2Oil",
+            " t CO₂ (Oil)",
+            0.568 / 1_000_000.0,
+        );
+        check_next_unit(5, UnitFamily::None, "Volts", " V", 0.0);
+        check_next_unit(18, UnitFamily::Energy, "WattHours", " Wh", 1.0);
+        check_next_unit(47, UnitFamily::None, "Watts", " W", 0.0);
+        check_next_unit(35, UnitFamily::None, "WattsPerSquareMeter", " W/m²", 0.0);
 
         assert_eq!(18, spec_file.device_templates.len());
 
