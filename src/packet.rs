@@ -96,7 +96,9 @@ impl ToPacketId for str {
 
         let source_address_str = parts.next().unwrap();
         if source_address_str.len() != 4 {
-            return Err(format!("Invalid length of source address {:?}", source_address_str).into());
+            return Err(
+                format!("Invalid length of source address {:?}", source_address_str).into(),
+            );
         }
         if source_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(

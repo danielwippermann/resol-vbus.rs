@@ -75,12 +75,8 @@ impl io::Read for BlobBuffer {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let src_len = self.len();
         let dst_len = buf.len();
-        let len = if src_len < dst_len {
-            src_len
-        } else {
-            dst_len
-        };
-        buf [0..len].copy_from_slice(&self [0..len]);
+        let len = if src_len < dst_len { src_len } else { dst_len };
+        buf[0..len].copy_from_slice(&self[0..len]);
         self.consume(len);
         Ok(len)
     }
