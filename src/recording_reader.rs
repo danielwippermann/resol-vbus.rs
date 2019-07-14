@@ -166,7 +166,7 @@ impl<R: Read> RecordingReader<R> {
 
             self.previous_length = 0;
             data_set.timestamp = data_set_timestamp;
-            return Ok(Some(data_set));
+            Ok(Some(data_set))
         } else {
             Ok(None)
         }
