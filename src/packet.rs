@@ -189,11 +189,11 @@ impl<'a> PacketFieldId<'a> {
 /// A trait to get a `PacketFieldId` for a given value.
 pub trait ToPacketFieldId {
     /// Get the `PacketFieldId` for a given value.
-    fn to_packet_field_id(&self) -> Result<PacketFieldId>;
+    fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>>;
 }
 
 impl<'a> ToPacketFieldId for PacketFieldId<'a> {
-    fn to_packet_field_id(&self) -> Result<PacketFieldId> {
+    fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>> {
         Ok(*self)
     }
 }
@@ -208,7 +208,7 @@ impl ToPacketFieldId for str {
     ///
     /// assert_eq!(PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "012_4_0"), "11_1213_1415_10_1718_012_4_0".to_packet_field_id().unwrap());
     /// ```
-    fn to_packet_field_id(&self) -> Result<PacketFieldId> {
+    fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>> {
         if self.len() < 21 {
             return Err(format!("Invalid length of input {:?}", self).into());
         }
@@ -466,7 +466,7 @@ impl ToPacketId for Packet {
 }
 
 impl fmt::Debug for Packet {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Packet")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:04X}", self.command))

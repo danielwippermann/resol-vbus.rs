@@ -222,7 +222,7 @@ pub struct Specification {
 /// }
 /// ```
 #[derive(Debug)]
-pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]> + 'a> {
+pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]>> {
     spec: &'a Specification,
     data_set: &'a T,
     data_index: usize,
@@ -231,7 +231,7 @@ pub struct DataSetPacketFieldIterator<'a, T: AsRef<[Data]> + 'a> {
 
 /// An item returned from the `DataSetPacketFieldIterator` for each field.
 #[derive(Debug)]
-pub struct DataSetPacketField<'a, T: AsRef<[Data]> + 'a> {
+pub struct DataSetPacketField<'a, T: AsRef<[Data]>> {
     data_set: &'a T,
     data_index: usize,
     packet_spec: Rc<PacketSpec>,
@@ -665,7 +665,7 @@ impl Specification {
     /// assert_eq!("29.01.2017 11:22:13", fmt_localized_timestamp(Language::De));
     /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::Fr));
     /// ```
-    pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: &DateTime<Tz>) -> RawValueFormatter {
+    pub fn fmt_timestamp<Tz: TimeZone>(&self, timestamp: &DateTime<Tz>) -> RawValueFormatter<'_> {
         RawValueFormatter {
             language: self.language,
             typ: Type::DateTime,
@@ -775,7 +775,7 @@ impl PacketFieldSpec {
     }
 
     /// Format a raw value into its textual representation.
-    pub fn fmt_raw_value(&self, raw_value: Option<i64>, append_unit: bool) -> PacketFieldFormatter {
+    pub fn fmt_raw_value(&self, raw_value: Option<i64>, append_unit: bool) -> PacketFieldFormatter<'_> {
         let unit_text = if append_unit { &self.unit_text } else { "" };
         PacketFieldFormatter {
             language: self.language,
@@ -813,7 +813,7 @@ impl<'a> RawValueFormatter<'a> {
 }
 
 impl<'a> fmt::Display for RawValueFormatter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.typ {
             Type::Number => {
                 if self.precision > 0 {
@@ -889,7 +889,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
 }
 
 impl<'a> fmt::Display for PacketFieldFormatter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(raw_value) = self.raw_value {
             let formatter = RawValueFormatter::new(
                 self.language,
@@ -1007,7 +1007,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     }
 
     /// Return the `PacketFieldId` associated with this field.
-    pub fn packet_field_id(&self) -> PacketFieldId {
+    pub fn packet_field_id(&self) -> PacketFieldId<'_> {
         PacketFieldId(
             self.data().as_packet().packet_id(),
             &self.field_spec().field_id,
@@ -1028,7 +1028,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
     }
 
     /// Format the raw value associated with this field.
-    pub fn fmt_raw_value(&self, append_unit: bool) -> PacketFieldFormatter {
+    pub fn fmt_raw_value(&self, append_unit: bool) -> PacketFieldFormatter<'_> {
         self.field_spec().fmt_raw_value(self.raw_value, append_unit)
     }
 }

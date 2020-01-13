@@ -142,7 +142,7 @@ impl IdHash for Datagram {
 }
 
 impl fmt::Debug for Datagram {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Datagram")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:04X}", self.command))

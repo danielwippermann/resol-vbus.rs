@@ -138,12 +138,12 @@ impl DataSet {
     }
 
     /// Returns an iterator over the `Data` values.
-    pub fn iter(&self) -> Iter<Data> {
+    pub fn iter(&self) -> Iter<'_, Data> {
         self.set.iter()
     }
 
     /// Returns an iterator over the `Data` values.
-    pub fn iter_mut(&mut self) -> IterMut<Data> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Data> {
         self.set.iter_mut()
     }
 

@@ -225,7 +225,7 @@ impl IdHash for Telegram {
 }
 
 impl fmt::Debug for Telegram {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Telegram")
             .field("header", &self.header)
             .field("command", &format_args!("0x{:02X}", self.command))

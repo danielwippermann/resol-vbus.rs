@@ -132,7 +132,7 @@ impl Default for Header {
 }
 
 impl fmt::Debug for Header {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Header")
             .field("timestamp", &self.timestamp)
             .field("channel", &format_args!("0x{:02X}", self.channel))

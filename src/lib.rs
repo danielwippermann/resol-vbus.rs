@@ -122,9 +122,12 @@
 //! ```
 
 #![warn(missing_docs)]
-#![deny(bare_trait_objects)]
 #![deny(missing_debug_implementations)]
 #![deny(warnings)]
+#![deny(future_incompatible)]
+#![deny(nonstandard_style)]
+#![deny(rust_2018_compatibility)]
+#![deny(rust_2018_idioms)]
 #![allow(clippy::if_same_then_else)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::needless_bool)]
