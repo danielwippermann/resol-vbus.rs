@@ -261,7 +261,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
                     } else {
                         panic!("Record type 0x88 too small: {}", len);
                     }
-                } else if record [1] == 0x77 {
+                } else if record[1] == 0x77 {
                     if len >= 16 {
                         self.current_channel = record[14];
                     }
@@ -336,12 +336,10 @@ impl<T: Read> LiveDataRecordingReader<T> {
                 } else {
                     panic!("Record type 0x88 too small: {}", len);
                 }
-            } else if record [1] == 0x77 {
-                if len >= 16 {
-                    let channel = record[14];
-                    if stats.max_channel < channel {
-                        stats.max_channel = channel;
-                    }
+            } else if record[1] == 0x77 && len >= 16 {
+                let channel = record[14];
+                if stats.max_channel < channel {
+                    stats.max_channel = channel;
                 }
             }
         }

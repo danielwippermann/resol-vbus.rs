@@ -775,7 +775,11 @@ impl PacketFieldSpec {
     }
 
     /// Format a raw value into its textual representation.
-    pub fn fmt_raw_value(&self, raw_value: Option<i64>, append_unit: bool) -> PacketFieldFormatter<'_> {
+    pub fn fmt_raw_value(
+        &self,
+        raw_value: Option<i64>,
+        append_unit: bool,
+    ) -> PacketFieldFormatter<'_> {
         let unit_text = if append_unit { &self.unit_text } else { "" };
         PacketFieldFormatter {
             language: self.language,

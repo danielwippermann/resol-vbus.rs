@@ -1226,11 +1226,7 @@ mod tests {
         check_next_localized_text("Heat quantity", "Wärmemenge", "Quantité de chaleur");
         check_next_localized_text("Heat quantity 1", "Wärmemenge 1", "Quantité de chaleur 1");
         check_next_localized_text("Heat quantity 2", "Wärmemenge 2", "Quantité de chaleur 2");
-        check_next_localized_text(
-            "Wärmemenge Monat",
-            "Wärmemenge Monat",
-            "Wärmemenge Monat",
-        );
+        check_next_localized_text("Wärmemenge Monat", "Wärmemenge Monat", "Wärmemenge Monat");
         check_next_localized_text(
             "Heat quantity week",
             "Wärmemenge Woche",
