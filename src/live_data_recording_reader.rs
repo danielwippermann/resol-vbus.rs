@@ -15,6 +15,7 @@ pub struct LiveDataRecordingStats {
     malformed_byte_count: usize,
     data_count: usize,
     data_byte_count: usize,
+    max_channel: u8,
 }
 
 /// A `RecordingReader` for type 0x88 live data recordings.
@@ -42,6 +43,8 @@ pub struct LiveDataRecordingReader<T: Read> {
     max_timestamp: Option<DateTime<Utc>>,
     buf: Vec<u8>,
     timestamp: DateTime<Utc>,
+    channel: u8,
+    current_channel: u8,
 }
 
 impl<T: Read> LiveDataRecordingReader<T> {
@@ -53,6 +56,8 @@ impl<T: Read> LiveDataRecordingReader<T> {
             max_timestamp: None,
             buf: Vec::new(),
             timestamp: Utc.timestamp(0, 0),
+            channel: 0,
+            current_channel: 0,
         }
     }
 
@@ -66,9 +71,16 @@ impl<T: Read> LiveDataRecordingReader<T> {
         self.max_timestamp = max_timestamp;
     }
 
+    /// Set channel that `read_*` functions will filter data from.
+    pub fn set_channel(&mut self, channel: u8) {
+        self.channel = channel;
+    }
+
     /// Quickly read to EOF of the source and return the DataSet for all uniquely found `Data` variants.
     pub fn read_topology_data_set(&mut self) -> Result<DataSet> {
         let mut set = HashSet::new();
+
+        let mut current_channel = 0u8;
 
         let has_timestamps = self.min_timestamp.is_some() || self.max_timestamp.is_some();
 
@@ -96,6 +108,10 @@ impl<T: Read> LiveDataRecordingReader<T> {
                                 continue;
                             }
                         }
+                    }
+
+                    if current_channel != self.channel {
+                        continue;
                     }
 
                     self.buf.extend_from_slice(&record[22..]);
@@ -133,6 +149,10 @@ impl<T: Read> LiveDataRecordingReader<T> {
                     }
                 } else {
                     panic!("Record type 0x88 too small: {}", len);
+                }
+            } else if record[1] == 0x77 {
+                if len >= 16 {
+                    current_channel = record[14];
                 }
             } else {
                 panic!("Unexpected record type 0x{:02X}", record[1]);
@@ -231,11 +251,19 @@ impl<T: Read> LiveDataRecordingReader<T> {
                             }
                         }
 
+                        if self.current_channel != self.channel {
+                            continue;
+                        }
+
                         self.timestamp = record_timestamp;
                         self.buf.extend_from_slice(&record[22..]);
                         break;
                     } else {
                         panic!("Record type 0x88 too small: {}", len);
+                    }
+                } else if record [1] == 0x77 {
+                    if len >= 16 {
+                        self.current_channel = record[14];
                     }
                 } else {
                     panic!("Unexpected record type 0x{:02X}", record[1]);
@@ -307,6 +335,13 @@ impl<T: Read> LiveDataRecordingReader<T> {
                     }
                 } else {
                     panic!("Record type 0x88 too small: {}", len);
+                }
+            } else if record [1] == 0x77 {
+                if len >= 16 {
+                    let channel = record[14];
+                    if stats.max_channel < channel {
+                        stats.max_channel = channel;
+                    }
                 }
             }
         }
@@ -382,6 +417,7 @@ mod tests {
                 malformed_byte_count: 0,
                 data_count: 7,
                 data_byte_count: 610,
+                max_channel: 0,
             },
             stats
         );
