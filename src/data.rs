@@ -46,26 +46,17 @@ pub enum Data {
 impl Data {
     /// Returns `true` if the variant is a `Packet`.
     pub fn is_packet(&self) -> bool {
-        match *self {
-            Data::Packet(_) => true,
-            _ => false,
-        }
+        matches!(*self, Data::Packet(_))
     }
 
     /// Returns `true` if the variant is a `Packet`.
     pub fn is_datagram(&self) -> bool {
-        match *self {
-            Data::Datagram(_) => true,
-            _ => false,
-        }
+        matches!(*self, Data::Datagram(_))
     }
 
     /// Returns `true` if the variant is a `Packet`.
     pub fn is_telegram(&self) -> bool {
-        match *self {
-            Data::Telegram(_) => true,
-            _ => false,
-        }
+        matches!(*self, Data::Telegram(_))
     }
 
     /// Returns the `Packet` value, consuming the `Data` value.
@@ -284,13 +275,7 @@ impl PartialOrd for Data {
             match *left {
                 Data::Packet(ref left_packet) => {
                     if let Data::Packet(ref right_packet) = *right {
-                        if left_packet.command < right_packet.command {
-                            Some(Less)
-                        } else if left_packet.command > right_packet.command {
-                            Some(Greater)
-                        } else {
-                            Some(Equal)
-                        }
+                        Some(left_packet.command.cmp(&right_packet.command))
                     } else {
                         None
                     }
@@ -316,13 +301,7 @@ impl PartialOrd for Data {
                 }
                 Data::Telegram(ref left_tgram) => {
                     if let Data::Telegram(ref right_tgram) = *right {
-                        if left_tgram.command < right_tgram.command {
-                            Some(Less)
-                        } else if left_tgram.command > right_tgram.command {
-                            Some(Greater)
-                        } else {
-                            Some(Equal)
-                        }
+                        Some(left_tgram.command.cmp(&right_tgram.command))
                     } else {
                         None
                     }

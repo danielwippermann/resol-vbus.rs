@@ -57,10 +57,7 @@ impl ToPacketId for str {
     /// assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), "11_1213_1415_10_1718".to_packet_id().unwrap());
     /// ```
     fn to_packet_id(&self) -> Result<PacketId> {
-        let is_not_hex_char = |c| match c {
-            '0'..='9' | 'A'..='F' | 'a'..='f' => false,
-            _ => true,
-        };
+        let is_not_hex_char = |c| !matches!(c, '0'..='9' | 'A'..='F' | 'a'..='f');
 
         if self.len() < 20 {
             return Err(format!("Invalid length of input {:?}", self).into());

@@ -488,10 +488,7 @@ impl SpecificationFile {
     }
 
     fn check_type_id(&self, id: i32) -> bool {
-        match id {
-            1 | 3 | 4 | 5 => true,
-            _ => false,
-        }
+        matches!(id, 1 | 3 | 4 | 5)
     }
 
     fn parse_specification_block(&mut self, bytes: &[u8], offset: usize) -> Result<()> {
@@ -726,7 +723,7 @@ impl SpecificationFile {
             let mut parts = Vec::<PacketTemplateFieldPart>::with_capacity(part_count);
             for index in 0..part_count {
                 let part =
-                    self.parse_packet_template_field_part_block(bytes, part_table_offset, index)?;
+                    self.parse_packet_template_field_part_block(bytes, part_table_offset, index);
                 parts.push(part);
             }
 
@@ -746,7 +743,7 @@ impl SpecificationFile {
         bytes: &[u8],
         offset: usize,
         index: usize,
-    ) -> Result<PacketTemplateFieldPart> {
+    ) -> PacketTemplateFieldPart {
         let block = slice_table_entry(bytes, offset, 0x10, index);
         let data_offset = LittleEndian::read_i32(&block[0x00..0x04]);
         let bit_pos = block[0x04];
@@ -754,13 +751,13 @@ impl SpecificationFile {
         let is_signed = block[0x06];
         let factor = LittleEndian::read_i64(&block[0x08..0x10]);
 
-        Ok(PacketTemplateFieldPart {
+        PacketTemplateFieldPart {
             offset: data_offset,
             bit_pos,
             mask,
             is_signed: is_signed != 0,
             factor,
-        })
+        }
     }
 
     /// Convert a value from one `Unit` to another.
