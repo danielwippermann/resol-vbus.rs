@@ -332,9 +332,9 @@ impl From<Telegram> for Data {
 impl AsRef<Header> for Data {
     fn as_ref(&self) -> &Header {
         match *self {
-            Data::Packet(ref packet) => &packet.as_ref(),
-            Data::Datagram(ref dgram) => &dgram.as_ref(),
-            Data::Telegram(ref tgram) => &tgram.as_ref(),
+            Data::Packet(ref packet) => packet.as_ref(),
+            Data::Datagram(ref dgram) => dgram.as_ref(),
+            Data::Telegram(ref tgram) => tgram.as_ref(),
         }
     }
 }

@@ -257,10 +257,7 @@ fn get_cached_device_spec(
         }
     });
 
-    match result {
-        Some(device) => Some(device.clone()),
-        None => None,
-    }
+    result.cloned()
 }
 
 fn get_or_create_cached_device_spec(
@@ -344,10 +341,7 @@ fn get_cached_packet_spec(
         }
     });
 
-    match result {
-        Some(packet) => Some(packet.clone()),
-        None => None,
-    }
+    result.cloned()
 }
 
 fn get_or_create_cached_packet_spec(
@@ -768,10 +762,7 @@ impl PacketFieldSpec {
 
     /// Construct a `f64` raw value from a slice of bytes.
     pub fn raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
-        match self.raw_value_i64(buf) {
-            Some(raw_value) => Some(raw_value as f64 * power_of_ten_f64(-self.precision)),
-            None => None,
-        }
+        self.raw_value_i64(buf).map(|raw_value| raw_value as f64 * power_of_ten_f64(-self.precision))
     }
 
     /// Format a raw value into its textual representation.
@@ -1025,10 +1016,7 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the raw value associated with this field.
     pub fn raw_value_f64(&self) -> Option<f64> {
-        match self.raw_value {
-            Some(v) => Some(v as f64 * power_of_ten_f64(-self.field_spec().precision)),
-            None => None,
-        }
+        self.raw_value.map(|v| v as f64 * power_of_ten_f64(-self.field_spec().precision))
     }
 
     /// Format the raw value associated with this field.

@@ -66,11 +66,7 @@ impl LiveDataBuffer {
     /// Try to read a valid blob of bytes as `Data` from internal buffer.
     pub fn read_data(&mut self) -> Option<Data> {
         let channel = self.channel;
-        if let Some(bytes) = self.read_bytes() {
-            Some(data_from_checked_bytes(current_timestamp(), channel, bytes))
-        } else {
-            None
-        }
+        self.read_bytes().map(|bytes| data_from_checked_bytes(current_timestamp(), channel, bytes))
     }
 
     /// Get amount of already read bytes.
