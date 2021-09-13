@@ -762,7 +762,8 @@ impl PacketFieldSpec {
 
     /// Construct a `f64` raw value from a slice of bytes.
     pub fn raw_value_f64(&self, buf: &[u8]) -> Option<f64> {
-        self.raw_value_i64(buf).map(|raw_value| raw_value as f64 * power_of_ten_f64(-self.precision))
+        self.raw_value_i64(buf)
+            .map(|raw_value| raw_value as f64 * power_of_ten_f64(-self.precision))
     }
 
     /// Format a raw value into its textual representation.
@@ -1016,7 +1017,8 @@ impl<'a, T: AsRef<[Data]>> DataSetPacketField<'a, T> {
 
     /// Return the raw value associated with this field.
     pub fn raw_value_f64(&self) -> Option<f64> {
-        self.raw_value.map(|v| v as f64 * power_of_ten_f64(-self.field_spec().precision))
+        self.raw_value
+            .map(|v| v as f64 * power_of_ten_f64(-self.field_spec().precision))
     }
 
     /// Format the raw value associated with this field.
