@@ -34,7 +34,6 @@ use crate::{
 /// ```
 #[derive(Debug)]
 pub struct RecordingReader<R: Read> {
-    current_channel: u8,
     reader: BlobReader<R>,
     previous_length: usize,
     min_timestamp: Option<DateTime<Utc>>,
@@ -45,7 +44,6 @@ impl<R: Read> RecordingReader<R> {
     /// Constructs a `RecordingReader`.
     pub fn new(reader: R) -> RecordingReader<R> {
         RecordingReader {
-            current_channel: 0,
             reader: BlobReader::new(reader),
             previous_length: 0,
             min_timestamp: None,
