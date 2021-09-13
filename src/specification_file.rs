@@ -378,6 +378,7 @@ impl SpecificationFile {
     }
 
     /// Construct a new `SpecificationFile` from the embedded default VSF data.
+    #[cfg(not(feature = "no-default-spec"))]
     pub fn new_default() -> SpecificationFile {
         Self::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
     }
