@@ -128,6 +128,7 @@
 #![deny(nonstandard_style)]
 #![deny(rust_2018_compatibility)]
 #![deny(rust_2018_idioms)]
+#![deny(rust_2021_compatibility)]
 #![allow(clippy::if_same_then_else)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::needless_bool)]
