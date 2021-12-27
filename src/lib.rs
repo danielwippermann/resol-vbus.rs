@@ -129,12 +129,6 @@
 #![deny(rust_2018_compatibility)]
 #![deny(rust_2018_idioms)]
 #![deny(rust_2021_compatibility)]
-#![allow(clippy::if_same_then_else)]
-#![allow(clippy::large_enum_variant)]
-#![allow(clippy::needless_bool)]
-#![allow(clippy::needless_pass_by_value)]
-#![allow(clippy::trivially_copy_pass_by_ref)]
-#![allow(clippy::write_with_newline)]
 
 pub use chrono;
 

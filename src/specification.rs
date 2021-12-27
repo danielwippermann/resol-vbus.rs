@@ -245,16 +245,12 @@ fn get_cached_device_spec(
     self_address: u16,
     peer_address: u16,
 ) -> Option<Rc<DeviceSpec>> {
+    let peer_address = Some(peer_address);
+
     let result = devices.iter().find(|&device| {
-        if device.channel != channel {
-            false
-        } else if device.self_address != self_address {
-            false
-        } else if device.peer_address.is_some() && device.peer_address.unwrap() != peer_address {
-            false
-        } else {
-            true
-        }
+        device.channel == channel
+            && device.self_address == self_address
+            && (device.peer_address.is_none() || device.peer_address == peer_address)
     });
 
     result.cloned()
@@ -328,17 +324,10 @@ fn get_cached_packet_spec(
     let PacketId(channel, destination_address, source_address, command) = packet_id;
 
     let result = packets.iter().find(|&packet| {
-        if packet.channel != channel {
-            false
-        } else if packet.destination_address != destination_address {
-            false
-        } else if packet.source_address != source_address {
-            false
-        } else if packet.command != command {
-            false
-        } else {
-            true
-        }
+        packet.channel == channel
+            && packet.destination_address == destination_address
+            && packet.source_address == source_address
+            && packet.command == command
     });
 
     result.cloned()

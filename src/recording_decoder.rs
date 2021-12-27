@@ -21,11 +21,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
         Malformed
     } else if len < 14 {
         Partial
-    } else if (buf[1] >> 4) != (buf[1] & 0x0F) {
-        Malformed
-    } else if buf[2] != buf[4] {
-        Malformed
-    } else if buf[3] != buf[5] {
+    } else if (buf[1] >> 4) != (buf[1] & 0x0F) || buf[2] != buf[4] || buf[3] != buf[5] {
         Malformed
     } else {
         let expected_len = LittleEndian::read_u16(&buf[2..4]) as usize;
@@ -101,9 +97,7 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
 pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
     match length_from_bytes(buf) {
         BlobLength(length) => {
-            if length < 20 {
-                None
-            } else if buf[1] != 0x66 {
+            if length < 20 || buf[1] != 0x66 {
                 None
             } else {
                 let protocol_version = buf[18];

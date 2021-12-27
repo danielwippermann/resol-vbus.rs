@@ -31,6 +31,7 @@ use crate::{
 ///     Ok(())
 /// }
 /// ```
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum Data {
     /// Contains a `Packet` conforming to VBus protocol version 1.x.
@@ -189,23 +190,16 @@ impl PartialEq for Data {
         let left_header = left.as_header();
         let right_header = right.as_header();
 
-        if left_header.channel != right_header.channel {
-            false
-        } else if left_header.destination_address != right_header.destination_address {
-            false
-        } else if left_header.source_address != right_header.source_address {
-            false
-        } else if left_header.protocol_version != right_header.protocol_version {
+        if left_header.channel != right_header.channel
+            || left_header.destination_address != right_header.destination_address
+            || left_header.source_address != right_header.source_address
+            || left_header.protocol_version != right_header.protocol_version {
             false
         } else {
             match *left {
                 Data::Packet(ref left_packet) => {
                     if let Data::Packet(ref right_packet) = *right {
-                        if left_packet.command != right_packet.command {
-                            false
-                        } else {
-                            true
-                        }
+                        left_packet.command == right_packet.command
                     } else {
                         false
                     }
@@ -216,10 +210,8 @@ impl PartialEq for Data {
                             false
                         } else if left_dgram.command != 0x0900 {
                             true
-                        } else if left_dgram.param16 != right_dgram.param16 {
-                            false
                         } else {
-                            true
+                            left_dgram.param16 == right_dgram.param16
                         }
                     } else {
                         false
@@ -227,11 +219,7 @@ impl PartialEq for Data {
                 }
                 Data::Telegram(ref left_tgram) => {
                     if let Data::Telegram(ref right_tgram) = *right {
-                        if left_tgram.command != right_tgram.command {
-                            false
-                        } else {
-                            true
-                        }
+                        left_tgram.command == right_tgram.command
                     } else {
                         false
                     }

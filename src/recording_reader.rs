@@ -144,9 +144,7 @@ impl<R: Read> RecordingReader<R> {
                 let bytes = self.read_record()?;
                 let length = bytes.len();
 
-                if length == 0 {
-                    break;
-                } else if bytes[1] == 0x44 {
+                if length == 0 || bytes[1] == 0x44 {
                     break;
                 } else if bytes[1] == 0x66 {
                     if let Some(data) = data_from_bytes(current_channel, bytes) {

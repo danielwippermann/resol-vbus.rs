@@ -32,9 +32,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
         if major == 0x10 {
             if len < 10 {
                 Partial
-            } else if has_msb_set(&buf[6..10]) {
-                Malformed
-            } else if !calc_and_compare_checksum_v0(&buf[1..10]) {
+            } else if has_msb_set(&buf[6..10]) || !calc_and_compare_checksum_v0(&buf[1..10]) {
                 Malformed
             } else {
                 let frame_count = buf[8] as usize;
@@ -58,9 +56,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
         } else if major == 0x20 {
             if len < 16 {
                 Partial
-            } else if has_msb_set(&buf[6..16]) {
-                Malformed
-            } else if !calc_and_compare_checksum_v0(&buf[1..16]) {
+            } else if has_msb_set(&buf[6..16]) || !calc_and_compare_checksum_v0(&buf[1..16]) {
                 Malformed
             } else {
                 BlobLength(16)
@@ -68,9 +64,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
         } else if major == 0x30 {
             if len < 8 {
                 Partial
-            } else if has_msb_set(&buf[6..8]) {
-                Malformed
-            } else if !calc_and_compare_checksum_v0(&buf[1..8]) {
+            } else if has_msb_set(&buf[6..8]) || !calc_and_compare_checksum_v0(&buf[1..8]) {
                 Malformed
             } else {
                 let frame_count = Telegram::frame_count_from_command(buf[6]) as usize;
