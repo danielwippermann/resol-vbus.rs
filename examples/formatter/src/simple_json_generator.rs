@@ -19,7 +19,7 @@ impl<'a> JsonEscape<'a> {
 }
 
 impl<'a> Display for JsonEscape<'a> {
-    fn fmt(&self, f: &mut Formatter) -> ::std::result::Result<(), ::std::fmt::Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::result::Result<(), ::std::fmt::Error> {
         for c in self.input.chars() {
             match c {
                 '\\' | '"' => write!(f, "\\{}", c)?,
@@ -30,7 +30,7 @@ impl<'a> Display for JsonEscape<'a> {
     }
 }
 
-pub fn generate(config: &mut Config) -> Result<()> {
+pub fn generate(config: &mut Config<'_>) -> Result<()> {
     let dsr = &mut config.data_set_reader;
     let spec = config.specification;
     let pattern = config.output_pattern.unwrap_or("Output.json");

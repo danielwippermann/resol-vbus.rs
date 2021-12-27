@@ -14,6 +14,6 @@ pub struct Config<'a> {
     pub specification: &'a Specification,
     // pub field_iterator: &'a FieldIterator<'a>,
     pub topology_data_set: &'a DataSet,
-    pub data_set_reader: &'a mut DataSetReader,
+    pub data_set_reader: &'a mut dyn DataSetReader,
     pub output_pattern: Option<&'a str>,
 }

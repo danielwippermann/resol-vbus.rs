@@ -2,7 +2,7 @@ use resol_vbus::*;
 
 use crate::{app_error::Result, config::Config};
 
-pub fn print_stats(config: &mut Config) -> Result<()> {
+pub fn print_stats(config: &mut Config<'_>) -> Result<()> {
     let dsr = &mut config.data_set_reader;
 
     let mut min_timestamp = None;

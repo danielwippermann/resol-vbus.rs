@@ -5,7 +5,7 @@ use crate::{
     field_iterator::{AllFieldsIterator, FieldIterator},
 };
 
-pub fn print_filter_template(config: &mut Config) {
+pub fn print_filter_template(config: &mut Config<'_>) {
     let field_iterator = AllFieldsIterator::new(config.specification);
 
     println!("use resol_vbus::{{PacketId, PacketFieldId, Specification}};");

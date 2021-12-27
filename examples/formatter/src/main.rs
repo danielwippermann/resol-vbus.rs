@@ -1,3 +1,10 @@
+#![deny(warnings)]
+#![deny(future_incompatible)]
+#![deny(nonstandard_style)]
+#![deny(rust_2018_compatibility)]
+#![deny(rust_2018_idioms)]
+#![deny(rust_2021_compatibility)]
+
 use std::{fs::File, io::Read};
 
 use clap::{App, Arg};
@@ -76,7 +83,7 @@ fn read_topology_data_set(
     }
 }
 
-fn process_data_set_stream(typ: &str, config: &mut Config) -> Result<bool> {
+fn process_data_set_stream(typ: &str, config: &mut Config<'_>) -> Result<bool> {
     let mut handled = true;
     match typ {
         "stats" => print_stats(config)?,

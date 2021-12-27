@@ -1,11 +1,13 @@
 use std::io::Read;
 
-use resol_vbus::{DataSet, LiveDataRecordingReader, RecordingReader};
+use resol_vbus::{Data, DataSet, LiveDataRecordingReader, RecordingReader};
 
-use crate::app_error::Result;
+use crate::app_error::{Error, Result};
 
 pub trait DataSetReader {
     fn read_data_set(&mut self) -> Result<Option<DataSet>>;
+
+    fn read_data(&mut self) -> Result<Option<Data>>;
 }
 
 impl<R: Read> DataSetReader for LiveDataRecordingReader<R> {
@@ -26,10 +28,18 @@ impl<R: Read> DataSetReader for LiveDataRecordingReader<R> {
 
         Ok(None)
     }
+
+    fn read_data(&mut self) -> Result<Option<Data>> {
+        Ok(LiveDataRecordingReader::read_data(self)?)
+    }
 }
 
 impl<R: Read> DataSetReader for RecordingReader<R> {
     fn read_data_set(&mut self) -> Result<Option<DataSet>> {
         Ok(self.read_data_set()?)
+    }
+
+    fn read_data(&mut self) -> Result<Option<Data>> {
+        Err(Error::from("Not supported"))
     }
 }

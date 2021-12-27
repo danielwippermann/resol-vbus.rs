@@ -5,7 +5,7 @@ use crate::{
     timestamp_interval::TimestampInterval,
 };
 
-pub fn generate(config: &mut Config) -> Result<()> {
+pub fn generate(config: &mut Config<'_>) -> Result<()> {
     let dsr = &mut config.data_set_reader;
     let interval_duration = config.sieve_interval;
     let ttl_duration = config.ttl;

@@ -7,7 +7,7 @@ use crate::{
     timestamp_file_writer::TimestampFileWriter, timestamp_interval::TimestampInterval,
 };
 
-pub fn convert_to_text_data(config: &mut Config) -> Result<()> {
+pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
     let dsr = &mut config.data_set_reader;
     let interval_duration = config.sieve_interval;
     let ttl_duration = config.ttl;
