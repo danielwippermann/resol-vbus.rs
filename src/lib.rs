@@ -32,13 +32,12 @@
 //! ## Technical Information & Specifications
 //!
 //! * [RESOL VBus Google Group](https://groups.google.com/forum/#!forum/resol-vbus)
-//! * [RESOL VBus Protocol Specification](http://danielwippermann.github.io/resol-vbus/vbus-specification.html)
-//! * [RESOL VBus Packet List](http://danielwippermann.github.io/resol-vbus/vbus-packets.html)
-//! * [RESOL VBus Recording File Format](http://danielwippermann.github.io/resol-vbus/vbus-recording-file-format.html)
-//! * [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
-//! * [RESOL VBus over TCP Specification](http://danielwippermann.github.io/resol-vbus/vbus-over-tcp.html)
-//! * [RESOL DL2 (v1) Data Download API](https://drive.google.com/file/d/0B4wMTuLGRPi2YmM5ZTJiNDQtNjkyMi00ZWYzLTgzYzgtYTdiMjBlZmI5ODgx/edit?usp=sharing)
-//! * [RESOL DL2 (v2) & DL3 Data Download API](http://danielwippermann.github.io/resol-vbus/dlx-data-download-api.html)
+//! * [RESOL VBus Protocol Specification](http://danielwippermann.github.io/resol-vbus/#/md/docs/vbus-specification)
+//! * [RESOL VBus Packet List](http://danielwippermann.github.io/resol-vbus/#/vsf)
+//! * [RESOL VBus Recording File Format](http://danielwippermann.github.io/resol-vbus/#/md/docs/vbus-recording-file-format)
+//! * [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/#/md/docs/vbus-specification-file-format-v1)
+//! * [RESOL VBus over TCP Specification](http://danielwippermann.github.io/resol-vbus/#/md/docs/vbus-over-tcp)
+//! * [RESOL DLx Data Download API](http://danielwippermann.github.io/resol-vbus/#/md/docs/dlx-data-download-api)
 //!
 //!
 //! ### Converter for recorded VBus data to CSV.
