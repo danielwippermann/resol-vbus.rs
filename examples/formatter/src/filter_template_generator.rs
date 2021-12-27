@@ -9,10 +9,10 @@ pub fn print_filter_template(config: &mut Config<'_>) {
     let field_iterator = AllFieldsIterator::new(config.specification);
 
     println!("use resol_vbus::{{PacketId, PacketFieldId, Specification}};");
-    println!("");
+    println!();
     println!("use field_iterator::FilteredFieldIterator;");
-    println!("");
-    println!("");
+    println!();
+    println!();
     println!("pub fn create_xxx_filtered_field_iterator<'a>(spec: &'a Specification) -> FilteredFieldIterator<'a> {{");
     println!("    FilteredFieldIterator::new(spec, vec![");
 
@@ -26,7 +26,7 @@ pub fn print_filter_template(config: &mut Config<'_>) {
         if last_packet_id != Some(packet_id) {
             last_packet_id = Some(packet_id);
 
-            println!("");
+            println!();
             println!("        //-----------------------------------------------------------------");
             println!("        // {}", field.data().id_string());
             println!("        // {}", field.packet_spec().name);

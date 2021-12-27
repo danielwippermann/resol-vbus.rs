@@ -8,7 +8,7 @@ pub struct TimestampInterval {
 impl TimestampInterval {
     pub fn new(interval: Option<Duration>) -> TimestampInterval {
         TimestampInterval {
-            interval: interval,
+            interval,
             last_interval: None,
         }
     }

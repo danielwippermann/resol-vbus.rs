@@ -16,7 +16,7 @@ pub fn print_data_set_fields(config: &mut Config<'_>) {
         if last_packet_id != Some(packet_id) {
             last_packet_id = Some(packet_id);
 
-            println!("");
+            println!();
             println!("// ----------------------------------------------------------------------");
             println!("// -- {:64} --", packet_id.packet_id_string());
             println!("// -- {:64} --", field.packet_spec().name);

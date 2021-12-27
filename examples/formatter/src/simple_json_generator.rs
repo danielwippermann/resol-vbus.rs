@@ -14,7 +14,7 @@ struct JsonEscape<'a> {
 
 impl<'a> JsonEscape<'a> {
     pub fn new(input: &'a str) -> JsonEscape<'a> {
-        JsonEscape { input: input }
+        JsonEscape { input }
     }
 }
 
@@ -41,17 +41,20 @@ pub fn generate(config: &mut Config<'_>) -> Result<()> {
 
     let output = &mut output_writer;
 
+    let eol = "\n";
+
     if let Some(data_set) = dsr.read_data_set()? {
         let timestamp = data_set.timestamp;
         let local_timestamp = timestamp.with_timezone(&Local);
 
         output.set_timestamp(timestamp)?;
 
-        write!(output, "{{\n")?;
+        write!(output, "{{{}", eol)?;
         write!(
             output,
-            "    \"timestamp\": \"{}\",\n",
-            local_timestamp.to_rfc3339()
+            "    \"timestamp\": \"{}\",{}",
+            local_timestamp.to_rfc3339(),
+            eol
         )?;
         write!(output, "    \"fields\": [")?;
         for (idx, field) in field_iterator
@@ -62,49 +65,56 @@ pub fn generate(config: &mut Config<'_>) -> Result<()> {
             if idx > 0 {
                 write!(output, ", ")?;
             }
-            write!(output, "{{\n")?;
+            write!(output, "{{{}", eol)?;
             write!(
                 output,
-                "        \"id\": \"{}_{}\",\n",
+                "        \"id\": \"{}_{}\",{}",
                 field.packet_spec().packet_id,
-                field.field_id()
+                field.field_id(),
+                eol
             )?;
             write!(
                 output,
-                "        \"packetName\": \"{}\",\n",
-                JsonEscape::new(&field.packet_spec().name)
+                "        \"packetName\": \"{}\",{}",
+                JsonEscape::new(&field.packet_spec().name),
+                eol
             )?;
             write!(
                 output,
-                "        \"fieldName\": \"{}\",\n",
-                JsonEscape::new(&field.field_spec().name)
+                "        \"fieldName\": \"{}\",{}",
+                JsonEscape::new(&field.field_spec().name),
+                eol
             )?;
             write!(
                 output,
-                "        \"rawValue\": \"{}\",\n",
-                field.raw_value_i64().unwrap()
+                "        \"rawValue\": \"{}\",{}",
+                field.raw_value_i64().unwrap(),
+                eol
             )?;
             write!(
                 output,
-                "        \"textValue\": \"{}\",\n",
-                field.fmt_raw_value(false)
+                "        \"textValue\": \"{}\",{}",
+                field.fmt_raw_value(false),
+                eol
             )?;
             write!(
                 output,
-                "        \"unitCode\": \"{}\",\n",
-                JsonEscape::new(&field.field_spec().unit_code)
+                "        \"unitCode\": \"{}\",{}",
+                JsonEscape::new(&field.field_spec().unit_code),
+                eol
             )?;
             write!(
                 output,
-                "        \"unitText\": \"{}\"\n",
-                JsonEscape::new(&field.field_spec().unit_text)
+                "        \"unitText\": \"{}\"{}",
+                JsonEscape::new(&field.field_spec().unit_text),
+                eol
             )?;
             write!(output, "    }}")?;
         }
-        write!(output, "]\n")?;
-        write!(output, "}}\n")?;
+        write!(output, "]{}", eol)?;
+        write!(output, "}}{}", eol)?;
     } else {
-        write!(output, "{{}}\n")?;
+        write!(output, "{{}}{}", eol)?;
     }
 
     Ok(())

@@ -16,7 +16,7 @@ pub struct TimestampFileWriter {
 impl TimestampFileWriter {
     pub fn new(filename_pattern: String) -> TimestampFileWriter {
         TimestampFileWriter {
-            filename_pattern: filename_pattern,
+            filename_pattern,
             timestamp: Utc::now(),
             timestamp_changed: true,
             current_filename: None,

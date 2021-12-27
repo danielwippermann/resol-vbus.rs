@@ -25,6 +25,9 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
 
     let output = &mut output_writer;
 
+    let sep = "\t";
+    let eol = "\n";
+
     while let Some(data_set) = dsr.read_data_set()? {
         let timestamp = data_set.timestamp;
         let local_timestamp = timestamp.with_timezone(&Local);
@@ -82,7 +85,7 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
                     None => true,
                 };
 
-                write!(output, "\t")?;
+                write!(output, "{}", sep)?;
 
                 if new_packet_spec {
                     current_packet_id = Some(field.packet_spec().packet_id.clone());
@@ -90,20 +93,20 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
                 }
             }
 
-            write!(output, "\n")?;
+            write!(output, "{}", eol)?;
 
             // Row 3: Field names
             write!(output, "Date / Time")?;
 
             for field in field_iterator.fields_in_data_set(&cumultative_data_set) {
-                write!(output, "\t{}", field.field_spec().name)?;
+                write!(output, "{}{}", sep, field.field_spec().name)?;
             }
 
             // for data in cumultative_data_set.as_data_slice() {
             //     write!(output, "\t{}", data.id_string())?;
             // }
 
-            write!(output, "\n")?;
+            write!(output, "{}", eol)?;
         }
 
         if new_interval {
@@ -112,7 +115,7 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
             write!(output, "{}", local_timestamp.to_rfc3339())?;
 
             for field in field_iterator.fields_in_data_set(&cumultative_data_set) {
-                write!(output, "\t{}", field.fmt_raw_value(false))?;
+                write!(output, "{}{}", sep, field.fmt_raw_value(false))?;
             }
 
             // for data in cumultative_data_set.as_data_slice() {
@@ -127,7 +130,7 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
             //     }
             // }
 
-            write!(output, "\n")?;
+            write!(output, "{}", eol)?;
         }
     }
 

@@ -18,7 +18,7 @@ pub struct AllFieldsIterator<'a> {
 
 impl<'a> AllFieldsIterator<'a> {
     pub fn new(spec: &'a Specification) -> AllFieldsIterator<'a> {
-        AllFieldsIterator { spec: spec }
+        AllFieldsIterator { spec }
     }
 }
 
@@ -64,8 +64,8 @@ impl<'a> FilteredFieldIterator<'a> {
         filters: Vec<PacketFieldId<'a>>,
     ) -> FilteredFieldIterator<'a> {
         FilteredFieldIterator {
-            spec: spec,
-            filters: filters,
+            spec,
+            filters,
         }
     }
 }

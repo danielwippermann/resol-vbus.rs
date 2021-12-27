@@ -249,22 +249,22 @@ fn run() -> Result<()> {
     let (source_type, topology_data_set) =
         read_topology_data_set(input_filenames.clone(), min_timestamp, max_timestamp)?;
 
-    let flr = FileListReader::new(input_filenames.clone());
+    let flr = FileListReader::new(input_filenames);
 
     if source_type == SourceType::Type44 {
         let mut rr = RecordingReader::new(flr);
         rr.set_min_max_timestamps(min_timestamp, max_timestamp);
 
         let mut config = Config {
-            sieve_interval: sieve_interval,
+            sieve_interval,
             ttl: ttl_duration,
-            min_timestamp: min_timestamp,
-            max_timestamp: max_timestamp,
-            language: language,
+            min_timestamp,
+            max_timestamp,
+            language,
             specification: &spec,
             topology_data_set: &topology_data_set,
             data_set_reader: &mut rr,
-            output_pattern: output_pattern,
+            output_pattern,
         };
 
         if process_data_set_stream(typ, &mut config)? {
@@ -281,15 +281,15 @@ fn run() -> Result<()> {
             println!("{:?}", stats);
         } else {
             let mut config = Config {
-                sieve_interval: sieve_interval,
+                sieve_interval,
                 ttl: ttl_duration,
-                min_timestamp: min_timestamp,
-                max_timestamp: max_timestamp,
-                language: language,
+                min_timestamp,
+                max_timestamp,
+                language,
                 specification: &spec,
                 topology_data_set: &topology_data_set,
                 data_set_reader: &mut ldrr,
-                output_pattern: output_pattern,
+                output_pattern,
             };
 
             if process_data_set_stream(typ, &mut config)? {
