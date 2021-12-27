@@ -90,7 +90,6 @@ impl<R: Read> RecordingReader<R> {
                     }
                 }
                 Malformed => {
-                    println!("Malformed record at offset {}", self.reader.offset());
                     self.reader.consume(1);
                 }
             }
