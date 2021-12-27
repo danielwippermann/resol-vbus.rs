@@ -6,7 +6,7 @@ license = "MIT/Apache-2.0"
 repository = "https://github.com/danielwippermann/resol-vbus.rs"
 documentation = "https://docs.rs/resol-vbus"
 description = "A Rust library for processing RESOL VBus data."
-edition = "2018"
+edition = "2021"
 
 [badges]
 travis-ci = { repository = "danielwippermann/resol-vbus.rs" }
