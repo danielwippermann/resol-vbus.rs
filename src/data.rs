@@ -193,7 +193,8 @@ impl PartialEq for Data {
         if left_header.channel != right_header.channel
             || left_header.destination_address != right_header.destination_address
             || left_header.source_address != right_header.source_address
-            || left_header.protocol_version != right_header.protocol_version {
+            || left_header.protocol_version != right_header.protocol_version
+        {
             false
         } else {
             match *left {

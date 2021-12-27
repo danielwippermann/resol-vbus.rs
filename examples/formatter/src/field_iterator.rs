@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-
 use resol_vbus::{
     specification::{DataSetPacketField, DataSetPacketFieldIterator},
     *,
@@ -63,10 +62,7 @@ impl<'a> FilteredFieldIterator<'a> {
         spec: &'a Specification,
         filters: Vec<PacketFieldId<'a>>,
     ) -> FilteredFieldIterator<'a> {
-        FilteredFieldIterator {
-            spec,
-            filters,
-        }
+        FilteredFieldIterator { spec, filters }
     }
 }
 
