@@ -5,7 +5,7 @@ authors = ["Daniel Wippermann <Daniel.Wippermann@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-clap = "2.20"
-env_logger = "0.4"
-log = "0.3"
+clap = "3.1.18"
+env_logger = "0.9.0"
+log = "0.4.17"
 "resol-vbus" = { path = "../.." }

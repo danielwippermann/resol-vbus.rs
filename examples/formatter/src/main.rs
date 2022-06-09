@@ -7,8 +7,8 @@
 
 use std::{fs::File, io::Read};
 
-use clap::{App, Arg};
-use log::{log, trace};
+use clap::{Arg, Command};
+use log::{trace};
 use resol_vbus::{
     chrono::{DateTime, Duration, Local, Utc},
     *,
@@ -100,16 +100,16 @@ fn process_data_set_stream(typ: &str, config: &mut Config<'_>) -> Result<bool> {
 }
 
 fn run() -> Result<()> {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let start = Local::now();
 
-    let matches = App::new("VBus-Formatter")
+    let matches = Command::new("VBus-Formatter")
         .version("1.0")
         .author("Daniel Wippermann <Daniel.Wippermann@gmail.com>")
         .about("Formats recorded VBus data")
         .arg(
-            Arg::with_name("type")
+            Arg::new("type")
                 .help("Sets the output type")
                 .required(true)
                 .takes_value(true)
@@ -126,59 +126,59 @@ fn run() -> Result<()> {
                 ]),
         )
         .arg(
-            Arg::with_name("sieve_interval")
+            Arg::new("sieve_interval")
                 .help("Sieves input data and removes multiple data sets within the same interval")
                 .long("sieve-interval")
                 .takes_value(true)
                 .value_name("SECONDS"),
         )
         .arg(
-            Arg::with_name("ttl")
+            Arg::new("ttl")
                 .help("Remove data from data sets if it was not updated for this amount of time")
                 .long("ttl")
                 .takes_value(true)
                 .value_name("SECONDS"),
         )
         .arg(
-            Arg::with_name("min_timestamp")
+            Arg::new("min_timestamp")
                 .help("Ignore data sets before this point in time")
                 .long("min-timestamp")
                 .takes_value(true)
                 .value_name("DATETIME"),
         )
         .arg(
-            Arg::with_name("max_timestamp")
+            Arg::new("max_timestamp")
                 .help("Ignore data sets after this point in time")
                 .long("max-timestamp")
                 .takes_value(true)
                 .value_name("DATETIME"),
         )
         .arg(
-            Arg::with_name("vsf_filename")
+            Arg::new("vsf_filename")
                 .help("Location of the VSF file")
                 .long("vsf")
                 .takes_value(true)
                 .value_name("FILENAME"),
         )
         .arg(
-            Arg::with_name("language")
+            Arg::new("language")
                 .help("Language")
                 .long("language")
                 .takes_value(true)
                 .value_name("LANGUAGE"),
         )
         .arg(
-            Arg::with_name("output_pattern")
+            Arg::new("output_pattern")
                 .help("Output filename pattern, optionally containing strftime placeholders")
                 .long("output")
                 .takes_value(true)
                 .value_name("PATTERN"),
         )
         .arg(
-            Arg::with_name("INPUT")
+            Arg::new("INPUT")
                 .help("Sets the input files to use")
                 .required(true)
-                .multiple(true),
+                .multiple_occurrences(true),
         )
         .get_matches();
 
