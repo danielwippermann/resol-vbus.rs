@@ -68,10 +68,7 @@ impl Data {
     pub fn into_packet(self) -> Packet {
         match self {
             Data::Packet(packet) => packet,
-            _ => panic!(
-                "called `Data::into_packet` for a non-`Packet` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::into_packet` for a non-`Packet` value: {self:?}"),
         }
     }
 
@@ -83,10 +80,7 @@ impl Data {
     pub fn into_datagram(self) -> Datagram {
         match self {
             Data::Datagram(datagram) => datagram,
-            _ => panic!(
-                "called `Data::into_datagram` for a non-`Datagram` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::into_datagram` for a non-`Datagram` value: {self:?}"),
         }
     }
 
@@ -98,10 +92,7 @@ impl Data {
     pub fn into_telegram(self) -> Telegram {
         match self {
             Data::Telegram(telegram) => telegram,
-            _ => panic!(
-                "called `Data::into_telegram` for a non-`Telegram` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::into_telegram` for a non-`Telegram` value: {self:?}"),
         }
     }
 
@@ -118,10 +109,7 @@ impl Data {
     pub fn as_packet(&self) -> &Packet {
         match *self {
             Data::Packet(ref packet) => packet,
-            _ => panic!(
-                "called `Data::as_packet` for a non-`Packet` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::as_packet` for a non-`Packet` value: {self:?}"),
         }
     }
 
@@ -133,10 +121,7 @@ impl Data {
     pub fn as_datagram(&self) -> &Datagram {
         match *self {
             Data::Datagram(ref datagram) => datagram,
-            _ => panic!(
-                "called `Data::as_datagram` for a non-`Datagram` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::as_datagram` for a non-`Datagram` value: {self:?}"),
         }
     }
 
@@ -148,10 +133,7 @@ impl Data {
     pub fn as_telegram(&self) -> &Telegram {
         match *self {
             Data::Telegram(ref telegram) => telegram,
-            _ => panic!(
-                "called `Data::as_telegram` for a non-`Telegram` value: {:?}",
-                self
-            ),
+            _ => panic!("called `Data::as_telegram` for a non-`Telegram` value: {self:?}"),
         }
     }
 

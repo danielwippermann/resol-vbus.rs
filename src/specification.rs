@@ -282,16 +282,16 @@ fn get_or_create_cached_device_spec(
     };
 
     let device_id = match peer_address_option {
-        None => format!("{:02X}_{:04X}", channel, self_address),
-        Some(peer_address) => format!("{:02X}_{:04X}_{:04X}", channel, self_address, peer_address),
+        None => format!("{channel:02X}_{self_address:04X}"),
+        Some(peer_address) => format!("{channel:02X}_{self_address:04X}_{peer_address:04X}"),
     };
 
     let name = match device_template {
         None => {
             match language {
-                Language::En => format!("Unknown device 0x{:04X}", self_address),
-                Language::De => format!("Unbekanntes Gerät 0x{:04X}", self_address),
-                Language::Fr => format!("Unknown device 0x{:04X}", self_address), // FIXME(daniel): missing translation
+                Language::En => format!("Unknown device 0x{self_address:04X}"),
+                Language::De => format!("Unbekanntes Gerät 0x{self_address:04X}"),
+                Language::Fr => format!("Unknown device 0x{self_address:04X}"), // FIXME(daniel): missing translation
             }
         }
         Some(device_template) => file
@@ -301,7 +301,7 @@ fn get_or_create_cached_device_spec(
 
     let name = match channel {
         0 => name,
-        _ => format!("VBus {}: {}", channel, name),
+        _ => format!("VBus {channel}: {name}"),
     };
 
     let device = DeviceSpec {
@@ -378,7 +378,7 @@ fn get_or_create_cached_packet_spec(
             .map(|field| {
                 let field_id = file.text_by_index(&field.id_text_index).to_string();
 
-                let packet_field_id = format!("{}_{}", packet_id_string, field_id);
+                let packet_field_id = format!("{packet_id_string}_{field_id}");
 
                 let field_name = file
                     .localized_text_by_index(&field.name_localized_text_index, language)
@@ -812,17 +812,17 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                         Language::De | Language::Fr => ",",
                     };
 
-                    write!(f, "{}{}{}", sign, left_part, separator)?;
+                    write!(f, "{sign}{left_part}{separator}")?;
                     match self.precision {
-                        1 => write!(f, "{:01}", right_part)?,
-                        2 => write!(f, "{:02}", right_part)?,
-                        3 => write!(f, "{:03}", right_part)?,
-                        4 => write!(f, "{:04}", right_part)?,
-                        5 => write!(f, "{:05}", right_part)?,
-                        6 => write!(f, "{:06}", right_part)?,
-                        7 => write!(f, "{:07}", right_part)?,
-                        8 => write!(f, "{:08}", right_part)?,
-                        9 => write!(f, "{:09}", right_part)?,
+                        1 => write!(f, "{right_part:01}")?,
+                        2 => write!(f, "{right_part:02}")?,
+                        3 => write!(f, "{right_part:03}")?,
+                        4 => write!(f, "{right_part:04}")?,
+                        5 => write!(f, "{right_part:05}")?,
+                        6 => write!(f, "{right_part:06}")?,
+                        7 => write!(f, "{right_part:07}")?,
+                        8 => write!(f, "{right_part:08}")?,
+                        9 => write!(f, "{right_part:09}")?,
                         _ => {
                             let s = format!("{}", right_part + factor);
                             write!(f, "{}", &s[1..])?;
@@ -836,7 +836,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
             Type::Time => {
                 let hours = self.raw_value / 60;
                 let minutes = self.raw_value % 60;
-                write!(f, "{:02}:{:02}", hours, minutes)
+                write!(f, "{hours:02}:{minutes:02}")
             }
             Type::WeekTime => {
                 let weekday_idx = ((self.raw_value / 1440) % 7) as usize;

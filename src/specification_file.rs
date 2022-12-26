@@ -78,7 +78,7 @@ pub enum ErrorKind {
 }
 
 fn err<T>(kind: ErrorKind) -> Result<T> {
-    Err(Error::new(format!("Unable to parse VSF: {:?}", kind)))
+    Err(Error::new(format!("Unable to parse VSF: {kind:?}")))
 }
 
 fn check_offset(buf: &[u8], offset: usize, length: usize, count: usize) -> bool {
@@ -411,7 +411,7 @@ impl SpecificationFile {
             4 => UnitFamily::Volume,
             5 => UnitFamily::Time,
             6 => UnitFamily::Power,
-            _ => panic!("Unsupported unit family ID {:?}", id),
+            _ => panic!("Unsupported unit family ID {id:?}"),
         }
     }
 
@@ -435,7 +435,7 @@ impl SpecificationFile {
             3 => Type::Time,
             4 => Type::WeekTime,
             5 => Type::DateTime,
-            _ => panic!("Unsupported type ID {:?}", id),
+            _ => panic!("Unsupported type ID {id:?}"),
         }
     }
 
@@ -777,12 +777,12 @@ impl SpecificationFile {
                 let value = match src_unit_code {
                     "DegreesCelsius" => value,
                     "DegreesFahrenheit" => (value - 32.0) / 1.8,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 };
                 match dst_unit_code {
                     "DegreesCelsius" => value,
                     "DegreesFahrenheit" => value * 1.8 + 32.0,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 }
             }
             UnitFamily::Energy => {
@@ -799,7 +799,7 @@ impl SpecificationFile {
                     "TonsCO2Gas" => value * 1_000_000.0 / GRAMS_CO2_GAS_PER_WATT_HOUR,
                     "TonsCO2Oil" => value * 1_000_000.0 / GRAMS_CO2_OIL_PER_WATT_HOUR,
                     "WattHours" => value,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 };
                 match dst_unit_code {
                     "Btus" => value * BTUS_PER_WATT_HOUR,
@@ -814,7 +814,7 @@ impl SpecificationFile {
                     "TonsCO2Gas" => value * GRAMS_CO2_GAS_PER_WATT_HOUR / 1_000_000.0,
                     "TonsCO2Oil" => value * GRAMS_CO2_OIL_PER_WATT_HOUR / 1_000_000.0,
                     "WattHours" => value,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 }
             }
             UnitFamily::VolumeFlow => {
@@ -824,7 +824,7 @@ impl SpecificationFile {
                     "GallonsPerMinute" => value / GALLONS_PER_LITER * 60.0,
                     "LitersPerHour" => value,
                     "LitersPerMinute" => value * 60.0,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 };
                 match dst_unit_code {
                     "CubicMetersPerHour" => value / 1000.0,
@@ -832,19 +832,19 @@ impl SpecificationFile {
                     "GallonsPerMinute" => value * GALLONS_PER_LITER / 60.0,
                     "LitersPerHour" => value,
                     "LitersPerMinute" => value / 60.0,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 }
             }
             UnitFamily::Pressure => {
                 let value = match src_unit_code {
                     "Bars" => value,
                     "PoundsForcePerSquareInch" => value / POUNDS_FORCE_PER_SQUARE_INCH_PER_BAR,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 };
                 match dst_unit_code {
                     "Bars" => value,
                     "PoundsForcePerSquareInch" => value * POUNDS_FORCE_PER_SQUARE_INCH_PER_BAR,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 }
             }
             UnitFamily::Volume => {
@@ -852,32 +852,32 @@ impl SpecificationFile {
                     "CubicMeters" => value * 1000.0,
                     "Gallons" => value / GALLONS_PER_LITER,
                     "Liters" => value,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 };
                 match dst_unit_code {
                     "CubicMeters" => value / 1000.0,
                     "Gallons" => value * GALLONS_PER_LITER,
                     "Liters" => value,
-                    unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                    unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 }
             }
             UnitFamily::Time => {
                 // let value = match src_unit_code {
-                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                //     unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 // };
                 // match dst_unit_code {
-                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                //     unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 // }
-                return Err(format!("Unexpected unit code {}", src_unit_code).into());
+                return Err(format!("Unexpected unit code {src_unit_code}").into());
             }
             UnitFamily::Power => {
                 // let value = match src_unit_code {
-                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                //     unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 // };
                 // match dst_unit_code {
-                //     unit_code => return Err(format!("Unexpected unit code {}", unit_code).into()),
+                //     unit_code => return Err(format!("Unexpected unit code {unit_code}").into()),
                 // }
-                return Err(format!("Unexpected unit code {}", src_unit_code).into());
+                return Err(format!("Unexpected unit code {src_unit_code}").into());
             }
         };
 

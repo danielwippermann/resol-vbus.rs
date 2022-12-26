@@ -89,7 +89,7 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
             param32,
         })
     } else {
-        panic!("Unhandled protocol version {}", protocol_version);
+        panic!("Unhandled protocol version {protocol_version}");
     }
 }
 

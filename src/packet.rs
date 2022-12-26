@@ -60,32 +60,30 @@ impl ToPacketId for str {
         let is_not_hex_char = |c| !matches!(c, '0'..='9' | 'A'..='F' | 'a'..='f');
 
         if self.len() < 20 {
-            return Err(format!("Invalid length of input {:?}", self).into());
+            return Err(format!("Invalid length of input {self:?}").into());
         }
 
         let mut parts = self.split('_');
 
         let channel_str = parts.next().unwrap();
         if channel_str.len() != 2 {
-            return Err(format!("Invalid length of channel {:?}", channel_str).into());
+            return Err(format!("Invalid length of channel {channel_str:?}").into());
         }
         if channel_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in channel {:?}", channel_str).into());
+            return Err(format!("Invalid characters in channel {channel_str:?}").into());
         }
         let channel = u8::from_str_radix(channel_str, 16).unwrap();
 
         let destination_address_str = parts.next().unwrap();
         if destination_address_str.len() != 4 {
             return Err(format!(
-                "Invalid length of destination address {:?}",
-                destination_address_str
+                "Invalid length of destination address {destination_address_str:?}",
             )
             .into());
         }
         if destination_address_str.chars().any(&is_not_hex_char) {
             return Err(format!(
-                "Invalid characters in destination address {:?}",
-                destination_address_str
+                "Invalid characters in destination address {destination_address_str:?}"
             )
             .into());
         }
@@ -93,45 +91,37 @@ impl ToPacketId for str {
 
         let source_address_str = parts.next().unwrap();
         if source_address_str.len() != 4 {
-            return Err(
-                format!("Invalid length of source address {:?}", source_address_str).into(),
-            );
+            return Err(format!("Invalid length of source address {source_address_str:?}").into());
         }
         if source_address_str.chars().any(&is_not_hex_char) {
-            return Err(format!(
-                "Invalid characters in source address {:?}",
-                source_address_str
-            )
-            .into());
+            return Err(
+                format!("Invalid characters in source address {source_address_str:?}").into(),
+            );
         }
         let source_address = u16::from_str_radix(source_address_str, 16).unwrap();
 
         let protocol_version_str = parts.next().unwrap();
         if protocol_version_str.len() != 2 {
-            return Err(format!(
-                "Invalid length of protocol version {:?}",
-                protocol_version_str
-            )
-            .into());
+            return Err(
+                format!("Invalid length of protocol version {protocol_version_str:?}").into(),
+            );
         }
         if protocol_version_str.chars().any(&is_not_hex_char) {
-            return Err(format!(
-                "Invalid characters in protocol version {:?}",
-                protocol_version_str
-            )
-            .into());
+            return Err(
+                format!("Invalid characters in protocol version {protocol_version_str:?}").into(),
+            );
         }
         let protocol_version = u8::from_str_radix(protocol_version_str, 16).unwrap();
         if (protocol_version & 0xF0) != 0x10 {
-            return Err(format!("Unsupported protocol version 0x{:02X}", protocol_version).into());
+            return Err(format!("Unsupported protocol version 0x{protocol_version:02X}").into());
         }
 
         let command_str = parts.next().unwrap();
         if command_str.len() != 4 {
-            return Err(format!("Invalid length of command {:?}", command_str).into());
+            return Err(format!("Invalid length of command {command_str:?}").into());
         }
         if command_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in command {:?}", command_str).into());
+            return Err(format!("Invalid characters in command {command_str:?}").into());
         }
         let command = u16::from_str_radix(command_str, 16).unwrap();
 
@@ -207,7 +197,7 @@ impl ToPacketFieldId for str {
     /// ```
     fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>> {
         if self.len() < 21 {
-            return Err(format!("Invalid length of input {:?}", self).into());
+            return Err(format!("Invalid length of input {self:?}").into());
         }
 
         let packet_id = self.to_packet_id()?;

@@ -148,7 +148,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    panic!("Record type 0x88 too small: {}", len);
+                    panic!("Record type 0x88 too small: {len}");
                 }
             } else if record[1] == 0x77 {
                 if len >= 16 {
@@ -259,7 +259,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         self.buf.extend_from_slice(&record[22..]);
                         break;
                     } else {
-                        panic!("Record type 0x88 too small: {}", len);
+                        panic!("Record type 0x88 too small: {len}");
                     }
                 } else if record[1] == 0x77 {
                     if len >= 16 {
@@ -334,7 +334,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    panic!("Record type 0x88 too small: {}", len);
+                    panic!("Record type 0x88 too small: {len}");
                 }
             } else if record[1] == 0x77 && len >= 16 {
                 let channel = record[14];

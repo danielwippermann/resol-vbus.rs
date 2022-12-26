@@ -17,7 +17,7 @@ impl Error {
     /// Construct a new `Error` using the provided cause's description.
     pub fn from_cause<T: StdError>(cause: T) -> Error {
         Error {
-            description: format!("{}", cause),
+            description: format!("{cause}"),
         }
     }
 }
@@ -34,7 +34,7 @@ pub trait IntoError: fmt::Display {}
 
 impl<T: IntoError> From<T> for Error {
     fn from(cause: T) -> Error {
-        Error::new(format!("{}", cause))
+        Error::new(format!("{cause}"))
     }
 }
 
