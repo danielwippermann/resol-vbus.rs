@@ -2,7 +2,7 @@
 //! File Format.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use crate::{
     data::Data,
@@ -10,6 +10,7 @@ use crate::{
     header::Header,
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
+    utils::utc_timestamp_with_nsecs,
 };
 
 /// Checks the provided slice of bytes whether it contains a valid VBus record.
@@ -40,7 +41,7 @@ pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<Utc> {
     let timestamp_ms = LittleEndian::read_i64(&buf[0..8]);
     let timestamp_s = timestamp_ms / 1000;
     let timestamp_ns = (timestamp_ms % 1000) as u32 * 1_000_000;
-    Utc.timestamp(timestamp_s, timestamp_ns)
+    utc_timestamp_with_nsecs(timestamp_s, timestamp_ns)
 }
 
 /// Convert slice of bytes to respective `Data` variant.

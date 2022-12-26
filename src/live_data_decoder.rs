@@ -169,13 +169,12 @@ pub fn data_from_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]) -> Opt
 mod tests {
     use super::*;
 
-    use chrono::TimeZone;
-
     use crate::{
         data::Data,
         stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
         test_utils::to_hex_string,
+        utils::utc_timestamp,
     };
 
     #[test]
@@ -322,7 +321,7 @@ mod tests {
 
     #[test]
     fn test_data_from_checked_bytes() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);

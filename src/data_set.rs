@@ -214,17 +214,18 @@ impl AsRef<[Data]> for DataSet {
 mod tests {
     use super::*;
 
-    use chrono::{Duration, TimeZone};
+    use chrono::Duration;
 
     use crate::{
         id_hash::id_hash,
         live_data_decoder::data_from_checked_bytes,
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+        utils::utc_timestamp,
     };
 
     #[test]
     fn test_add_data() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
@@ -232,7 +233,7 @@ mod tests {
         let tgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_TELEGRAM_1[0..]);
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         assert_eq!(0, data_set.as_data_slice().len());
 
         data_set.add_data(packet_data.clone());
@@ -308,11 +309,11 @@ mod tests {
 
     #[test]
     fn test_add_data_set() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel,
@@ -330,7 +331,7 @@ mod tests {
         ));
 
         let mut other_data_set = DataSet::new();
-        other_data_set.timestamp = Utc.timestamp(0, 0);
+        other_data_set.timestamp = utc_timestamp(0);
         other_data_set.add_data_set(data_set);
 
         assert_eq!(timestamp, other_data_set.timestamp);
@@ -351,11 +352,11 @@ mod tests {
 
     #[test]
     fn test_remove_data_older_than() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp + Duration::seconds(10),
             channel,
@@ -387,11 +388,11 @@ mod tests {
 
     #[test]
     fn test_clear_packets_older_than() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp + Duration::seconds(10),
             channel,
@@ -425,11 +426,11 @@ mod tests {
 
     #[test]
     fn test_sort() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel + 1,
@@ -531,11 +532,11 @@ mod tests {
 
     #[test]
     fn test_sort_by() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel + 1,
@@ -641,11 +642,11 @@ mod tests {
 
     #[test]
     fn test_id_hash() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let mut data_set = DataSet::new();
-        data_set.timestamp = Utc.timestamp(0, 0);
+        data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
             timestamp,
             channel,

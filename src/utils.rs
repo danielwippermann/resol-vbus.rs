@@ -1,5 +1,5 @@
 //! A module containing utitlities functions for processing VBus data.
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, LocalResult, TimeZone, Utc};
 
 /// Calc checksum according to VBus protocol version x.0.
 ///
@@ -197,7 +197,23 @@ pub fn calc_crc16(buf: &[u8]) -> u16 {
 /// assert_eq!("2017-01-29 11:22:13 UTC", utc_timestamp(1485688933).to_string());
 /// ```
 pub fn utc_timestamp(secs: i64) -> DateTime<Utc> {
-    Utc.timestamp(secs, 0)
+    utc_timestamp_with_nsecs(secs, 0)
+}
+
+/// Return a Utc timestamp for the given UNIX epoch seconds including nanoseconds portion.
+///
+/// # Examples
+///
+/// ```rust
+/// use resol_vbus::utils::utc_timestamp_with_nsecs;
+///
+/// assert_eq!("2017-01-29 11:22:13.123456789 UTC", utc_timestamp_with_nsecs(1485688933, 123456789).to_string());
+/// ```
+pub fn utc_timestamp_with_nsecs(secs: i64, nsecs: u32) -> DateTime<Utc> {
+    match Utc.timestamp_opt(secs, nsecs) {
+        LocalResult::Single(timestamp) => timestamp,
+        _ => unreachable!(),
+    }
 }
 
 /// Return the current timestamp if the platform supports that.

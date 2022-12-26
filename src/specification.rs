@@ -2,7 +2,7 @@
 //! of the fields contained within the `frame_data` payload of `Packet` values.
 use std::{cell::RefCell, clone::Clone, fmt, rc::Rc};
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, TimeZone};
 
 use crate::{
     data::Data,
@@ -11,6 +11,7 @@ use crate::{
     specification_file::{
         Language, PacketTemplateFieldPart, SpecificationFile, Type, Unit, UnitFamily, UnitId,
     },
+    utils::utc_timestamp,
 };
 
 /// Contains information about a VBus device.
@@ -861,7 +862,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
                 }
             }
             Type::DateTime => {
-                let timestamp = Utc.timestamp(self.raw_value + 978_307_200, 0);
+                let timestamp = utc_timestamp(self.raw_value + 978_307_200);
                 match self.language {
                     Language::En | Language::Fr => {
                         write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))

@@ -314,12 +314,13 @@ impl AsRef<Header> for Data {
 mod tests {
     use super::*;
 
-    use chrono::{DateTime, TimeZone, Utc};
+    use chrono::{DateTime, Utc};
 
     use crate::{
         id_hash::id_hash,
         live_data_decoder::data_from_checked_bytes,
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+        utils::utc_timestamp,
     };
 
     fn packet_data(timestamp: DateTime<Utc>, channel: u8) -> Data {
@@ -336,7 +337,7 @@ mod tests {
 
     #[test]
     fn test_is_packet() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -351,7 +352,7 @@ mod tests {
 
     #[test]
     fn test_is_datagram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -366,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_is_telegram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -381,7 +382,7 @@ mod tests {
 
     #[test]
     fn test_into_packet() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -397,7 +398,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_into_packet_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let dgram_data = datagram_data(timestamp, channel);
@@ -406,7 +407,7 @@ mod tests {
 
     #[test]
     fn test_into_datagram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let dgram_data = datagram_data(timestamp, channel);
@@ -422,7 +423,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_into_datagram_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let tgram_data = telegram_data(timestamp, channel);
@@ -431,7 +432,7 @@ mod tests {
 
     #[test]
     fn test_into_telegram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let tgram_data = telegram_data(timestamp, channel);
@@ -447,7 +448,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_into_telegram_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -456,7 +457,7 @@ mod tests {
 
     #[test]
     fn test_as_header() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -489,7 +490,7 @@ mod tests {
 
     #[test]
     fn test_as_packet() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -499,7 +500,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_as_packet_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let datagram_data = datagram_data(timestamp, channel);
@@ -508,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_as_datagram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let datagram_data = datagram_data(timestamp, channel);
@@ -518,7 +519,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_as_datagram_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let telegram_data = telegram_data(timestamp, channel);
@@ -527,7 +528,7 @@ mod tests {
 
     #[test]
     fn test_as_telegram() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let telegram_data = telegram_data(timestamp, channel);
@@ -537,7 +538,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_as_telegram_panic() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -546,7 +547,7 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -558,7 +559,7 @@ mod tests {
         let tgram_data = telegram_data(timestamp, channel);
         let tgram = tgram_data.clone().into_telegram();
 
-        let other_timestamp = Utc.timestamp(0, 0);
+        let other_timestamp = utc_timestamp(0);
 
         // Between variants
         assert_eq!(false, packet_data.eq(&dgram_data));
@@ -672,7 +673,7 @@ mod tests {
 
     #[test]
     fn test_partial_cmp() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
@@ -693,7 +694,7 @@ mod tests {
             _ => unreachable!(),
         };
 
-        let other_timestamp = Utc.timestamp(0, 0);
+        let other_timestamp = utc_timestamp(0);
 
         // Between variants
         assert_eq!(Some(Greater), packet_data.partial_cmp(&dgram_data));
@@ -897,7 +898,7 @@ mod tests {
 
     #[test]
     fn test_id_hash() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
         let data = packet_data(timestamp, channel);

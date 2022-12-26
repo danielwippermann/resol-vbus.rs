@@ -2,9 +2,9 @@
 //! representation according to the VBus Recording File Format.
 
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
-use crate::{data::Data, header::Header};
+use crate::{data::Data, header::Header, utils::utc_timestamp};
 
 /// Returns the number of bytes that the recorded representation of the Data needs.
 pub fn length_from_data(data: &Data) -> usize {
@@ -35,7 +35,7 @@ pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<Utc>, buf: &m
 
 /// Stores a "VBus channel marker" record in the provided byte slice.
 pub fn bytes_from_channel(channel: u8, buf: &mut [u8]) {
-    bytes_from_record(0x77, 16, Utc.timestamp(0, 0), buf);
+    bytes_from_record(0x77, 16, utc_timestamp(0), buf);
     buf[14] = channel;
     buf[15] = 0;
 }
@@ -91,12 +91,11 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 mod tests {
     use super::*;
 
-    use chrono::TimeZone;
-
     use crate::{
         recording_decoder::data_from_checked_bytes,
         test_data::{RECORDING_1, RECORDING_3},
         test_utils::to_hex_string,
+        utils::utc_timestamp,
     };
 
     #[test]
@@ -116,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_bytes_from_timestamp() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
 
         let mut buf = [0u8; 8];
 
@@ -126,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_bytes_from_record() {
-        let timestamp = Utc.timestamp(1485688933, 0);
+        let timestamp = utc_timestamp(1485688933);
 
         let mut buf = [0u8; 14];
 

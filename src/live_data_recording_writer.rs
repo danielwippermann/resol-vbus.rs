@@ -58,9 +58,7 @@ impl<W: Write> LiveDataRecordingWriter<W> {
 mod tests {
     use super::*;
 
-    use chrono::TimeZone;
-
-    use crate::test_data::LIVE_DATA_RECORDING_1;
+    use crate::{test_data::LIVE_DATA_RECORDING_1, utils::utc_timestamp_with_nsecs};
 
     #[test]
     fn test_write_live_data() {
@@ -69,8 +67,8 @@ mod tests {
         {
             let mut ldrw = LiveDataRecordingWriter::new(&mut bytes);
 
-            let start_timestamp = Utc.timestamp(1486857602, 94000000);
-            let end_timestamp = Utc.timestamp(1486857602, 95000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857602, 94000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857602, 95000000);
             let data = &[
                 170, 16, 0, 17, 126, 16, 0, 1, 27, 52, 56, 34, 56, 34, 5, 70, 61, 126, 121, 127,
                 14, 62, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 2, 2,
@@ -79,8 +77,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857602, 283000000);
-            let end_timestamp = Utc.timestamp(1486857602, 284000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857602, 283000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857602, 284000000);
             let data = &[
                 15, 39, 15, 39, 0, 19, 15, 39, 70, 5, 0, 126, 15, 39, 15, 39, 0, 19, 15, 39, 15,
                 39, 0, 19, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127,
@@ -88,8 +86,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857602, 474000000);
-            let end_timestamp = Utc.timestamp(1486857602, 474000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857602, 474000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857602, 474000000);
             let data = &[
                 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 15,
                 39, 15, 39, 0, 19, 15, 39, 15, 39, 0, 19,
@@ -97,8 +95,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857602, 683000000);
-            let end_timestamp = Utc.timestamp(1486857602, 704000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857602, 683000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857602, 704000000);
             let data = &[
                 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 16,
                 14, 0, 0, 0, 97, 1, 6, 0, 0, 0, 120, 0, 0, 0, 0, 0, 127,
@@ -106,14 +104,14 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857602, 863000000);
-            let end_timestamp = Utc.timestamp(1486857602, 864000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857602, 863000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857602, 864000000);
             let data = &[0, 0, 0, 0, 0, 127];
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857603, 123000000);
-            let end_timestamp = Utc.timestamp(1486857603, 124000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857603, 123000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857603, 124000000);
             let data = &[
                 170, 21, 0, 17, 126, 16, 0, 1, 10, 64, 2, 10, 0, 0, 0, 115, 56, 34, 56, 34, 5, 70,
                 0, 0, 0, 0, 0, 127, 1, 11, 0, 0, 0, 115, 1, 6, 0, 0, 0, 120,
@@ -121,8 +119,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857603, 314000000);
-            let end_timestamp = Utc.timestamp(1486857603, 314000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857603, 314000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857603, 314000000);
             let data = &[
                 4, 8, 0, 0, 0, 115, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0,
                 0, 0, 0, 0, 127,
@@ -130,8 +128,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857603, 534000000);
-            let end_timestamp = Utc.timestamp(1486857603, 535000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857603, 534000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857603, 535000000);
             let data = &[
                 170, 85, 102, 17, 126, 16, 0, 2, 14, 21, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0,
                 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127,
@@ -139,8 +137,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857603, 763000000);
-            let end_timestamp = Utc.timestamp(1486857603, 764000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857603, 763000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857603, 764000000);
             let data = &[
                 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0,
                 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127,
@@ -148,14 +146,14 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857604, 114000000);
-            let end_timestamp = Utc.timestamp(1486857604, 114000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857604, 114000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857604, 114000000);
             let data = &[170, 0, 0, 17, 126, 32, 0, 5, 0, 0, 0, 0, 0, 0, 0, 75];
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857605, 94000000);
-            let end_timestamp = Utc.timestamp(1486857605, 94000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857605, 94000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857605, 94000000);
             let data = &[
                 170, 16, 0, 17, 126, 16, 0, 1, 27, 52, 56, 34, 56, 34, 5, 70, 60, 126, 121, 127,
                 14, 63, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 2, 2,
@@ -164,8 +162,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857605, 283000000);
-            let end_timestamp = Utc.timestamp(1486857605, 284000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857605, 283000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857605, 284000000);
             let data = &[
                 15, 39, 15, 39, 0, 19, 15, 39, 70, 5, 0, 126, 15, 39, 15, 39, 0, 19, 15, 39, 15,
                 39, 0, 19, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127,
@@ -173,8 +171,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857605, 474000000);
-            let end_timestamp = Utc.timestamp(1486857605, 474000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857605, 474000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857605, 474000000);
             let data = &[
                 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 15,
                 39, 15, 39, 0, 19, 15, 39, 15, 39, 0, 19,
@@ -182,8 +180,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857605, 703000000);
-            let end_timestamp = Utc.timestamp(1486857605, 704000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857605, 703000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857605, 704000000);
             let data = &[
                 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 16,
                 14, 0, 0, 0, 97, 1, 6, 0, 0, 0, 120, 0, 0, 0, 0, 0, 127,
@@ -191,14 +189,14 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857605, 863000000);
-            let end_timestamp = Utc.timestamp(1486857605, 863000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857605, 863000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857605, 863000000);
             let data = &[0, 0, 0, 0, 0, 127];
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857606, 123000000);
-            let end_timestamp = Utc.timestamp(1486857606, 124000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857606, 123000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857606, 124000000);
             let data = &[
                 170, 21, 0, 17, 126, 16, 0, 1, 10, 64, 2, 10, 0, 0, 0, 115, 56, 34, 56, 34, 5, 70,
                 0, 0, 0, 0, 0, 127, 1, 11, 0, 0, 0, 115, 1, 6, 0, 0, 0, 120,
@@ -206,8 +204,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857606, 314000000);
-            let end_timestamp = Utc.timestamp(1486857606, 314000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857606, 314000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857606, 314000000);
             let data = &[
                 4, 8, 0, 0, 0, 115, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0, 0, 0, 0, 0, 127, 0,
                 0, 0, 0, 0, 127,
@@ -215,8 +213,8 @@ mod tests {
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();
 
-            let start_timestamp = Utc.timestamp(1486857606, 503000000);
-            let end_timestamp = Utc.timestamp(1486857606, 504000000);
+            let start_timestamp = utc_timestamp_with_nsecs(1486857606, 503000000);
+            let end_timestamp = utc_timestamp_with_nsecs(1486857606, 504000000);
             let data = &[170, 0, 0, 17, 126, 32, 0, 5, 0, 0, 0, 0, 0, 0, 0, 75];
             ldrw.write_raw_data(start_timestamp, end_timestamp, data)
                 .unwrap();

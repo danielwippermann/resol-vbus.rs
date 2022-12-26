@@ -1,10 +1,11 @@
 use std::{collections::HashSet, io::Read};
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use crate::{
     data::Data, data_set::DataSet, error::Result, live_data_decoder, recording_decoder,
     recording_reader::RecordingReader, stream_blob_length::StreamBlobLength::*,
+    utils::utc_timestamp,
 };
 
 #[derive(Debug, Default, PartialEq)]
@@ -55,7 +56,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
             min_timestamp: None,
             max_timestamp: None,
             buf: Vec::new(),
-            timestamp: Utc.timestamp(0, 0),
+            timestamp: utc_timestamp(0),
             channel: 0,
             current_channel: 0,
         }
