@@ -96,6 +96,8 @@ impl io::Write for BlobBuffer {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Read, Write};
+
     use super::*;
 
     #[test]
@@ -107,6 +109,7 @@ mod tests {
         assert_eq!(0, bb.offset);
         assert_eq!(0, bb.len());
         assert_eq!(true, bb.is_empty());
+        assert_eq!(0, bb.offset());
 
         bb.extend_from_slice(&[0x00, 0x01, 0x02, 0x03]);
 
@@ -116,6 +119,7 @@ mod tests {
         assert_eq!(4, bb.len());
         assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x00, 0x01, 0x02, 0x03], &*bb);
+        assert_eq!(0, bb.offset());
 
         bb.consume(2);
 
@@ -125,6 +129,7 @@ mod tests {
         assert_eq!(2, bb.len());
         assert_eq!(false, bb.is_empty());
         assert_eq!(&[0x02, 0x03], &*bb);
+        assert_eq!(2, bb.offset());
 
         bb.consume(1);
 
@@ -133,6 +138,7 @@ mod tests {
         assert_eq!(3, bb.offset);
         assert_eq!(1, bb.len());
         assert_eq!(false, bb.is_empty());
+        assert_eq!(3, bb.offset());
         assert_eq!(&[0x03], &*bb);
 
         bb.extend_from_slice(&[0x04, 0x05, 0x06, 0x07]);
@@ -142,6 +148,7 @@ mod tests {
         assert_eq!(3, bb.offset);
         assert_eq!(5, bb.len());
         assert_eq!(false, bb.is_empty());
+        assert_eq!(3, bb.offset());
         assert_eq!(&[0x03, 0x04, 0x05, 0x06, 0x07], &*bb);
 
         // Deref trait impl
@@ -150,5 +157,36 @@ mod tests {
         // Index trait impl
         assert_eq!(0x05, bb[2]);
         assert_eq!(&[0x05, 0x06], &bb[2..4]);
+
+        // Read trait impl
+        let mut buf = [0u8; 2];
+        assert_eq!(bb.read(&mut buf).expect("No read error"), 2);
+        assert_eq!(&[0x03, 0x04], &buf);
+        assert_eq!(5, bb.buf.len());
+        assert_eq!(2, bb.start);
+        assert_eq!(5, bb.offset);
+        assert_eq!(3, bb.len());
+        assert_eq!(false, bb.is_empty());
+        assert_eq!(5, bb.offset());
+
+        assert_eq!(bb.read(&mut buf).expect("No read error"), 2);
+        assert_eq!(&[0x05, 0x06], &buf);
+        assert_eq!(5, bb.buf.len());
+        assert_eq!(4, bb.start);
+        assert_eq!(7, bb.offset);
+        assert_eq!(1, bb.len());
+        assert_eq!(false, bb.is_empty());
+        assert_eq!(7, bb.offset());
+
+        // Write trait impl
+        assert_eq!(bb.write(&buf).expect("No write error"), 2);
+        bb.flush().expect("No flush error");
+        assert_eq!(3, bb.buf.len());
+        assert_eq!(0, bb.start);
+        assert_eq!(7, bb.offset);
+        assert_eq!(3, bb.len());
+        assert_eq!(false, bb.is_empty());
+        assert_eq!(7, bb.offset());
+        assert_eq!(&[0x07, 0x05, 0x06], &*bb);
     }
 }
