@@ -481,7 +481,7 @@ impl SpecificationFile {
     }
 
     fn check_unit_family_id(&self, id: i32) -> bool {
-        (id >= -1) && (id <= 6)
+        (-1..=6).contains(&id)
     }
 
     fn check_unit_id(&self, id: i32) -> bool {
