@@ -53,9 +53,12 @@ impl DataSet {
         }
     }
 
-    /// Construct a `DataSet` from a list of `Data` values.
-    pub fn from_data(timestamp: DateTime<Utc>, set: Vec<Data>) -> DataSet {
-        DataSet { timestamp, set }
+    /// Construct an empty `DataSet` with a provided timestamp.
+    pub fn with_timestamp(timestamp: DateTime<Utc>) -> DataSet {
+        DataSet {
+            timestamp,
+            set: Vec::new(),
+        }
     }
 
     /// Return the amount of `Data` values contained in this `DataSet`.
@@ -223,6 +226,14 @@ mod tests {
         test_utils::{test_clone_derive, test_debug_derive},
         utils::utc_timestamp,
     };
+
+    #[test]
+    fn test_with_timestamp() {
+        let data_set = DataSet::with_timestamp(utc_timestamp(1485688933));
+
+        assert_eq!(utc_timestamp(1485688933), data_set.timestamp);
+        assert!(data_set.is_empty());
+    }
 
     #[test]
     fn test_len() {
