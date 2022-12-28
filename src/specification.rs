@@ -645,7 +645,7 @@ impl Specification {
     ///     format!("{}", spec.fmt_timestamp(&utc_timestamp(1485688933)))
     /// };
     ///
-    /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::En));
+    /// assert_eq!("01/29/2017 11:22:13", fmt_localized_timestamp(Language::En));
     /// assert_eq!("29.01.2017 11:22:13", fmt_localized_timestamp(Language::De));
     /// assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::Fr));
     /// ```
@@ -864,10 +864,9 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
             Type::DateTime => {
                 let timestamp = utc_timestamp(self.raw_value + 978_307_200);
                 match self.language {
-                    Language::En | Language::Fr => {
-                        write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S"))
-                    }
+                    Language::En => write!(f, "{}", timestamp.format("%m/%d/%Y %H:%M:%S")),
                     Language::De => write!(f, "{}", timestamp.format("%d.%m.%Y %H:%M:%S")),
+                    Language::Fr => write!(f, "{}", timestamp.format("%d/%m/%Y %H:%M:%S")),
                 }
             }
         }
@@ -1688,7 +1687,7 @@ mod tests {
 
         let field_spec = fake_field_spec(10, Type::DateTime, "don't append unit");
         assert_eq!(
-            "22/12/2013 15:17:42",
+            "12/22/2013 15:17:42",
             fmt_raw_value(&field_spec, 409418262, true)
         );
 
@@ -1779,6 +1778,19 @@ mod tests {
         assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
+    }
+
+    #[test]
+    fn test_fmt_timestamp() {
+        let fmt_localized_timestamp = |language: Language| {
+            let spec = Specification::from_file(SpecificationFile::new_default(), language);
+
+            format!("{}", spec.fmt_timestamp(&utc_timestamp(1485688933)))
+        };
+
+        assert_eq!("01/29/2017 11:22:13", fmt_localized_timestamp(Language::En));
+        assert_eq!("29.01.2017 11:22:13", fmt_localized_timestamp(Language::De));
+        assert_eq!("29/01/2017 11:22:13", fmt_localized_timestamp(Language::Fr));
     }
 
     #[test]
