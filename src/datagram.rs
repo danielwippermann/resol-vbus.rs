@@ -165,7 +165,42 @@ impl AsRef<Header> for Datagram {
 mod tests {
     use super::*;
 
-    use crate::{header::Header, utils::utc_timestamp};
+    use crate::{header::Header, id_hash, utils::utc_timestamp};
+
+    #[test]
+    fn test_id_hash() {
+        let timestamp = utc_timestamp(1485688933);
+
+        let dgram = Datagram {
+            header: Header {
+                timestamp,
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x26,
+            },
+            command: 0x1718,
+            param16: 0x191a,
+            param32: 0x1b1c1d1e,
+        };
+
+        assert_eq!(2264775891674525017, id_hash(&dgram));
+
+        let dgram = Datagram {
+            header: Header {
+                timestamp,
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x26,
+            },
+            command: 0x0900,
+            param16: 0x191a,
+            param32: 0x1b1c1d1e,
+        };
+
+        assert_eq!(11755850012962607095, id_hash(&dgram));
+    }
 
     #[test]
     fn test_debug_fmt() {

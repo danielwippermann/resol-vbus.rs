@@ -396,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::into_packet` for a non-`Packet` value: Datagram")]
     fn test_into_packet_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::into_datagram` for a non-`Datagram` value: Telegram")]
     fn test_into_datagram_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -446,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::into_telegram` for a non-`Telegram` value: Packet")]
     fn test_into_telegram_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -498,7 +498,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::as_packet` for a non-`Packet` value: Datagram")]
     fn test_as_packet_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -517,7 +517,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::as_datagram` for a non-`Datagram` value: Telegram")]
     fn test_as_datagram_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -536,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "called `Data::as_telegram` for a non-`Telegram` value: Packet")]
     fn test_as_telegram_panic() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;

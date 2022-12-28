@@ -11,6 +11,7 @@ use crate::{
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
     utils::utc_timestamp_with_nsecs,
+    Telegram,
 };
 
 /// Checks the provided slice of bytes whether it contains a valid VBus record.
@@ -89,8 +90,26 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
             param16,
             param32,
         })
+    } else if major == 0x30 {
+        let command = buf[20];
+        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+
+        let mut frame_data = [0u8; 21];
+        frame_data[0..frame_data_length].copy_from_slice(&buf[26..26 + frame_data_length]);
+
+        Data::Telegram(Telegram {
+            header: Header {
+                timestamp,
+                channel,
+                destination_address,
+                source_address,
+                protocol_version,
+            },
+            command,
+            frame_data,
+        })
     } else {
-        panic!("Unhandled protocol version {protocol_version}");
+        panic!("Unhandled protocol version 0x{protocol_version:02}");
     }
 }
 
@@ -121,6 +140,17 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                     } else {
                         Some(data_from_checked_bytes(channel, buf))
                     }
+                } else if major == 0x30 {
+                    if length < 26 {
+                        None
+                    } else {
+                        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+                        if length < 26 + frame_data_length {
+                            None
+                        } else {
+                            Some(data_from_checked_bytes(channel, buf))
+                        }
+                    }
                 } else {
                     None
                 }
@@ -134,7 +164,7 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
 mod tests {
     use super::*;
 
-    use crate::test_data::{RECORDING_1, RECORDING_3};
+    use crate::test_data::{RECORDING_1, RECORDING_3, TELEGRAM_RECORDING_1};
 
     #[test]
     fn test_length_from_bytes() {
@@ -162,6 +192,18 @@ mod tests {
             Malformed,
             length_from_bytes(&[
                 0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x01, 0x31, 0x47, 0xA9, 0x82, 0x59, 0x01, 0x00, 0x00
+            ])
+        );
+        assert_eq!(
+            Malformed,
+            length_from_bytes(&[
+                0xA5, 0x44, 0x0D, 0x00, 0x0D, 0x00, 0x31, 0x47, 0xA9, 0x82, 0x59, 0x01, 0x00, 0x00
+            ])
+        );
+        assert_eq!(
+            Partial,
+            length_from_bytes(&[
+                0xA5, 0x44, 0x10, 0x00, 0x10, 0x00, 0x31, 0x47, 0xA9, 0x82, 0x59, 0x01, 0x00, 0x00
             ])
         );
         assert_eq!(
@@ -337,11 +379,84 @@ mod tests {
             data.as_header().timestamp.to_rfc3339()
         );
         assert_eq!("01_0000_7E11_20_0900_18F8", data.id_string());
+
+        let data = data_from_checked_bytes(0x01, &TELEGRAM_RECORDING_1[0..]);
+        assert_eq!(
+            "2017-01-29T11:22:13+00:00",
+            data.as_header().timestamp.to_rfc3339()
+        );
+        assert_eq!("01_7771_2011_30_25", data.id_string());
+    }
+
+    #[test]
+    #[should_panic(expected = "Unhandled protocol version 0x00")]
+    fn test_data_from_checked_bytes_panic() {
+        let bytes: &[u8] = &[
+            0xA5, 0x66, 0x21, 0x00, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        data_from_checked_bytes(0x00, bytes);
     }
 
     #[test]
     fn test_data_from_bytes() {
+        // Packet record too short for header
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x14, 0x00, 0x14, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 19 */ 0x00, 0x00, 0x00, 0x00, 0x10,
+            0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
+        // Packet record too short for payload
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x1A, 0x00, 0x1A, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 25 */ 0x00, 0x00, 0x00, 0x00, 0x10,
+            0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
+        // Datagram record too short
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x14, 0x00, 0x14, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 19 */ 0x00, 0x00, 0x00, 0x00, 0x20,
+            0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
+        // Telegram record too short for header
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x14, 0x00, 0x14, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 19 */ 0x00, 0x00, 0x00, 0x00, 0x30,
+            0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
+        // Telegram record too short for payload
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x1A, 0x00, 0x1A, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 25 */ 0x00, 0x00, 0x00, 0x00, 0x30,
+            0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
+        // Unknown protocol version record
+        let bytes: &[u8] = &[
+            /* 0 - 5 */ 0xA5, 0x66, 0x1A, 0x00, 0x1A, 0x00, /* 6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 25 */ 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+        ];
+
+        assert_eq!(None, data_from_bytes(0x00, bytes));
+
         assert_eq!(None, data_from_bytes(0x00, &RECORDING_1[0..]));
+        assert_eq!(None, data_from_bytes(0x00, &RECORDING_1[14..34]));
         assert_eq!(
             "00_0010_0053_10_0100",
             data_from_bytes(0x00, &RECORDING_1[14..])
@@ -437,6 +552,12 @@ mod tests {
         assert_eq!(
             "01_0000_7E11_20_0900_18F8",
             data_from_bytes(0x01, &RECORDING_3[192..])
+                .unwrap()
+                .id_string()
+        );
+        assert_eq!(
+            "01_7771_2011_30_25",
+            data_from_bytes(0x01, &TELEGRAM_RECORDING_1[0..])
                 .unwrap()
                 .id_string()
         );

@@ -149,14 +149,16 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    panic!("Record type 0x88 too small: {len}");
+                    return Err(format!("Record type 0x88 too small: {len}").into());
                 }
             } else if record[1] == 0x77 {
                 if len >= 16 {
                     current_channel = record[14];
+                } else {
+                    return Err(format!("Record type 0x77 too small: {len}").into());
                 }
             } else {
-                panic!("Unexpected record type 0x{:02X}", record[1]);
+                return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
             }
         }
 
@@ -260,14 +262,16 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         self.buf.extend_from_slice(&record[22..]);
                         break;
                     } else {
-                        panic!("Record type 0x88 too small: {len}");
+                        return Err(format!("Record type 0x88 too small: {len}").into());
                     }
                 } else if record[1] == 0x77 {
                     if len >= 16 {
                         self.current_channel = record[14];
+                    } else {
+                        return Err(format!("Record type 0x77 too small: {len}").into());
                     }
                 } else {
-                    panic!("Unexpected record type 0x{:02X}", record[1]);
+                    return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
                 }
             }
         }
@@ -276,6 +280,8 @@ impl<T: Read> LiveDataRecordingReader<T> {
     /// Quickly read to EOF of the source and return the `LiveDataRecordingStats`.
     pub fn read_to_stats(&mut self) -> Result<LiveDataRecordingStats> {
         let has_timestamps = self.min_timestamp.is_some() || self.max_timestamp.is_some();
+
+        let mut current_channel = 0u8;
 
         let mut stats = LiveDataRecordingStats::default();
 
@@ -307,6 +313,10 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         }
                     }
 
+                    if current_channel != self.channel {
+                        continue;
+                    }
+
                     stats.live_data_record_count += 1;
                     stats.live_data_record_byte_count += len - 22;
 
@@ -335,13 +345,19 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    panic!("Record type 0x88 too small: {len}");
+                    return Err(format!("Record type 0x88 too small: {len}").into());
                 }
-            } else if record[1] == 0x77 && len >= 16 {
-                let channel = record[14];
-                if stats.max_channel < channel {
-                    stats.max_channel = channel;
+            } else if record[1] == 0x77 {
+                if len >= 16 {
+                    current_channel = record[14];
+                    if stats.max_channel < current_channel {
+                        stats.max_channel = current_channel;
+                    }
+                } else {
+                    return Err(format!("Record type 0x77 too small: {len}").into());
                 }
+            } else {
+                return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
             }
         }
 
@@ -465,8 +481,69 @@ mod tests {
         let data_slice = data_set.as_data_slice();
         assert_eq!(0, data_slice.len());
 
-        // FIXME(daniel): read data with channel switch command
-        // FIXME(daniel): read data with malformed live data
+        // Malformed live data
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x1C, 0x00, 0x1C, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 21 */ 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, /* 22 - 27 */ 0xAA, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        assert_eq!(0, data_set.len());
+
+        // Malformed record 0x88 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_topology_data_set().err().unwrap();
+
+        assert_eq!("Record type 0x88 too small: 14", error.to_string());
+
+        // Malformed record 0x77 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x77, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_topology_data_set().err().unwrap();
+
+        assert_eq!("Record type 0x77 too small: 14", error.to_string());
+
+        // Unexpected record type
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_topology_data_set().err().unwrap();
+
+        assert_eq!("Unexpected record type 0x44", error.to_string());
+
+        // Channel switch commands
+        let bytes: &[u8] = &[
+            0xA5, 0x77, 0x10, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        assert_eq!(0, data_set.len());
+
+        // NOTE(daniel): current_channel is not modified for topology scans
+        assert_eq!(0, ldrr.current_channel);
 
         Ok(())
     }
@@ -549,6 +626,88 @@ mod tests {
 
         let data = ldrr.read_data()?;
         assert_eq!(None, data);
+
+        // Malformed live data
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x1C, 0x00, 0x1C, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 21 */ 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, /* 22 - 27 */ 0xAA, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let data = ldrr.read_data()?;
+
+        assert_eq!(None, data);
+
+        // Malformed record 0x88 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_data().err().unwrap();
+
+        assert_eq!("Record type 0x88 too small: 14", error.to_string());
+
+        // Malformed record 0x77 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x77, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_data().err().unwrap();
+
+        assert_eq!("Record type 0x77 too small: 14", error.to_string());
+
+        // Unexpected record type
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_data().err().unwrap();
+
+        assert_eq!("Unexpected record type 0x44", error.to_string());
+
+        // Channel switch
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x77, 0x10, 0x00, 0x10, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 15 */ 0x01, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let data = ldrr.read_data()?;
+
+        assert_eq!(None, data);
+        assert_eq!(1, ldrr.current_channel);
+
+        // Malformed data after valid data
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x27, 0x00, 0x27, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 21 */ 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, /* 22 - 37 */ 0xaa, 0x00, 0x00, 0x11, 0x7e, 0x20, 0x00, 0x05,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4b, /* 38 */ 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let data = ldrr.read_data()?.expect("Should return Data");
+
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
+        assert_eq!(1, ldrr.buf.len());
+
+        let data = ldrr.read_data()?;
+
+        assert_eq!(None, data);
+        assert_eq!(1, ldrr.buf.len()); // TODO(daniel): hmmm, those malformed should be consumed...
 
         Ok(())
     }
@@ -636,7 +795,110 @@ mod tests {
             stats
         );
 
-        // FIXME(daniel): filter by channel!
+        // Filter by channel
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_channel(1);
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 18,
+                live_data_record_count: 0,
+                live_data_record_byte_count: 0,
+                malformed_byte_count: 0,
+                data_count: 0,
+                data_byte_count: 0,
+                max_channel: 0,
+            },
+            stats
+        );
+
+        // Malformed live data
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x1C, 0x00, 0x1C, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 21 */ 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, /* 22 - 27 */ 0xAA, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 1,
+                live_data_record_count: 1,
+                live_data_record_byte_count: 6,
+                malformed_byte_count: 6,
+                data_count: 0,
+                data_byte_count: 0,
+                max_channel: 0,
+            },
+            stats
+        );
+
+        // Malformed record 0x88 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_to_stats().err().unwrap();
+
+        assert_eq!("Record type 0x88 too small: 14", error.to_string());
+
+        // Unexpected record type
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_to_stats().err().unwrap();
+
+        assert_eq!("Unexpected record type 0x44", error.to_string());
+
+        // Channel switch
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x77, 0x10, 0x00, 0x10, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 14 - 15 */ 0x01, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 1,
+                live_data_record_count: 0,
+                live_data_record_byte_count: 0,
+                malformed_byte_count: 0,
+                data_count: 0,
+                data_byte_count: 0,
+                max_channel: 1,
+            },
+            stats
+        );
+
+        assert_eq!(0, ldrr.current_channel);
+
+        // Malformed record 0x77 (too small)
+        let bytes: &[u8] = &[
+            /*  0 -  5 */ 0xA5, 0x77, 0x0E, 0x00, 0x0E, 0x00, /*  6 - 13 */ 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut ldrr = LiveDataRecordingReader::new(bytes);
+
+        let error = ldrr.read_to_stats().err().unwrap();
+
+        assert_eq!("Record type 0x77 too small: 14", error.to_string());
 
         Ok(())
     }

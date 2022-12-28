@@ -44,14 +44,12 @@ pub fn bytes_from_channel(channel: u8, buf: &mut [u8]) {
 pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
     let length = length_from_data(data);
 
-    {
-        let header: &Header = data.as_ref();
-        bytes_from_record(0x66, length as u16, header.timestamp, buf);
-        LittleEndian::write_u16(&mut buf[14..16], header.destination_address);
-        LittleEndian::write_u16(&mut buf[16..18], header.source_address);
-        buf[18] = header.protocol_version;
-        buf[19] = 0;
-    }
+    let header: &Header = data.as_ref();
+    bytes_from_record(0x66, length as u16, header.timestamp, buf);
+    LittleEndian::write_u16(&mut buf[14..16], header.destination_address);
+    LittleEndian::write_u16(&mut buf[16..18], header.source_address);
+    buf[18] = header.protocol_version;
+    buf[19] = 0;
 
     match *data {
         Data::Packet(ref packet) => {
@@ -93,7 +91,7 @@ mod tests {
 
     use crate::{
         recording_decoder::data_from_checked_bytes,
-        test_data::{RECORDING_1, RECORDING_3},
+        test_data::{RECORDING_1, RECORDING_3, TELEGRAM_RECORDING_1},
         test_utils::to_hex_string,
         utils::utc_timestamp,
     };
@@ -110,7 +108,9 @@ mod tests {
 
         assert_eq!(32, length_from_data(&data2));
 
-        // NOTE(daniel): no official Telegram recording found...
+        let data3 = data_from_checked_bytes(channel, &TELEGRAM_RECORDING_1[0..]);
+
+        assert_eq!(33, length_from_data(&data3));
     }
 
     #[test]
@@ -157,6 +157,10 @@ mod tests {
         bytes_from_data(&data2, &mut buf);
         assert_eq!(&RECORDING_3[0..32], &buf[0..32]);
 
-        // NOTE(daniel): no official Telegram recording found...
+        let data3 = data_from_checked_bytes(channel, &TELEGRAM_RECORDING_1[0..]);
+
+        bytes_from_data(&data3, &mut buf);
+
+        assert_eq!(&TELEGRAM_RECORDING_1[0..33], &buf[0..33]);
     }
 }

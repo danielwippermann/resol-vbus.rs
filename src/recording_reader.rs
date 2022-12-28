@@ -145,7 +145,7 @@ impl<R: Read> RecordingReader<R> {
                         current_channel = bytes[14];
                     }
                 } else {
-                    panic!("Unsupported record type 0x{:02X}", bytes[1]);
+                    return Err(format!("Unsupported record type 0x{:02X}", bytes[1]).into());
                 }
             }
 
@@ -216,7 +216,7 @@ impl<R: Read> RecordingReader<R> {
                     current_channel = record[14];
                 }
             } else {
-                panic!("Unsupported record type 0x{:02X}", record[1]);
+                return Err(format!("Unsupported record type 0x{:02X}", record[1]).into());
             }
         }
 
@@ -413,6 +413,18 @@ mod tests {
         );
 
         assert_eq!(true, rr.read_data_set().unwrap().is_none());
+
+        // Unsupported record type
+        let bytes: &[u8] = &[
+            0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut rr = RecordingReader::new(bytes);
+
+        let error = rr.read_data_set().err().unwrap();
+
+        assert_eq!("Unsupported record type 0x88", error.to_string());
     }
 
     #[test]
@@ -484,6 +496,18 @@ mod tests {
         let mut rr = RecordingReader::new(RECORDING_1);
         rr.set_min_max_timestamps(Some(timestamp), Some(timestamp_plus_one));
         assert_eq!(9, rr.read_topology_data_set()?.len());
+
+        // Unsupported record type
+        let bytes: &[u8] = &[
+            0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut rr = RecordingReader::new(bytes);
+
+        let error = rr.read_topology_data_set().err().unwrap();
+
+        assert_eq!("Unsupported record type 0x88", error.to_string());
 
         Ok(())
     }

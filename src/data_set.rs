@@ -502,11 +502,7 @@ mod tests {
         let data_slice = data_set.as_data_slice();
         assert_eq!(3, data_slice.len());
         assert_eq!("11_0010_7E11_10_0100", data_slice[0].id_string());
-        if let Data::Packet(ref packet) = data_slice[0] {
-            assert_eq!(0, packet.frame_count);
-        } else {
-            panic!("First element should have been a packet");
-        }
+        assert_eq!(0, data_slice[0].as_packet().frame_count);
         assert_eq!("11_0000_7E11_20_0500_0000", data_slice[1].id_string());
         assert_eq!("11_7771_2011_30_25", data_slice[2].id_string());
     }
@@ -540,11 +536,7 @@ mod tests {
         let data_slice = data_set.as_data_slice();
         assert_eq!(3, data_slice.len());
         assert_eq!("11_0010_7E11_10_0100", data_slice[0].id_string());
-        if let Data::Packet(ref packet) = data_slice[0] {
-            assert_eq!(0, packet.frame_count);
-        } else {
-            panic!("First element should have been a packet");
-        }
+        assert_eq!(0, data_slice[0].as_packet().frame_count);
         assert_eq!("11_0000_7E11_20_0500_0000", data_slice[1].id_string());
         assert_eq!("11_7771_2011_30_25", data_slice[2].id_string());
     }

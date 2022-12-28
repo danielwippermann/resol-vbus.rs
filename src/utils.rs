@@ -1,5 +1,5 @@
 //! A module containing utitlities functions for processing VBus data.
-use chrono::{DateTime, LocalResult, TimeZone, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 
 /// Calc checksum according to VBus protocol version x.0.
 ///
@@ -210,10 +210,7 @@ pub fn utc_timestamp(secs: i64) -> DateTime<Utc> {
 /// assert_eq!("2017-01-29 11:22:13.123456789 UTC", utc_timestamp_with_nsecs(1485688933, 123456789).to_string());
 /// ```
 pub fn utc_timestamp_with_nsecs(secs: i64, nsecs: u32) -> DateTime<Utc> {
-    match Utc.timestamp_opt(secs, nsecs) {
-        LocalResult::Single(timestamp) => timestamp,
-        _ => unreachable!(),
-    }
+    Utc.timestamp_opt(secs, nsecs).unwrap()
 }
 
 /// Return the current timestamp if the platform supports that.
@@ -229,4 +226,25 @@ fn current_timestamp_internal() -> DateTime<Utc> {
 #[cfg(not(target_arch = "wasm32"))]
 fn current_timestamp_internal() -> DateTime<Utc> {
     Utc::now()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "Destination must be one byte larger than source")]
+    fn test_copy_bytes_extracting_septett_panic() {
+        let mut dst = [0; 6];
+        let src = [0; 4];
+        copy_bytes_extracting_septett(&mut dst[..], &src[..])
+    }
+
+    #[test]
+    #[should_panic(expected = "Source must be one byte larger than destination")]
+    fn test_copy_bytes_injecting_septett_panic() {
+        let mut dst = [0; 4];
+        let src = [0; 6];
+        copy_bytes_injecting_septett(&mut dst[..], &src[..])
+    }
 }
