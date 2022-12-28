@@ -35,16 +35,6 @@ impl<R: Read> LiveDataReader<R> {
         }
     }
 
-    /// Get a reference to the underlying reader.
-    pub fn get_ref(&self) -> &R {
-        &self.reader
-    }
-
-    /// Get a mutable reference to the underlying reader.
-    pub fn get_mut(&mut self) -> &mut R {
-        &mut self.reader
-    }
-
     fn read_to_buf(&mut self) -> Result<usize> {
         let mut buf = Vec::new();
         buf.resize(4096, 0);
@@ -169,4 +159,25 @@ mod tests {
         test_debug_derive(&ldr);
     }
 
+    #[test]
+    fn test_as_ref() {
+        let channel = 0x11;
+
+        let ldr = LiveDataReader::new(channel, LIVE_DATA_1);
+
+        let inner = ldr.as_ref();
+
+        assert_eq!(&LIVE_DATA_1, inner);
+    }
+
+    #[test]
+    fn test_as_mut() {
+        let channel = 0x11;
+
+        let mut ldr = LiveDataReader::new(channel, LIVE_DATA_1);
+
+        let inner = ldr.as_mut();
+
+        assert_eq!(&LIVE_DATA_1, inner);
+    }
 }

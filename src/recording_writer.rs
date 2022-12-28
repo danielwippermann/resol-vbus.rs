@@ -18,16 +18,6 @@ impl<W: Write> RecordingWriter<W> {
         RecordingWriter { writer }
     }
 
-    /// Gets a reference to the underlying writer.
-    pub fn get_ref(&self) -> &W {
-        &self.writer
-    }
-
-    /// Gets a mutable reference to the underlying writer.
-    pub fn get_mut(&mut self) -> &mut W {
-        &mut self.writer
-    }
-
     /// Write the recorded representation of the `DataSet`.
     pub fn write_data_set(&mut self, data_set: &DataSet) -> Result<()> {
         let timestamp = data_set.timestamp;
@@ -67,6 +57,18 @@ impl<W: Write> RecordingWriter<W> {
     }
 }
 
+impl<W: Write> AsRef<W> for RecordingWriter<W> {
+    fn as_ref(&self) -> &W {
+        &self.writer
+    }
+}
+
+impl<W: Write> AsMut<W> for RecordingWriter<W> {
+    fn as_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -103,4 +105,23 @@ mod tests {
         test_debug_derive(&rw);
     }
 
+    #[test]
+    fn test_as_ref() {
+        let mut writer: Vec<u8> = Vec::new();
+        writer.extend_from_slice(RECORDING_1);
+
+        let rw = RecordingWriter::new(&mut writer);
+
+        assert_eq!(RECORDING_1, rw.as_ref().as_slice());
+    }
+
+    #[test]
+    fn test_as_mut() {
+        let mut writer: Vec<u8> = Vec::new();
+        writer.extend_from_slice(RECORDING_1);
+
+        let mut rw = RecordingWriter::new(&mut writer);
+
+        assert_eq!(RECORDING_1, rw.as_mut().as_slice());
+    }
 }

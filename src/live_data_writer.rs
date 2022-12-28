@@ -18,16 +18,6 @@ impl<W: Write> LiveDataWriter<W> {
         LiveDataWriter { writer }
     }
 
-    /// Gets a reference to the underlying writer.
-    pub fn get_ref(&self) -> &W {
-        &self.writer
-    }
-
-    /// Gets a mutable reference to the underlying writer.
-    pub fn get_mut(&mut self) -> &mut W {
-        &mut self.writer
-    }
-
     /// Write the live representation of the `Data` variant.
     pub fn write_data(&mut self, data: &Data) -> Result<()> {
         let length = length_from_data(data);
@@ -99,6 +89,34 @@ mod tests {
             writer.write_data(&data3).unwrap();
         }
         assert_eq!(&LIVE_TELEGRAM_1[0..17], &buf[0..17]);
+    }
+
+    #[test]
+    fn test_as_ref() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+
+        let mut buf = Vec::new();
+        let mut writer = LiveDataWriter::new(&mut buf);
+        writer.write_data(&data1).unwrap();
+
+        assert_eq!(&LIVE_DATA_1[0..172], &writer.as_ref()[..]);
+    }
+
+    #[test]
+    fn test_as_mut() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let data1 = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+
+        let mut buf = Vec::new();
+        let mut writer = LiveDataWriter::new(&mut buf);
+        writer.write_data(&data1).unwrap();
+
+        assert_eq!(&LIVE_DATA_1[0..172], &writer.as_mut()[..]);
     }
 
     #[test]

@@ -51,16 +51,6 @@ impl<R: Read> RecordingReader<R> {
         }
     }
 
-    /// Get a reference to the underlying reader.
-    pub fn get_ref(&self) -> &R {
-        self.reader.get_ref()
-    }
-
-    /// Get a mutable reference to the underlying reader.
-    pub fn get_mut(&mut self) -> &mut R {
-        self.reader.get_mut()
-    }
-
     /// Set optional minimum and maximum timestamps for prefiltering data.
     pub fn set_min_max_timestamps(
         &mut self,
@@ -276,6 +266,18 @@ impl<R: Read> RecordingReader<R> {
     }
 }
 
+impl<R: Read> AsRef<R> for RecordingReader<R> {
+    fn as_ref(&self) -> &R {
+        self.reader.as_ref()
+    }
+}
+
+impl<R: Read> AsMut<R> for RecordingReader<R> {
+    fn as_mut(&mut self) -> &mut R {
+        self.reader.as_mut()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -484,5 +486,19 @@ mod tests {
         assert_eq!(9, rr.read_topology_data_set()?.len());
 
         Ok(())
+    }
+
+    #[test]
+    fn test_as_ref() {
+        let rr = RecordingReader::new(RECORDING_1);
+
+        assert_eq!(&RECORDING_1, rr.as_ref());
+    }
+
+    #[test]
+    fn test_as_mut() {
+        let mut rr = RecordingReader::new(RECORDING_1);
+
+        assert_eq!(&RECORDING_1, rr.as_mut());
     }
 }

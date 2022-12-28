@@ -58,16 +58,6 @@ impl<R: Read> BlobReader<R> {
         }
     }
 
-    /// Get a reference to the underlying reader.
-    pub fn get_ref(&self) -> &R {
-        &self.reader
-    }
-
-    /// Get a mutable reference to the underlying reader.
-    pub fn get_mut(&mut self) -> &mut R {
-        &mut self.reader
-    }
-
     /// Consumes this `BlobReader`, returning its inner `Read` value.
     pub fn into_inner(self) -> R {
         self.reader
@@ -99,7 +89,12 @@ impl<R: Read> DerefMut for BlobReader<R> {
     }
 }
 
-#[cfg(test)]
+impl<R: Read> AsRef<R> for BlobReader<R> {
+    fn as_ref(&self) -> &R {
+        &self.reader
+    }
+}
+
 impl<R: Read> AsMut<R> for BlobReader<R> {
     fn as_mut(&mut self) -> &mut R {
         &mut self.reader
@@ -178,5 +173,27 @@ mod tests {
         let result = br.read().unwrap();
         assert_eq!(0, result);
         assert_eq!(len - 20, br.buf.len());
+    }
+
+    #[test]
+    fn test_as_ref() {
+        let bytes = LIVE_DATA_1;
+
+        let br = BlobReader::new(bytes);
+
+        let inner = br.as_ref();
+
+        assert_eq!(inner, &LIVE_DATA_1);
+    }
+
+    #[test]
+    fn test_as_mut() {
+        let bytes = LIVE_DATA_1;
+
+        let mut br = BlobReader::new(bytes);
+
+        let inner = br.as_mut();
+
+        assert_eq!(inner, &LIVE_DATA_1);
     }
 }

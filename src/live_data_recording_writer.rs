@@ -19,16 +19,6 @@ impl<W: Write> LiveDataRecordingWriter<W> {
         LiveDataRecordingWriter { writer }
     }
 
-    /// Gets a reference to the underlying writer.
-    pub fn get_ref(&self) -> &W {
-        &self.writer
-    }
-
-    /// Gets a mutable reference to the underlying writer.
-    pub fn get_mut(&mut self) -> &mut W {
-        &mut self.writer
-    }
-
     /// Write a type 0x88 live data record.
     pub fn write_raw_data(
         &mut self,
@@ -51,6 +41,18 @@ impl<W: Write> LiveDataRecordingWriter<W> {
         self.writer.write_all(buf)?;
 
         Ok(())
+    }
+}
+
+impl<W: Write> AsRef<W> for LiveDataRecordingWriter<W> {
+    fn as_ref(&self) -> &W {
+        &self.writer
+    }
+}
+
+impl<W: Write> AsMut<W> for LiveDataRecordingWriter<W> {
+    fn as_mut(&mut self) -> &mut W {
+        &mut self.writer
     }
 }
 
@@ -233,5 +235,43 @@ mod tests {
         assert_eq!(1006, LIVE_DATA_RECORDING_1.len());
         assert_eq!(1006, bytes.len());
         assert_eq!(LIVE_DATA_RECORDING_1, &bytes[..]);
+    }
+
+    #[test]
+    fn test_as_ref() -> Result<()> {
+        let mut bytes: Vec<u8> = Vec::new();
+        let mut ldrw = LiveDataRecordingWriter::new(&mut bytes);
+
+        let start_timestamp = utc_timestamp_with_nsecs(1486857602, 94000000);
+        let end_timestamp = utc_timestamp_with_nsecs(1486857602, 95000000);
+        let data = &[
+            170, 16, 0, 17, 126, 16, 0, 1, 27, 52, 56, 34, 56, 34, 5, 70, 61, 126, 121, 127, 14,
+            62, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 2, 2, 56, 34,
+            4, 29,
+        ];
+        ldrw.write_raw_data(start_timestamp, end_timestamp, data)?;
+
+        assert_eq!(68, ldrw.as_ref().len());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_as_mut() -> Result<()> {
+        let mut bytes: Vec<u8> = Vec::new();
+        let mut ldrw = LiveDataRecordingWriter::new(&mut bytes);
+
+        let start_timestamp = utc_timestamp_with_nsecs(1486857602, 94000000);
+        let end_timestamp = utc_timestamp_with_nsecs(1486857602, 95000000);
+        let data = &[
+            170, 16, 0, 17, 126, 16, 0, 1, 27, 52, 56, 34, 56, 34, 5, 70, 61, 126, 121, 127, 14,
+            62, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 56, 34, 56, 34, 5, 70, 2, 2, 56, 34,
+            4, 29,
+        ];
+        ldrw.write_raw_data(start_timestamp, end_timestamp, data)?;
+
+        assert_eq!(68, ldrw.as_mut().len());
+
+        Ok(())
     }
 }
