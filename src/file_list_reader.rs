@@ -72,7 +72,20 @@ impl<T: AsRef<Path>> Read for FileListReader<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::test_debug_derive;
+
     use super::*;
+
+    #[test]
+    fn test_derived_impls() {
+        let flr = FileListReader {
+            file_list: Vec::new() as Vec<String>,
+            file_index: 0,
+            file: None,
+        };
+
+        test_debug_derive(&flr);
+    }
 
     #[test]
     fn test_new() {

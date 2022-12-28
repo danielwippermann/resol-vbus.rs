@@ -141,4 +141,20 @@ mod tests {
 
         assert_eq!(None, ldb.read_data());
     }
+
+    #[test]
+    fn test_offset() {
+        let mut ldb = LiveDataBuffer::new(0x11);
+        ldb.extend_from_slice(LIVE_DATA_1);
+
+        assert_eq!(0, ldb.offset());
+
+        drop(ldb.read_data().expect("Expected data"));
+
+        assert_eq!(0, ldb.offset());
+
+        drop(ldb.read_data().expect("Expected data"));
+
+        assert_eq!(172, ldb.offset());
+    }
 }

@@ -98,7 +98,16 @@ impl io::Write for BlobBuffer {
 mod tests {
     use std::io::{Read, Write};
 
+    use crate::test_utils::{test_clone_derive, test_debug_derive};
+
     use super::*;
+
+    #[test]
+    fn test_derived_impls() {
+        let bb = BlobBuffer::default();
+        test_debug_derive(&bb);
+        test_clone_derive(&bb);
+    }
 
     #[test]
     fn test() {

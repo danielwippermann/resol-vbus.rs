@@ -370,4 +370,17 @@ mod tests {
             panic!("Expected {:?} to be a Packet", data);
         }
     }
+
+    #[test]
+    fn test_data_from_bytes() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let data =
+            data_from_bytes(timestamp, channel, &LIVE_DATA_1[0..]).expect("Must return Data");
+
+        assert_eq!("11_0010_7E11_10_0100", data.id_string());
+
+        assert!(data_from_bytes(timestamp, channel, &LIVE_DATA_1[0..1]).is_none());
+    }
 }

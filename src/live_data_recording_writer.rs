@@ -58,7 +58,17 @@ impl<W: Write> LiveDataRecordingWriter<W> {
 mod tests {
     use super::*;
 
-    use crate::{test_data::LIVE_DATA_RECORDING_1, utils::utc_timestamp_with_nsecs};
+    use crate::{
+        test_data::LIVE_DATA_RECORDING_1, test_utils::test_debug_derive,
+        utils::utc_timestamp_with_nsecs,
+    };
+
+    #[test]
+    fn test_derived_impls() {
+        let mut bytes: Vec<u8> = Vec::new();
+        let ldrw = LiveDataRecordingWriter::new(&mut bytes);
+        test_debug_derive(&ldrw);
+    }
 
     #[test]
     fn test_write_live_data() {

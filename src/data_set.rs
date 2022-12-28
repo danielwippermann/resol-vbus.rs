@@ -184,7 +184,7 @@ impl DataSet {
             } else if r.is_packet() {
                 Ordering::Greater
             } else {
-                Ordering::Equal
+                l.partial_cmp(r).expect("Comparison should always succeed")
             }
         })
     }
@@ -220,8 +220,50 @@ mod tests {
         id_hash::id_hash,
         live_data_decoder::data_from_checked_bytes,
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+        test_utils::{test_clone_derive, test_debug_derive},
         utils::utc_timestamp,
     };
+
+    #[test]
+    fn test_len() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+        let dgram_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[352..]);
+
+        let mut data_set = DataSet::with_timestamp(utc_timestamp(0));
+
+        assert_eq!(0, data_set.len());
+
+        data_set.add_data(packet_data);
+
+        assert_eq!(1, data_set.len());
+
+        data_set.add_data(dgram_data.clone());
+
+        assert_eq!(2, data_set.len());
+
+        data_set.add_data(dgram_data);
+
+        assert_eq!(2, data_set.len());
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let packet_data = data_from_checked_bytes(timestamp, channel, &LIVE_DATA_1[0..]);
+
+        let mut data_set = DataSet::with_timestamp(utc_timestamp(0));
+
+        assert!(data_set.is_empty());
+
+        data_set.add_data(packet_data);
+
+        assert!(!data_set.is_empty());
+    }
 
     #[test]
     fn test_add_data() {
@@ -348,6 +390,41 @@ mod tests {
             "11_7771_2011_30_25",
             other_data_set.as_data_slice()[2].id_string()
         );
+
+        let timestamp = current_timestamp();
+
+        let mut other_data_set = DataSet::with_timestamp(utc_timestamp(0));
+        other_data_set.add_data_set(DataSet::with_timestamp(timestamp));
+
+        assert_eq!(timestamp, other_data_set.timestamp);
+    }
+
+    #[test]
+    fn test_remove_all_data() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = utc_timestamp(0);
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[352..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_TELEGRAM_1[0..],
+        ));
+
+        data_set.remove_all_data();
+
+        assert_eq!(0, data_set.len());
     }
 
     #[test]
@@ -387,6 +464,43 @@ mod tests {
     }
 
     #[test]
+    fn test_clear_all_packets() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = utc_timestamp(0);
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[352..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_TELEGRAM_1[0..],
+        ));
+
+        data_set.clear_all_packets();
+
+        let data_slice = data_set.as_data_slice();
+        assert_eq!(3, data_slice.len());
+        assert_eq!("11_0010_7E11_10_0100", data_slice[0].id_string());
+        if let Data::Packet(ref packet) = data_slice[0] {
+            assert_eq!(0, packet.frame_count);
+        } else {
+            panic!("First element should have been a packet");
+        }
+        assert_eq!("11_0000_7E11_20_0500_0000", data_slice[1].id_string());
+        assert_eq!("11_7771_2011_30_25", data_slice[2].id_string());
+    }
+
+    #[test]
     fn test_clear_packets_older_than() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -422,6 +536,82 @@ mod tests {
         }
         assert_eq!("11_0000_7E11_20_0500_0000", data_slice[1].id_string());
         assert_eq!("11_7771_2011_30_25", data_slice[2].id_string());
+    }
+
+    #[test]
+    fn test_iter() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = utc_timestamp(0);
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[352..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_TELEGRAM_1[0..],
+        ));
+
+        let mut iter = data_set.iter();
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_0010_7E11_10_0100", item.id_string());
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_0000_7E11_20_0500_0000", item.id_string());
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_7771_2011_30_25", item.id_string());
+
+        let item = iter.next();
+        assert_eq!(None, item);
+    }
+
+    #[test]
+    fn test_iter_mut() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = utc_timestamp(0);
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[352..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_TELEGRAM_1[0..],
+        ));
+
+        let mut iter = data_set.iter_mut();
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_0010_7E11_10_0100", item.id_string());
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_0000_7E11_20_0500_0000", item.id_string());
+
+        let item = iter.next().expect("Should have been Data");
+        assert_eq!("11_7771_2011_30_25", item.id_string());
+
+        let item = iter.next();
+        assert_eq!(None, item);
     }
 
     #[test]
@@ -641,6 +831,66 @@ mod tests {
     }
 
     #[test]
+    fn test_sort_by_id_slice() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let mut data_set = DataSet::new();
+        data_set.timestamp = utc_timestamp(0);
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[172..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[242..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[258..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_DATA_1[352..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel,
+            &LIVE_TELEGRAM_1[0..],
+        ));
+        data_set.add_data(data_from_checked_bytes(
+            timestamp,
+            channel + 1,
+            &LIVE_DATA_1[0..],
+        ));
+
+        data_set.sort_by_id_slice(&[
+            PacketId(0x12, 0x0010, 0x7E11, 0x0100),
+            PacketId(0x11, 0x0015, 0x7E11, 0x0100),
+        ]);
+
+        let data_slice = data_set.as_data_slice();
+
+        assert_eq!(7, data_slice.len());
+        assert_eq!("12_0010_7E11_10_0100", data_slice[0].id_string());
+        assert_eq!("11_0015_7E11_10_0100", data_slice[1].id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_slice[2].id_string());
+        assert_eq!("11_0010_7E22_10_0100", data_slice[3].id_string());
+        assert_eq!("11_6651_7E11_10_0200", data_slice[4].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_slice[5].id_string());
+        assert_eq!("11_7771_2011_30_25", data_slice[6].id_string());
+    }
+
+    #[test]
     fn test_id_hash() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -666,5 +916,26 @@ mod tests {
         let result = id_hash(&data_set);
 
         assert_eq!(13725728793204414233, result);
+    }
+
+    #[test]
+    fn test_derived_trait_impls() {
+        let data_set = DataSet::new();
+
+        test_debug_derive(&data_set);
+        test_clone_derive(&data_set);
+    }
+
+    #[test]
+    fn test_default_trait_impl() {
+        let timestamp_before = current_timestamp();
+
+        let data_set = DataSet::default();
+
+        let timestamp_after = current_timestamp();
+
+        assert!(data_set.timestamp >= timestamp_before);
+        assert!(data_set.timestamp <= timestamp_after);
+        assert!(data_set.is_empty());
     }
 }

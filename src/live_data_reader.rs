@@ -104,7 +104,7 @@ impl<R: Read> AsMut<R> for LiveDataReader<R> {
 mod tests {
     use super::*;
 
-    use crate::test_data::LIVE_DATA_1;
+    use crate::{test_data::LIVE_DATA_1, test_utils::test_debug_derive};
 
     #[test]
     fn test_read_bytes() {
@@ -159,4 +159,14 @@ mod tests {
 
         assert_eq!(true, data.is_none());
     }
+
+    #[test]
+    fn test_derived_impls() {
+        let channel = 0x11;
+
+        let ldr = LiveDataReader::new(channel, LIVE_DATA_1);
+
+        test_debug_derive(&ldr);
+    }
+
 }

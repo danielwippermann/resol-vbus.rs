@@ -358,55 +358,207 @@ impl<T: Read> LiveDataRecordingReader<T> {
 mod tests {
     use super::*;
 
-    use crate::test_data::LIVE_DATA_RECORDING_1;
+    use crate::{
+        test_data::LIVE_DATA_RECORDING_1,
+        test_utils::{test_debug_derive, test_partial_eq_derive},
+    };
 
     #[test]
-    fn test_read_topology_data_set() {
+    fn test_live_data_recording_stats_derived_impls() {
+        let stats = LiveDataRecordingStats::default();
+
+        test_debug_derive(&stats);
+        test_partial_eq_derive(&stats);
+    }
+
+    #[test]
+    fn test_derived_impls() {
+        let ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        test_debug_derive(&ldrr);
+    }
+
+    #[test]
+    fn test_set_min_max_timestamps() {
         let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
 
-        let data_set = ldrr.read_topology_data_set().unwrap();
+        assert_eq!(None, ldrr.min_timestamp);
+        assert_eq!(None, ldrr.max_timestamp);
+
+        let min_timestamp = utc_timestamp(1485688933);
+        let max_timestamp = utc_timestamp(1672045902);
+
+        ldrr.set_min_max_timestamps(Some(min_timestamp), Some(max_timestamp));
+
+        assert_eq!(Some(utc_timestamp(1485688933)), ldrr.min_timestamp);
+        assert_eq!(Some(utc_timestamp(1672045902)), ldrr.max_timestamp);
+    }
+
+    #[test]
+    fn test_set_channel() {
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        assert_eq!(0, ldrr.channel);
+
+        ldrr.set_channel(1);
+
+        assert_eq!(1, ldrr.channel);
+    }
+
+    #[test]
+    fn test_read_topology_data_set() -> Result<()> {
+        // No timestamps and channel filtering
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        let data_set = ldrr.read_topology_data_set()?;
 
         let data_slice = data_set.as_data_slice();
         assert_eq!(3, data_slice.len());
         assert_eq!("00_0010_7E11_10_0100", data_slice[0].id_string());
         assert_eq!("00_0015_7E11_10_0100", data_slice[1].id_string());
         assert_eq!("00_6655_7E11_10_0200", data_slice[2].id_string());
+
+        // Filter by min timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(Some(utc_timestamp(1486857606)), None);
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        let data_slice = data_set.as_data_slice();
+        assert_eq!(1, data_slice.len());
+        assert_eq!("00_0015_7E11_10_0100", data_slice[0].id_string());
+
+        // Filter by max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(None, Some(utc_timestamp(1486857603)));
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        let data_slice = data_set.as_data_slice();
+        assert_eq!(1, data_slice.len());
+        assert_eq!("00_0010_7E11_10_0100", data_slice[0].id_string());
+
+        // Filter by min and max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(
+            Some(utc_timestamp(1486857603)),
+            Some(utc_timestamp(1486857604)),
+        );
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        let data_slice = data_set.as_data_slice();
+        assert_eq!(2, data_slice.len());
+        assert_eq!("00_0015_7E11_10_0100", data_slice[0].id_string());
+        assert_eq!("00_6655_7E11_10_0200", data_slice[1].id_string());
+
+        // Filter by channel
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_channel(1);
+
+        let data_set = ldrr.read_topology_data_set()?;
+
+        let data_slice = data_set.as_data_slice();
+        assert_eq!(0, data_slice.len());
+
+        // FIXME(daniel): read data with channel switch command
+        // FIXME(daniel): read data with malformed live data
+
+        Ok(())
     }
 
     #[test]
-    fn test_read_data() {
+    fn test_read_data() -> Result<()> {
+        // No timestamps and channel filtering
         let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0010_7E11_10_0100", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0015_7E11_10_0100", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_6655_7E11_10_0200", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0010_7E11_10_0100", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0015_7E11_10_0100", data.id_string());
 
-        let data = ldrr.read_data().unwrap().unwrap();
+        let data = ldrr.read_data()?.unwrap();
         assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
 
-        let data = ldrr.read_data().unwrap();
+        let data = ldrr.read_data()?;
         assert_eq!(None, data);
+
+        // Filter by min timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(Some(utc_timestamp(1486857606)), None);
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
+
+        let data = ldrr.read_data()?;
+        assert_eq!(None, data);
+
+        // Filter by max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(None, Some(utc_timestamp(1486857603)));
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0010_7E11_10_0100", data.id_string());
+
+        let data = ldrr.read_data()?;
+        assert_eq!(None, data);
+
+        // Filter by min and max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(
+            Some(utc_timestamp(1486857603)),
+            Some(utc_timestamp(1486857604)),
+        );
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_6655_7E11_10_0200", data.id_string());
+
+        let data = ldrr.read_data()?;
+        assert_eq!(None, data);
+
+        // Filter by channel
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_channel(1);
+
+        let data = ldrr.read_data()?;
+        assert_eq!(None, data);
+
+        Ok(())
     }
 
     #[test]
-    fn test_read_to_stats() {
+    fn test_read_to_stats() -> Result<()> {
+        // No timestamps and channel filtering
         let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
 
-        let stats = ldrr.read_to_stats().expect("No error");
+        let stats = ldrr.read_to_stats()?;
 
         assert_eq!(
             LiveDataRecordingStats {
@@ -420,5 +572,121 @@ mod tests {
             },
             stats
         );
+
+        // Filter by min timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(Some(utc_timestamp(1486857606)), None);
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 18,
+                live_data_record_count: 3,
+                live_data_record_byte_count: 86,
+                malformed_byte_count: 0,
+                data_count: 2,
+                data_byte_count: 86,
+                max_channel: 0,
+            },
+            stats
+        );
+
+        // Filter by max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(None, Some(utc_timestamp(1486857603)));
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 18,
+                live_data_record_count: 5,
+                live_data_record_byte_count: 172,
+                malformed_byte_count: 0,
+                data_count: 1,
+                data_byte_count: 172,
+                max_channel: 0,
+            },
+            stats
+        );
+
+        // Filter by min and max timestamp
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        ldrr.set_min_max_timestamps(
+            Some(utc_timestamp(1486857603)),
+            Some(utc_timestamp(1486857604)),
+        );
+
+        let stats = ldrr.read_to_stats()?;
+
+        assert_eq!(
+            LiveDataRecordingStats {
+                total_record_count: 18,
+                live_data_record_count: 4,
+                live_data_record_byte_count: 164,
+                malformed_byte_count: 0,
+                data_count: 2,
+                data_byte_count: 164,
+                max_channel: 0,
+            },
+            stats
+        );
+
+        // FIXME(daniel): filter by channel!
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_offset() -> Result<()> {
+        let mut ldrr = LiveDataRecordingReader::new(LIVE_DATA_RECORDING_1);
+
+        assert_eq!(0, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0010_7E11_10_0100", data.id_string());
+
+        assert_eq!(254, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
+
+        assert_eq!(344, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_6655_7E11_10_0200", data.id_string());
+
+        assert_eq!(464, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
+
+        assert_eq!(534, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0010_7E11_10_0100", data.id_string());
+
+        assert_eq!(826, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0015_7E11_10_0100", data.id_string());
+
+        assert_eq!(916, ldrr.offset());
+
+        let data = ldrr.read_data()?.unwrap();
+        assert_eq!("00_0000_7E11_20_0500_0000", data.id_string());
+
+        assert_eq!(968, ldrr.offset());
+
+        let data = ldrr.read_data()?;
+        assert_eq!(None, data);
+
+        assert_eq!(1006, ldrr.offset());
+
+        Ok(())
     }
 }

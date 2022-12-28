@@ -47,7 +47,19 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::{test_debug_derive, test_partial_eq_derive};
+
     use super::*;
+
+    #[test]
+    fn test_derived_impls() {
+        let error = Error {
+            description: "Description".into(),
+        };
+
+        test_debug_derive(&error);
+        test_partial_eq_derive(&error);
+    }
 
     #[test]
     fn test_new() {
@@ -75,7 +87,16 @@ mod tests {
     }
 
     #[test]
-    fn test_from_other_error() {
+    fn test_from_str() {
+        let cause = "Other error";
+
+        let error = Error::from(cause);
+
+        assert_eq!("Other error", &error.description);
+    }
+
+    #[test]
+    fn test_from_std_io_error() {
         use std::io;
 
         let cause = io::Error::new(io::ErrorKind::Other, "Other error");

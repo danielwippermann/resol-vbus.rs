@@ -631,6 +631,20 @@ mod tests {
         assert_eq!(false, Data::Datagram(other).eq(&dgram_data));
 
         let mut other = dgram.clone();
+        other.command = 0x0900;
+        let other_right = other.clone();
+        assert_eq!(true, Data::Datagram(other).eq(&Data::Datagram(other_right)));
+
+        let mut other = dgram.clone();
+        other.command = 0x0900;
+        let mut other_right = other.clone();
+        other_right.param16 ^= 1;
+        assert_eq!(
+            false,
+            Data::Datagram(other).eq(&Data::Datagram(other_right))
+        );
+
+        let mut other = dgram.clone();
         other.param16 ^= 1;
         assert_eq!(true, Data::Datagram(other).eq(&dgram_data));
 
@@ -677,22 +691,13 @@ mod tests {
         let channel = 0x11;
 
         let packet_data = packet_data(timestamp, channel);
-        let packet = match packet_data {
-            Data::Packet(ref packet) => packet,
-            _ => unreachable!(),
-        };
+        let packet = packet_data.clone().into_packet();
 
         let dgram_data = datagram_data(timestamp, channel);
-        let dgram = match dgram_data {
-            Data::Datagram(ref dgram) => dgram,
-            _ => unreachable!(),
-        };
+        let dgram = dgram_data.clone().into_datagram();
 
         let tgram_data = telegram_data(timestamp, channel);
-        let tgram = match tgram_data {
-            Data::Telegram(ref tgram) => tgram,
-            _ => unreachable!(),
-        };
+        let tgram = tgram_data.clone().into_telegram();
 
         let other_timestamp = utc_timestamp(0);
 
@@ -821,6 +826,24 @@ mod tests {
         );
 
         let mut other = dgram.clone();
+        other.command = 0x0900;
+        let other_right = other.clone();
+        other.param16 -= 1;
+        assert_eq!(
+            Some(Less),
+            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+        );
+
+        let mut other = dgram.clone();
+        other.command = 0x0900;
+        let other_right = other.clone();
+        other.param16 += 1;
+        assert_eq!(
+            Some(Greater),
+            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+        );
+
+        let mut other = dgram.clone();
         other.param16 ^= 1;
         assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
 
@@ -915,5 +938,29 @@ mod tests {
 
         let result = id_hash(&data);
         assert_eq!(2688669052981416192, result);
+    }
+
+    #[test]
+    fn test_from_trait_impl() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let packet_data = packet_data(timestamp, channel);
+        let packet = packet_data.clone().into_packet();
+
+        let dgram_data = datagram_data(timestamp, channel);
+        let dgram = dgram_data.clone().into_datagram();
+
+        let tgram_data = telegram_data(timestamp, channel);
+        let tgram = tgram_data.clone().into_telegram();
+
+        let other_packet_data = Data::from(packet);
+        assert_eq!(packet_data, other_packet_data);
+
+        let other_dgram_data = Data::from(dgram);
+        assert_eq!(dgram_data, other_dgram_data);
+
+        let other_tgram_data = Data::from(tgram);
+        assert_eq!(tgram_data, other_tgram_data);
     }
 }

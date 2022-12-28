@@ -110,7 +110,7 @@ impl<R: Read> AsMut<R> for BlobReader<R> {
 mod tests {
     use super::*;
 
-    use crate::test_data::LIVE_DATA_1;
+    use crate::{test_data::LIVE_DATA_1, test_utils::test_debug_derive};
 
     #[test]
     fn test_new() {
@@ -119,6 +119,15 @@ mod tests {
         let br = BlobReader::new(bytes);
 
         assert_eq!(0, br.buf.len());
+    }
+
+    #[test]
+    fn test_derived_impls() {
+        let bytes = LIVE_DATA_1;
+
+        let br = BlobReader::new(bytes);
+
+        test_debug_derive(&br);
     }
 
     #[test]

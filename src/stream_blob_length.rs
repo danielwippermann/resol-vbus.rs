@@ -10,3 +10,17 @@ pub enum StreamBlobLength {
     /// The slice of bytes does not start with a valid blob.
     Malformed,
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::{test_debug_derive, test_partial_eq_derive};
+
+    use super::*;
+
+    #[test]
+    fn test_derived_impl() {
+        let sbl = StreamBlobLength::BlobLength(0);
+        test_debug_derive(&sbl);
+        test_partial_eq_derive(&sbl);
+    }
+}

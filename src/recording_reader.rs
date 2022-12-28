@@ -280,7 +280,23 @@ impl<R: Read> RecordingReader<R> {
 mod tests {
     use super::*;
 
-    use crate::test_data::RECORDING_1;
+    use crate::{test_data::RECORDING_1, utils::utc_timestamp};
+
+    #[test]
+    fn test_set_min_max_timestamps() {
+        let mut ldrr = RecordingReader::new(RECORDING_1);
+
+        assert_eq!(None, ldrr.min_timestamp);
+        assert_eq!(None, ldrr.max_timestamp);
+
+        let min_timestamp = utc_timestamp(1485688933);
+        let max_timestamp = utc_timestamp(1672045902);
+
+        ldrr.set_min_max_timestamps(Some(min_timestamp), Some(max_timestamp));
+
+        assert_eq!(Some(utc_timestamp(1485688933)), ldrr.min_timestamp);
+        assert_eq!(Some(utc_timestamp(1672045902)), ldrr.max_timestamp);
+    }
 
     #[test]
     fn test_read_record() {
@@ -299,7 +315,48 @@ mod tests {
 
     #[test]
     fn test_read_to_next_data_set_record() {
+        // without timestamp filtering
         let mut rr = RecordingReader::new(RECORDING_1);
+        let timestamp = rr.read_to_next_data_set_record().unwrap().unwrap();
+        assert_eq!("2017-01-09T09:57:29.009+00:00", timestamp.to_rfc3339());
+
+        assert_eq!(true, rr.read_to_next_data_set_record().unwrap().is_none());
+
+        // with min timestamp
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(Some(utc_timestamp(1483955849)), None);
+
+        let timestamp = rr.read_to_next_data_set_record().unwrap().unwrap();
+        assert_eq!("2017-01-09T09:57:29.009+00:00", timestamp.to_rfc3339());
+
+        assert_eq!(true, rr.read_to_next_data_set_record().unwrap().is_none());
+
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(Some(utc_timestamp(1483955850)), None);
+
+        assert_eq!(true, rr.read_to_next_data_set_record().unwrap().is_none());
+
+        // with max timestamp
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(None, Some(utc_timestamp(1483955850)));
+
+        let timestamp = rr.read_to_next_data_set_record().unwrap().unwrap();
+        assert_eq!("2017-01-09T09:57:29.009+00:00", timestamp.to_rfc3339());
+
+        assert_eq!(true, rr.read_to_next_data_set_record().unwrap().is_none());
+
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(None, Some(utc_timestamp(1483955849)));
+
+        assert_eq!(true, rr.read_to_next_data_set_record().unwrap().is_none());
+
+        // with min and max timestamps
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(
+            Some(utc_timestamp(1483955849)),
+            Some(utc_timestamp(1483955850)),
+        );
+
         let timestamp = rr.read_to_next_data_set_record().unwrap().unwrap();
         assert_eq!("2017-01-09T09:57:29.009+00:00", timestamp.to_rfc3339());
 
@@ -357,9 +414,13 @@ mod tests {
     }
 
     #[test]
-    fn test_read_topology_data_set() {
+    fn test_read_topology_data_set() -> Result<()> {
+        let timestamp = utc_timestamp(1483955849);
+        let timestamp_plus_one = utc_timestamp(1483955850);
+
+        // without timestamp filtering
         let mut rr = RecordingReader::new(RECORDING_1);
-        let data_set = rr.read_topology_data_set().unwrap();
+        let data_set = rr.read_topology_data_set()?;
 
         assert_eq!(9, data_set.as_data_slice().len());
         assert_eq!(
@@ -398,5 +459,30 @@ mod tests {
             "01_6655_7E11_10_0200",
             data_set.as_data_slice()[8].id_string()
         );
+
+        // with min timestamp filtering
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(Some(timestamp), None);
+        assert_eq!(9, rr.read_topology_data_set()?.len());
+
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(Some(timestamp_plus_one), None);
+        assert_eq!(0, rr.read_topology_data_set()?.len());
+
+        // with max timestamp filtering
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(None, Some(timestamp_plus_one));
+        assert_eq!(9, rr.read_topology_data_set()?.len());
+
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(None, Some(timestamp));
+        assert_eq!(0, rr.read_topology_data_set()?.len());
+
+        // with min and max timestamp filtering
+        let mut rr = RecordingReader::new(RECORDING_1);
+        rr.set_min_max_timestamps(Some(timestamp), Some(timestamp_plus_one));
+        assert_eq!(9, rr.read_topology_data_set()?.len());
+
+        Ok(())
     }
 }

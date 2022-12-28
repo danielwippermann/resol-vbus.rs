@@ -71,7 +71,9 @@ impl<W: Write> RecordingWriter<W> {
 mod tests {
     use super::*;
 
-    use crate::{recording_reader::RecordingReader, test_data::RECORDING_1};
+    use crate::{
+        recording_reader::RecordingReader, test_data::RECORDING_1, test_utils::test_debug_derive,
+    };
 
     #[test]
     fn test_write_data_set() {
@@ -91,4 +93,14 @@ mod tests {
         assert_eq!(740, writer.len());
         assert_eq!(&RECORDING_1[0..740], &writer[0..740]);
     }
+
+    #[test]
+    fn test_derived_trait_impls() {
+        let mut writer: Vec<u8> = Vec::new();
+
+        let rw = RecordingWriter::new(&mut writer);
+
+        test_debug_derive(&rw);
+    }
+
 }

@@ -889,7 +889,190 @@ impl SpecificationFile {
 mod tests {
     use super::*;
 
-    use crate::test_data::SPEC_FILE_1;
+    use crate::{
+        test_data::SPEC_FILE_1,
+        test_utils::{
+            test_clone_derive, test_copy_derive, test_debug_derive, test_partial_eq_derive,
+        },
+    };
+
+    #[test]
+    fn test_error_kind_derived_impls() {
+        let error_kind = ErrorKind::InvalidFileHeader;
+
+        test_debug_derive(&error_kind);
+        test_clone_derive(&error_kind);
+        test_copy_derive(&error_kind);
+    }
+
+    fn call_err<T>() {
+        let result = err::<T>(ErrorKind::InvalidFileHeader);
+
+        assert!(result.is_err());
+
+        let error = result.err().unwrap();
+
+        assert_eq!("Unable to parse VSF: InvalidFileHeader", error.to_string());
+    }
+
+    #[test]
+    fn test_err() {
+        call_err::<()>();
+        call_err::<String>();
+        call_err::<DeviceTemplate>();
+        call_err::<LocalizedText>();
+        call_err::<PacketTemplate>();
+        call_err::<PacketTemplateField>();
+        call_err::<SpecificationFile>();
+        call_err::<Unit>();
+    }
+
+    #[test]
+    fn test_language_derived_impls() {
+        let language = Language::En;
+
+        test_debug_derive(&language);
+        test_clone_derive(&language);
+        test_copy_derive(&language);
+        test_partial_eq_derive(&language);
+    }
+
+    #[test]
+    fn test_text_index_derived_impls() {
+        let text_index = TextIndex(0);
+
+        test_debug_derive(&text_index);
+        test_clone_derive(&text_index);
+        test_copy_derive(&text_index);
+    }
+
+    #[test]
+    fn test_localized_text_derived_impls() {
+        let loc_text_index = LocalizedText {
+            text_index_en: TextIndex(0),
+            text_index_de: TextIndex(1),
+            text_index_fr: TextIndex(2),
+        };
+
+        test_debug_derive(&loc_text_index);
+    }
+
+    #[test]
+    fn test_localized_text_index_derived_impls() {
+        let loc_text_index = LocalizedTextIndex(0);
+
+        test_debug_derive(&loc_text_index);
+        test_clone_derive(&loc_text_index);
+        test_copy_derive(&loc_text_index);
+    }
+
+    #[test]
+    fn test_unit_family_derived_impls() {
+        let unit_family = UnitFamily::None;
+
+        test_debug_derive(&unit_family);
+        test_clone_derive(&unit_family);
+        test_copy_derive(&unit_family);
+        test_partial_eq_derive(&unit_family);
+    }
+
+    #[test]
+    fn test_unit_derived_impls() {
+        let unit = Unit {
+            unit_id: UnitId(0),
+            unit_family_id: UnitFamilyId(0),
+            unit_code_text_index: TextIndex(0),
+            unit_text_text_index: TextIndex(1),
+        };
+
+        test_debug_derive(&unit);
+        test_clone_derive(&unit);
+    }
+
+    #[test]
+    fn test_device_template_derived_impls() {
+        let dt = DeviceTemplate {
+            self_address: 0x0010,
+            self_mask: 0xFFFF,
+            peer_address: 0x0000,
+            peer_mask: 0x0000,
+            name_localized_text_index: LocalizedTextIndex(0),
+        };
+
+        test_debug_derive(&dt);
+    }
+
+    #[test]
+    fn test_packet_template_derived_impls() {
+        let pt = PacketTemplate {
+            destination_address: 0x0010,
+            destination_mask: 0xFFFF,
+            source_address: 0x7E11,
+            source_mask: 0xFFFF,
+            command: 0x0100,
+            fields: Vec::new(),
+        };
+
+        test_debug_derive(&pt);
+        test_clone_derive(&pt);
+    }
+
+    #[test]
+    fn test_type_derived_impls() {
+        let typ = Type::Number;
+
+        test_debug_derive(&typ);
+        test_clone_derive(&typ);
+        test_copy_derive(&typ);
+        test_partial_eq_derive(&typ);
+    }
+
+    #[test]
+    fn test_type_id_derived_impls() {
+        let type_id = TypeId(0);
+
+        test_debug_derive(&type_id);
+        test_clone_derive(&type_id);
+        test_copy_derive(&type_id);
+        test_partial_eq_derive(&type_id);
+    }
+
+    #[test]
+    fn test_packet_template_field_derived_impls() {
+        let ptf = PacketTemplateField {
+            id_text_index: TextIndex(0),
+            name_localized_text_index: LocalizedTextIndex(0),
+            unit_id: UnitId(0),
+            precision: 0,
+            type_id: TypeId(0),
+            parts: Vec::new(),
+        };
+
+        test_debug_derive(&ptf);
+        test_clone_derive(&ptf);
+    }
+
+    #[test]
+    fn test_packet_template_field_part_derived_impls() {
+        let ptfp = PacketTemplateFieldPart {
+            offset: 0,
+            bit_pos: 0,
+            mask: 0xFF,
+            is_signed: false,
+            factor: 1,
+        };
+
+        test_debug_derive(&ptfp);
+        test_clone_derive(&ptfp);
+        test_partial_eq_derive(&ptfp);
+    }
+
+    #[test]
+    fn test_specification_file_derived_impls() {
+        let spec_file = SpecificationFile::new_default();
+
+        test_debug_derive(&spec_file);
+    }
 
     fn check_spec_file_fixture(spec_file: &SpecificationFile) {
         let mut text_index = 0;
@@ -1543,5 +1726,16 @@ mod tests {
     #[test]
     fn test_new_default() {
         let _spec_file = SpecificationFile::new_default();
+    }
+
+    #[test]
+    fn test_unit_by_unit_code() {
+        let spec_file = SpecificationFile::new_default();
+
+        let unit = spec_file
+            .unit_by_unit_code("DegreesCelsius")
+            .expect("Unit should exist");
+
+        assert_eq!(UnitId(62), unit.unit_id);
     }
 }

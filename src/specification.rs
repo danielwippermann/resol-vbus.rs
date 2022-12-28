@@ -1022,9 +1022,70 @@ mod tests {
     use super::*;
 
     use crate::{
+        data_set::DataSet,
         recording_reader::RecordingReader,
         test_data::{RECORDING_2, SPEC_FILE_1},
+        test_utils::{test_debug_derive, test_partial_eq_derive},
+        Header, Packet,
     };
+
+    #[test]
+    fn test_device_spec_derived_impls() {
+        let ds = DeviceSpec {
+            device_id: "DeviceID".into(),
+            channel: 0,
+            self_address: 0x1234,
+            peer_address: None,
+            name: "Name".into(),
+        };
+
+        test_debug_derive(&ds);
+    }
+
+    #[test]
+    fn test_packet_spec_derived_impls() {
+        let ds = Rc::new(DeviceSpec {
+            device_id: "DeviceID".into(),
+            channel: 0,
+            self_address: 0x1234,
+            peer_address: None,
+            name: "DeviceName".into(),
+        });
+
+        let ps = PacketSpec {
+            packet_id: "PacketID".into(),
+            channel: 0,
+            destination_address: 0x1234,
+            source_address: 0x2345,
+            command: 0x3456,
+            destination_device: ds.clone(),
+            source_device: ds,
+            name: "Name".into(),
+            fields: Vec::new(),
+        };
+
+        test_debug_derive(&ps);
+    }
+
+    #[test]
+    fn test_packet_field_spec_derived_impls() {
+        let pfs = PacketFieldSpec {
+            field_id: "FieldID".into(),
+            packet_field_id: "PacketFieldID".into(),
+            name: "Name".into(),
+            unit_id: UnitId(0),
+            unit_family: UnitFamily::None,
+            unit_code: "UnitCode".into(),
+            unit_text: "UnitText".into(),
+            precision: 0,
+            typ: Type::Number,
+            parts: Vec::new(),
+            language: Language::En,
+        };
+
+        test_debug_derive(&pfs);
+        test_partial_eq_derive(&pfs);
+    }
 
     #[test]
     fn test_power_of_ten_i64() {
@@ -1043,6 +1104,9 @@ mod tests {
     #[test]
     fn test_raw_value_formatter() {
         use crate::specification_file::{Language::*, Type::*};
+
+        let formatter = RawValueFormatter::new(En, Number, 0, 0, "");
+        test_debug_derive(&formatter);
 
         let fmt_to_string = |language, typ, prec, value, unit| {
             let formatter = RawValueFormatter::new(language, typ, prec, value, unit);
@@ -1095,7 +1159,7 @@ mod tests {
         );
 
         assert_eq!(
-            "22/12/2013 15:17:42",
+            "12/22/2013 15:17:42",
             fmt_to_string(En, DateTime, 10, 409418262, " ignore this unit")
         );
         assert_eq!(
@@ -1109,6 +1173,110 @@ mod tests {
     }
 
     #[test]
+    fn test_packet_field_formatter_derived_impls() {
+        let pff = PacketFieldFormatter {
+            language: Language::En,
+            typ: Type::Number,
+            precision: 0,
+            raw_value: None,
+            unit_text: "UnitText",
+        };
+
+        test_debug_derive(&pff);
+    }
+
+    #[test]
+    fn test_specification_derived_impls() {
+        let spec = Specification {
+            file: SpecificationFile::new_default(),
+            language: Language::En,
+            devices: RefCell::new(Vec::new()),
+            packets: RefCell::new(Vec::new()),
+        };
+
+        test_debug_derive(&spec);
+    }
+
+    #[test]
+    fn test_data_set_packet_field_iterator_derived_impls() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        let data_set = DataSet::new();
+
+        let it = DataSetPacketFieldIterator {
+            spec: &spec,
+            data_set: &data_set,
+            data_index: 0,
+            field_index: 0,
+        };
+
+        test_debug_derive(&it);
+    }
+
+    #[test]
+    fn test_data_set_packet_field_derived_impls() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        let data_set = DataSet::new();
+
+        let packet_spec = spec.get_packet_spec(0, 0x0010, 0x7E11, 0x0100);
+
+        let dspf = DataSetPacketField {
+            data_set: &data_set,
+            data_index: 0,
+            packet_spec: packet_spec,
+            field_index: 0,
+            raw_value: None,
+        };
+
+        test_debug_derive(&dspf);
+    }
+
+    #[test]
+    fn test_get_or_create_cached_device_spec() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let mut devices = Vec::new();
+
+        let device_spec = get_or_create_cached_device_spec(
+            &mut devices,
+            0x01,
+            0xFFFF,
+            0x0010,
+            &spec_file,
+            Language::En,
+        );
+
+        assert_eq!("VBus 1: Unknown device 0xFFFF", &device_spec.name);
+
+        let device_spec = get_or_create_cached_device_spec(
+            &mut devices,
+            0x02,
+            0xFFFF,
+            0x0010,
+            &spec_file,
+            Language::De,
+        );
+
+        assert_eq!("VBus 2: Unbekanntes Gerät 0xFFFF", &device_spec.name);
+
+        let device_spec = get_or_create_cached_device_spec(
+            &mut devices,
+            0x03,
+            0xFFFF,
+            0x0010,
+            &spec_file,
+            Language::Fr,
+        );
+
+        assert_eq!("VBus 3: Unknown device 0xFFFF", &device_spec.name); // FIXME(daniel): fix translation and test
+    }
+
+    #[test]
     fn test_from_file() {
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
@@ -1116,6 +1284,28 @@ mod tests {
 
         assert_eq!(0, spec.devices.borrow().len());
         assert_eq!(0, spec.packets.borrow().len());
+    }
+
+    #[test]
+    fn test_specification_file() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        assert_eq!(20161007, spec_file.datecode);
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        let spec_file = spec.specification_file();
+
+        assert_eq!(20161007, spec_file.datecode);
+    }
+
+    #[test]
+    fn test_language() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        assert_eq!(Language::En, spec.language());
     }
 
     #[test]
@@ -1228,6 +1418,17 @@ mod tests {
     }
 
     #[test]
+    fn test_get_packet_spec_by_id() {
+        let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
+
+        let spec = Specification::from_file(spec_file, Language::En);
+
+        let packet_spec = spec.get_packet_spec_by_id(PacketId(0x00, 0x0010, 0x7E11, 0x0100));
+
+        assert_eq!("00_0010_7E11_10_0100", packet_spec.packet_id);
+    }
+
+    #[test]
     fn test_get_field_spec() {
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
@@ -1315,6 +1516,28 @@ mod tests {
                 .unwrap()
                 .raw_value_i64(&buf[0..0])
         );
+
+        let pfs = PacketFieldSpec {
+            field_id: "FieldID".into(),
+            packet_field_id: "PacketFieldId".into(),
+            name: "Name".into(),
+            unit_id: UnitId(0),
+            unit_family: UnitFamily::None,
+            unit_code: "UnitCode".into(),
+            unit_text: "UnitText".into(),
+            precision: 0,
+            typ: Type::Number,
+            parts: vec![PacketTemplateFieldPart {
+                offset: 9,
+                bit_pos: 3,
+                mask: 0x38,
+                is_signed: false,
+                factor: 1,
+            }],
+            language: Language::En,
+        };
+
+        assert_eq!(Some(3), pfs.raw_value_i64(&buf[..]));
     }
 
     #[test]
@@ -1424,6 +1647,33 @@ mod tests {
         let field_spec = fake_field_spec(4, Type::Number, "don't append unit");
         assert_eq!("12345.0009", fmt_raw_value(&field_spec, 123450009, false));
 
+        let field_spec = fake_field_spec(5, Type::Number, "don't append unit");
+        assert_eq!("12345.00098", fmt_raw_value(&field_spec, 1234500098, false));
+
+        let field_spec = fake_field_spec(6, Type::Number, "don't append unit");
+        assert_eq!(
+            "12345.000987",
+            fmt_raw_value(&field_spec, 12345000987, false)
+        );
+
+        let field_spec = fake_field_spec(7, Type::Number, "don't append unit");
+        assert_eq!(
+            "12345.0009876",
+            fmt_raw_value(&field_spec, 123450009876, false)
+        );
+
+        let field_spec = fake_field_spec(8, Type::Number, "don't append unit");
+        assert_eq!(
+            "12345.00098765",
+            fmt_raw_value(&field_spec, 1234500098765, false)
+        );
+
+        let field_spec = fake_field_spec(9, Type::Number, "don't append unit");
+        assert_eq!(
+            "12345.000987654",
+            fmt_raw_value(&field_spec, 12345000987654, false)
+        );
+
         let field_spec = fake_field_spec(10, Type::Number, "don't append unit");
         assert_eq!(
             "1.2345678900",
@@ -1441,6 +1691,9 @@ mod tests {
             "22/12/2013 15:17:42",
             fmt_raw_value(&field_spec, 409418262, true)
         );
+
+        let formatter = field_spec.fmt_raw_value(None, true);
+        assert_eq!("", format!("{}", formatter));
     }
 
     #[test]
@@ -1526,5 +1779,135 @@ mod tests {
         assert_eq!(Some(0f64), field.raw_value_f64());
         assert_eq!("0", format!("{}", field.fmt_raw_value(false)));
         assert_eq!("0 l", format!("{}", field.fmt_raw_value(true)));
+    }
+
+    #[test]
+    fn test_unit_by_unit_code() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let unit = spec
+            .unit_by_unit_code("DegreesCelsius")
+            .expect("Unit should exist");
+
+        assert_eq!(UnitId(62), unit.unit_id);
+
+        assert!(spec.unit_by_unit_code("Unknown").is_none());
+    }
+
+    #[test]
+    fn test_convert_value() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let src_unit = spec
+            .unit_by_unit_code("DegreesCelsius")
+            .expect("Source unit should exist");
+
+        let dst_unit = spec
+            .unit_by_unit_code("DegreesFahrenheit")
+            .expect("Destination unit should exist");
+
+        let converted_value = spec
+            .convert_value(20.0, src_unit, dst_unit)
+            .expect("Conversion should work");
+
+        assert_eq!(68.0, converted_value);
+    }
+
+    #[test]
+    fn test_packet_spec_get_field_spec_position() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+
+        assert_eq!(Some(1), packet_spec.get_field_spec_position("002_2_0"));
+        assert_eq!(None, packet_spec.get_field_spec_position("002_1_0"));
+    }
+
+    #[test]
+    fn test_packet_spec_get_field_spec_by_position() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+
+        assert_eq!(
+            "002_2_0",
+            packet_spec.get_field_spec_by_position(1).field_id
+        );
+    }
+
+    #[test]
+    fn test_data_set_packet_field_new() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+
+        let mut data_set = DataSet::new();
+
+        data_set.add_data(Data::Packet(Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0,
+                destination_address: 0x0010,
+                source_address: 0x7E11,
+                protocol_version: 0x10,
+            },
+            command: 0x0100,
+            frame_count: 10,
+            frame_data: [0xA5; 508],
+        }));
+
+        let dspf = DataSetPacketField::new(&data_set, 0, packet_spec.clone(), 0, Some(1234));
+
+        assert_eq!(1, dspf.data_set.len());
+        assert_eq!(0, dspf.data_index);
+        assert_eq!("00_0010_7E11_10_0100", &dspf.packet_spec.packet_id);
+        assert_eq!(0, dspf.field_index);
+        assert_eq!(Some(1234), dspf.raw_value);
+    }
+
+    #[test]
+    fn test_data_set_packet_field_accessors() {
+        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+
+        let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
+
+        let mut data_set = DataSet::new();
+
+        data_set.add_data(Data::Packet(Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0,
+                destination_address: 0x0010,
+                source_address: 0x7E11,
+                protocol_version: 0x10,
+            },
+            command: 0x0100,
+            frame_count: 10,
+            frame_data: [0xA5; 508],
+        }));
+
+        let dspf = DataSetPacketField::new(&data_set, 0, packet_spec.clone(), 0, Some(1234));
+
+        let data_set = dspf.data_set();
+
+        assert_eq!(1, data_set.len());
+        assert_eq!("00_0010_7E11_10_0100", data_set[0].id_string());
+
+        assert_eq!(0, dspf.data_index());
+        assert_eq!("00_0010_7E11_10_0100", dspf.data().id_string());
+        assert_eq!("00_0010_7E11_10_0100", dspf.packet_spec().packet_id);
+        assert_eq!(0, dspf.field_index());
+        assert_eq!(
+            "00_0010_7E11_10_0100_000_2_0",
+            dspf.field_spec().packet_field_id
+        );
+        assert_eq!(PacketId(0x00, 0x0010, 0x7E11, 0x0100), dspf.packet_id());
+        assert_eq!("000_2_0", dspf.field_id());
+        assert_eq!(
+            PacketFieldId(PacketId(0x00, 0x0010, 0x7E11, 0x0100), "000_2_0"),
+            dspf.packet_field_id()
+        );
+        assert_eq!(&Some(1234), dspf.raw_value_i64());
+        assert_eq!(Some(123.4), dspf.raw_value_f64());
     }
 }

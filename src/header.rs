@@ -159,6 +159,22 @@ mod tests {
     use crate::utils::utc_timestamp;
 
     #[test]
+    fn test_default_trait_impl() {
+        let timestamp_before = current_timestamp();
+
+        let header = Header::default();
+
+        let timestamp_after = current_timestamp();
+
+        assert!(header.timestamp >= timestamp_before);
+        assert!(header.timestamp <= timestamp_after);
+        assert_eq!(0x00, header.channel);
+        assert_eq!(0x0000, header.destination_address);
+        assert_eq!(0x0000, header.source_address);
+        assert_eq!(0x00, header.protocol_version);
+    }
+
+    #[test]
     fn test_debug_fmt() {
         let header = Header {
             timestamp: utc_timestamp(1485688933),

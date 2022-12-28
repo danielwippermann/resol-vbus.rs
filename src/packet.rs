@@ -487,7 +487,38 @@ impl AsRef<Header> for Packet {
 mod tests {
     use super::*;
 
-    use crate::{error::Error, utils::utc_timestamp};
+    use crate::{
+        error::Error,
+        test_utils::{
+            test_clone_derive, test_copy_derive, test_debug_derive, test_eq_derive,
+            test_hash_derive, test_ord_derive, test_partial_eq_derive, test_partial_ord_derive,
+        },
+        utils::utc_timestamp,
+    };
+
+    #[test]
+    fn test_packet_id_derived_impls() {
+        let packet_id = PacketId(0x11, 0x1213, 0x1415, 0x1718);
+        test_debug_derive(&packet_id);
+        test_clone_derive(&packet_id);
+        test_copy_derive(&packet_id);
+        test_partial_eq_derive(&packet_id);
+        test_eq_derive(&packet_id);
+        test_partial_ord_derive(&packet_id);
+        test_ord_derive(&packet_id);
+        test_hash_derive(&packet_id);
+    }
+
+    #[test]
+    fn test_packet_field_id_derived_impls() {
+        let packet_field_id = PacketFieldId(PacketId(0x11, 0x1213, 0x1415, 0x1718), "000_2_0");
+        test_debug_derive(&packet_field_id);
+        test_clone_derive(&packet_field_id);
+        test_copy_derive(&packet_field_id);
+        test_partial_eq_derive(&packet_field_id);
+        test_eq_derive(&packet_field_id);
+        test_hash_derive(&packet_field_id);
+    }
 
     #[test]
     fn test_packet_id_string() {
@@ -609,6 +640,82 @@ mod tests {
             Error::new("Invalid length of input \"11_1213_1415_10_1718\""),
             result
         );
+    }
+
+    #[test]
+    fn test_valid_frame_data_len() {
+        let packet = Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x16,
+            },
+            command: 0x1718,
+            frame_count: 0x19,
+            frame_data: [0u8; 508],
+        };
+
+        assert_eq!(100, packet.valid_frame_data_len());
+    }
+
+    #[test]
+    fn test_valid_frame_data() {
+        let packet = Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x16,
+            },
+            command: 0x1718,
+            frame_count: 0x19,
+            frame_data: [0u8; 508],
+        };
+
+        let frame_data = packet.valid_frame_data();
+        assert_eq!(100, frame_data.len());
+    }
+
+    #[test]
+    fn test_valid_frame_data_mut() {
+        let mut packet = Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x16,
+            },
+            command: 0x1718,
+            frame_count: 0x19,
+            frame_data: [0u8; 508],
+        };
+
+        let frame_data = packet.valid_frame_data_mut();
+        assert_eq!(100, frame_data.len());
+    }
+
+    #[test]
+    fn test_packet_to_packet_id() {
+        let packet = Packet {
+            header: Header {
+                timestamp: utc_timestamp(1485688933),
+                channel: 0x11,
+                destination_address: 0x1213,
+                source_address: 0x1415,
+                protocol_version: 0x16,
+            },
+            command: 0x1718,
+            frame_count: 0x19,
+            frame_data: [0u8; 508],
+        };
+
+        let packet_id = packet.to_packet_id().expect("Must return PacketId");
+
+        assert_eq!(PacketId(0x11, 0x1213, 0x1415, 0x1718), packet_id);
     }
 
     #[test]

@@ -62,6 +62,7 @@ mod tests {
     use crate::{
         live_data_decoder::data_from_checked_bytes,
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
+        test_utils::test_debug_derive,
         utils::utc_timestamp,
     };
 
@@ -98,5 +99,12 @@ mod tests {
             writer.write_data(&data3).unwrap();
         }
         assert_eq!(&LIVE_TELEGRAM_1[0..17], &buf[0..17]);
+    }
+
+    #[test]
+    fn test_derived_trait_impls() {
+        let mut buf = Vec::new();
+        let writer = LiveDataWriter::new(&mut buf);
+        test_debug_derive(&writer);
     }
 }
