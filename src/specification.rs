@@ -1023,7 +1023,7 @@ mod tests {
     use crate::{
         data_set::DataSet,
         recording_reader::RecordingReader,
-        test_data::{RECORDING_2, SPEC_FILE_1},
+        test_data::{RECORDING_2, SPEC_FILE_1, TELEGRAM_RECORDING_1},
         test_utils::{test_debug_derive, test_partial_eq_derive},
         Header, Packet,
     };
@@ -1742,7 +1742,12 @@ mod tests {
     fn test_fields_in_data_set() {
         let mut rr = RecordingReader::new(RECORDING_2);
 
-        let data_set = rr.read_data_set().unwrap().unwrap();
+        let mut data_set = rr.read_data_set().unwrap().unwrap();
+
+        let data = crate::recording_decoder::data_from_bytes(0, TELEGRAM_RECORDING_1)
+            .expect("Should decode Data");
+
+        data_set.add_data(data);
 
         let spec_file = SpecificationFile::from_bytes(SPEC_FILE_1).unwrap();
 
