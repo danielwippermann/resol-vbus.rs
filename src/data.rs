@@ -546,6 +546,29 @@ mod tests {
     }
 
     #[test]
+    fn test_eq_dw() {
+        let timestamp = utc_timestamp(1485688933);
+        let channel = 0x11;
+
+        let packet_data = packet_data(timestamp, channel);
+        let packet = packet_data.clone().into_packet();
+
+        let dgram_data = datagram_data(timestamp, channel);
+        let dgram = dgram_data.clone().into_datagram();
+
+        let tgram_data = telegram_data(timestamp, channel);
+        let _tgram = tgram_data.clone().into_telegram();
+
+        let _other_timestamp = utc_timestamp(0);
+
+        let mut other = dgram.clone();
+        other.header.destination_address = packet.header.destination_address;
+        other.header.source_address = packet.header.source_address;
+        other.header.protocol_version = 0x10;
+        assert_eq!(false, Data::Datagram(other).eq(&packet_data));
+    }
+
+    #[test]
     fn test_eq() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
@@ -602,6 +625,12 @@ mod tests {
         other.frame_data[0] ^= 1;
         assert_eq!(true, Data::Packet(other).eq(&packet_data));
 
+        let mut other = dgram.clone();
+        other.header.destination_address = packet.header.destination_address;
+        other.header.source_address = packet.header.source_address;
+        other.header.protocol_version = packet.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(false, packet_data.eq(&Data::Datagram(other)));
+
         // ---- Datagram ----
         let other = dgram.clone();
         assert_eq!(true, Data::Datagram(other).eq(&dgram_data));
@@ -652,6 +681,12 @@ mod tests {
         other.param32 ^= 1;
         assert_eq!(true, Data::Datagram(other).eq(&dgram_data));
 
+        let mut other = packet.clone();
+        other.header.destination_address = dgram.header.destination_address;
+        other.header.source_address = dgram.header.source_address;
+        other.header.protocol_version = dgram.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(false, dgram_data.eq(&Data::Packet(other)));
+
         // ---- Telegram ----
         let other = tgram.clone();
         assert_eq!(true, Data::Telegram(other).eq(&tgram_data));
@@ -683,6 +718,12 @@ mod tests {
         let mut other = tgram.clone();
         other.frame_data[0] ^= 1;
         assert_eq!(true, Data::Telegram(other).eq(&tgram_data));
+
+        let mut other = packet.clone();
+        other.header.destination_address = tgram.header.destination_address;
+        other.header.source_address = tgram.header.source_address;
+        other.header.protocol_version = tgram.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(false, tgram_data.eq(&Data::Packet(other)));
     }
 
     #[test]
@@ -761,6 +802,12 @@ mod tests {
         let mut other = packet.clone();
         other.frame_data[0] ^= 1;
         assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
+
+        let mut other = dgram.clone();
+        other.header.destination_address = packet.header.destination_address;
+        other.header.source_address = packet.header.source_address;
+        other.header.protocol_version = packet.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(None, packet_data.partial_cmp(&Data::Datagram(other)));
 
         // ---- Datagram ----
         let other = dgram.clone();
@@ -848,8 +895,19 @@ mod tests {
         assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
 
         let mut other = dgram.clone();
+        other.command = 0x0900;
+        let other_right = other.clone();
         other.param32 ^= 1;
-        assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(
+            Some(Equal),
+            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+        );
+
+        let mut other = packet.clone();
+        other.header.destination_address = dgram.header.destination_address;
+        other.header.source_address = dgram.header.source_address;
+        other.header.protocol_version = dgram.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(None, dgram_data.partial_cmp(&Data::Packet(other)));
 
         // ---- Telegram ----
         let other = tgram.clone();
@@ -917,6 +975,12 @@ mod tests {
         let mut other = tgram.clone();
         other.frame_data[0] ^= 1;
         assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
+
+        let mut other = packet.clone();
+        other.header.destination_address = tgram.header.destination_address;
+        other.header.source_address = tgram.header.source_address;
+        other.header.protocol_version = tgram.header.protocol_version; // normally illegal, just not testing purposes!
+        assert_eq!(None, tgram_data.partial_cmp(&Data::Packet(other)));
     }
 
     #[test]
