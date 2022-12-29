@@ -1,5 +1,5 @@
 // This is part of resol-vbus.rs.
-// Copyright (c) 2017-2019, Daniel Wippermann.
+// Copyright (c) 2017-present, Daniel Wippermann.
 // See README.md and LICENSE.txt for details.
 
 //! # resol-vbus.rs
