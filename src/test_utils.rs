@@ -90,37 +90,36 @@ pub fn to_hex_string(buf: &[u8]) -> String {
 }
 
 pub fn test_debug_derive<T: std::fmt::Debug>(t: &T) {
-    drop(format!("{t:?}"));
+    let _ = format!("{t:?}");
 }
 
 pub fn test_clone_derive<T: Clone>(t: &T) {
-    drop(t.clone());
+    let _ = t.clone();
 }
 
 pub fn test_copy_derive<T: Copy>(t: &T) {
-    drop(t.clone());
+    let _ = t.clone();
 }
 
 pub fn test_partial_eq_derive<T: PartialEq>(t: &T) {
-    drop(t.eq(t));
+    let _ = t.eq(t);
 }
 
 pub fn test_eq_derive<T: Eq>(t: &T) {
-    drop(t.eq(t));
+    let _ = t.eq(t);
 }
 
 pub fn test_partial_ord_derive<T: PartialOrd>(t: &T) {
-    drop(t.partial_cmp(t));
+    let _ = t.partial_cmp(t);
 }
 
 pub fn test_ord_derive<T: Ord>(t: &T) {
-    drop(t.cmp(t));
+    let _ = t.cmp(t);
 }
 
 pub fn test_hash_derive<T: std::hash::Hash>(t: &T) {
     let mut hasher = DefaultHasher::new();
     t.hash(&mut hasher);
-    drop(hasher);
 }
 
 #[test]
