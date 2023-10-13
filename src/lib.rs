@@ -146,6 +146,7 @@ mod error;
 mod file_list_reader;
 mod header;
 mod id_hash;
+mod little_endian;
 mod live_data_buffer;
 pub mod live_data_decoder;
 pub mod live_data_encoder;

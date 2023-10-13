@@ -5,11 +5,9 @@
 //!
 //! See the [RESOL VBus Specification File Format v1](http://danielwippermann.github.io/resol-vbus/vbus-specification-file-format-v1.html)
 //! for details.
-use byteorder::{ByteOrder, LittleEndian};
-
 use crate::{
     error::{Error, Result},
-    utils::calc_crc16,
+    utils::calc_crc16, little_endian::{u16_from_le_bytes, i32_from_le_bytes, i64_from_le_bytes},
 };
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.
@@ -354,11 +352,11 @@ impl SpecificationFile {
             err(ErrorKind::InvalidFileHeader)
         } else {
             let fileheader = slice_entry(bytes, 0, 0x10);
-            let checksum_a = LittleEndian::read_u16(&fileheader[0x00..0x02]);
-            let checksum_b = LittleEndian::read_u16(&fileheader[0x02..0x04]);
-            let total_length = LittleEndian::read_i32(&fileheader[0x04..0x08]) as usize;
-            let data_version = LittleEndian::read_i32(&fileheader[0x08..0x0C]);
-            let specification_offset = LittleEndian::read_i32(&fileheader[0x0C..0x10]) as usize;
+            let checksum_a = u16_from_le_bytes(&fileheader[0x00..0x02]);
+            let checksum_b = u16_from_le_bytes(&fileheader[0x02..0x04]);
+            let total_length = i32_from_le_bytes(&fileheader[0x04..0x08]) as usize;
+            let data_version = i32_from_le_bytes(&fileheader[0x08..0x0C]);
+            let specification_offset = i32_from_le_bytes(&fileheader[0x0C..0x10]) as usize;
 
             if total_length != bytes.len() {
                 err(ErrorKind::InvalidFileHeaderTotalLength)
@@ -494,17 +492,17 @@ impl SpecificationFile {
 
     fn parse_specification_block(&mut self, bytes: &[u8], offset: usize) -> Result<()> {
         let block = slice_entry(bytes, offset, 0x2C);
-        let datecode = LittleEndian::read_i32(&block[0x00..0x04]);
-        let text_count = LittleEndian::read_i32(&block[0x04..0x08]) as usize;
-        let text_table_offset = LittleEndian::read_i32(&block[0x08..0x0C]) as usize;
-        let localized_text_count = LittleEndian::read_i32(&block[0x0C..0x10]) as usize;
-        let localized_text_table_offset = LittleEndian::read_i32(&block[0x10..0x14]) as usize;
-        let unit_count = LittleEndian::read_i32(&block[0x14..0x18]) as usize;
-        let unit_table_offset = LittleEndian::read_i32(&block[0x18..0x1C]) as usize;
-        let device_template_count = LittleEndian::read_i32(&block[0x1C..0x20]) as usize;
-        let device_template_table_offset = LittleEndian::read_i32(&block[0x20..0x24]) as usize;
-        let packet_template_count = LittleEndian::read_i32(&block[0x24..0x28]) as usize;
-        let packet_template_table_offset = LittleEndian::read_i32(&block[0x28..0x2C]) as usize;
+        let datecode = i32_from_le_bytes(&block[0x00..0x04]);
+        let text_count = i32_from_le_bytes(&block[0x04..0x08]) as usize;
+        let text_table_offset = i32_from_le_bytes(&block[0x08..0x0C]) as usize;
+        let localized_text_count = i32_from_le_bytes(&block[0x0C..0x10]) as usize;
+        let localized_text_table_offset = i32_from_le_bytes(&block[0x10..0x14]) as usize;
+        let unit_count = i32_from_le_bytes(&block[0x14..0x18]) as usize;
+        let unit_table_offset = i32_from_le_bytes(&block[0x18..0x1C]) as usize;
+        let device_template_count = i32_from_le_bytes(&block[0x1C..0x20]) as usize;
+        let device_template_table_offset = i32_from_le_bytes(&block[0x20..0x24]) as usize;
+        let packet_template_count = i32_from_le_bytes(&block[0x24..0x28]) as usize;
+        let packet_template_table_offset = i32_from_le_bytes(&block[0x28..0x2C]) as usize;
 
         if !check_offset(bytes, text_table_offset, 0x04, text_count) {
             err(ErrorKind::InvalidSpecificationTextTable)
@@ -568,7 +566,7 @@ impl SpecificationFile {
 
     fn parse_text_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<String> {
         let block = slice_table_entry(bytes, offset, 0x04, index);
-        let string_offset = LittleEndian::read_i32(&block[0x00..0x04]) as usize;
+        let string_offset = i32_from_le_bytes(&block[0x00..0x04]) as usize;
 
         if !check_offset(bytes, string_offset, 0x01, 1) {
             err(ErrorKind::InvalidTextStringOffset)
@@ -591,9 +589,9 @@ impl SpecificationFile {
         index: usize,
     ) -> Result<LocalizedText> {
         let block = slice_table_entry(bytes, offset, 0x0C, index);
-        let text_index_en = LittleEndian::read_i32(&block[0x00..0x04]);
-        let text_index_de = LittleEndian::read_i32(&block[0x04..0x08]);
-        let text_index_fr = LittleEndian::read_i32(&block[0x08..0x0C]);
+        let text_index_en = i32_from_le_bytes(&block[0x00..0x04]);
+        let text_index_de = i32_from_le_bytes(&block[0x04..0x08]);
+        let text_index_fr = i32_from_le_bytes(&block[0x08..0x0C]);
 
         if !self.check_text_index(text_index_en) {
             err(ErrorKind::InvalidLocalizedTextTextIndexEn)
@@ -612,10 +610,10 @@ impl SpecificationFile {
 
     fn parse_unit_block(&mut self, bytes: &[u8], offset: usize, index: usize) -> Result<Unit> {
         let block = slice_table_entry(bytes, offset, 0x10, index);
-        let unit_id = LittleEndian::read_i32(&block[0x00..0x04]);
-        let unit_family_id = LittleEndian::read_i32(&block[0x04..0x08]);
-        let unit_code_text_index = LittleEndian::read_i32(&block[0x08..0x0C]);
-        let unit_text_text_index = LittleEndian::read_i32(&block[0x0C..0x10]);
+        let unit_id = i32_from_le_bytes(&block[0x00..0x04]);
+        let unit_family_id = i32_from_le_bytes(&block[0x04..0x08]);
+        let unit_code_text_index = i32_from_le_bytes(&block[0x08..0x0C]);
+        let unit_text_text_index = i32_from_le_bytes(&block[0x0C..0x10]);
 
         if !self.check_unit_family_id(unit_family_id) {
             err(ErrorKind::InvalidUnitUnitFamilyId)
@@ -640,11 +638,11 @@ impl SpecificationFile {
         index: usize,
     ) -> Result<DeviceTemplate> {
         let block = slice_table_entry(bytes, offset, 0x0C, index);
-        let self_address = LittleEndian::read_u16(&block[0x00..0x02]);
-        let self_mask = LittleEndian::read_u16(&block[0x02..0x04]);
-        let peer_address = LittleEndian::read_u16(&block[0x04..0x06]);
-        let peer_mask = LittleEndian::read_u16(&block[0x06..0x08]);
-        let name_localized_text_index = LittleEndian::read_i32(&block[0x08..0x0C]);
+        let self_address = u16_from_le_bytes(&block[0x00..0x02]);
+        let self_mask = u16_from_le_bytes(&block[0x02..0x04]);
+        let peer_address = u16_from_le_bytes(&block[0x04..0x06]);
+        let peer_mask = u16_from_le_bytes(&block[0x06..0x08]);
+        let name_localized_text_index = i32_from_le_bytes(&block[0x08..0x0C]);
 
         if !self.check_localized_text_index(name_localized_text_index) {
             err(ErrorKind::InvalidDeviceTemplateNameLocalizedTextIndex)
@@ -666,13 +664,13 @@ impl SpecificationFile {
         index: usize,
     ) -> Result<PacketTemplate> {
         let block = slice_table_entry(bytes, offset, 0x14, index);
-        let destination_address = LittleEndian::read_u16(&block[0x00..0x02]);
-        let destination_mask = LittleEndian::read_u16(&block[0x02..0x04]);
-        let source_address = LittleEndian::read_u16(&block[0x04..0x06]);
-        let source_mask = LittleEndian::read_u16(&block[0x06..0x08]);
-        let command = LittleEndian::read_u16(&block[0x08..0x0A]);
-        let field_count = LittleEndian::read_i32(&block[0x0C..0x10]) as usize;
-        let field_table_offset = LittleEndian::read_i32(&block[0x10..0x14]) as usize;
+        let destination_address = u16_from_le_bytes(&block[0x00..0x02]);
+        let destination_mask = u16_from_le_bytes(&block[0x02..0x04]);
+        let source_address = u16_from_le_bytes(&block[0x04..0x06]);
+        let source_mask = u16_from_le_bytes(&block[0x06..0x08]);
+        let command = u16_from_le_bytes(&block[0x08..0x0A]);
+        let field_count = i32_from_le_bytes(&block[0x0C..0x10]) as usize;
+        let field_table_offset = i32_from_le_bytes(&block[0x10..0x14]) as usize;
 
         if !check_offset(bytes, field_table_offset, 0x1C, field_count) {
             err(ErrorKind::InvalidPacketTemplateFieldTable)
@@ -702,13 +700,13 @@ impl SpecificationFile {
         index: usize,
     ) -> Result<PacketTemplateField> {
         let block = slice_table_entry(bytes, offset, 0x1C, index);
-        let id_text_index = LittleEndian::read_i32(&block[0x00..0x04]);
-        let name_localized_text_index = LittleEndian::read_i32(&block[0x04..0x08]);
-        let unit_id = LittleEndian::read_i32(&block[0x08..0x0C]);
-        let precision = LittleEndian::read_i32(&block[0x0C..0x10]);
-        let type_id = LittleEndian::read_i32(&block[0x10..0x14]);
-        let part_count = LittleEndian::read_i32(&block[0x14..0x18]) as usize;
-        let part_table_offset = LittleEndian::read_i32(&block[0x18..0x1C]) as usize;
+        let id_text_index = i32_from_le_bytes(&block[0x00..0x04]);
+        let name_localized_text_index = i32_from_le_bytes(&block[0x04..0x08]);
+        let unit_id = i32_from_le_bytes(&block[0x08..0x0C]);
+        let precision = i32_from_le_bytes(&block[0x0C..0x10]);
+        let type_id = i32_from_le_bytes(&block[0x10..0x14]);
+        let part_count = i32_from_le_bytes(&block[0x14..0x18]) as usize;
+        let part_table_offset = i32_from_le_bytes(&block[0x18..0x1C]) as usize;
 
         if !self.check_text_index(id_text_index) {
             err(ErrorKind::InvalidPacketTemplateFieldIdTextIndex)
@@ -746,11 +744,11 @@ impl SpecificationFile {
         index: usize,
     ) -> PacketTemplateFieldPart {
         let block = slice_table_entry(bytes, offset, 0x10, index);
-        let data_offset = LittleEndian::read_i32(&block[0x00..0x04]);
+        let data_offset = i32_from_le_bytes(&block[0x00..0x04]);
         let bit_pos = block[0x04];
         let mask = block[0x05];
         let is_signed = block[0x06];
-        let factor = LittleEndian::read_i64(&block[0x08..0x10]);
+        let factor = i64_from_le_bytes(&block[0x08..0x10]);
 
         PacketTemplateFieldPart {
             offset: data_offset,

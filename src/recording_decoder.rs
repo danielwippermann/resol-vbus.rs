@@ -1,7 +1,6 @@
 //! Functions in this module allow to decode a byte stream conforming to the VBus Recording
 //! File Format.
 
-use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Utc};
 
 use crate::{
@@ -11,7 +10,7 @@ use crate::{
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
     utils::utc_timestamp_with_nsecs,
-    Telegram,
+    Telegram, little_endian::{u16_from_le_bytes, i64_from_le_bytes, i16_from_le_bytes, i32_from_le_bytes},
 };
 
 /// Checks the provided slice of bytes whether it contains a valid VBus record.
@@ -26,7 +25,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
     } else if (buf[1] >> 4) != (buf[1] & 0x0F) || buf[2] != buf[4] || buf[3] != buf[5] {
         Malformed
     } else {
-        let expected_len = LittleEndian::read_u16(&buf[2..4]) as usize;
+        let expected_len = u16_from_le_bytes(&buf[2..4]) as usize;
         if expected_len < 14 {
             Malformed
         } else if len < expected_len {
@@ -39,7 +38,7 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
 
 /// Convert slice of bytes to `DateTime<Utc>` object.
 pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<Utc> {
-    let timestamp_ms = LittleEndian::read_i64(&buf[0..8]);
+    let timestamp_ms = i64_from_le_bytes(&buf[0..8]);
     let timestamp_s = timestamp_ms / 1000;
     let timestamp_ns = (timestamp_ms % 1000) as u32 * 1_000_000;
     utc_timestamp_with_nsecs(timestamp_s, timestamp_ns)
@@ -48,14 +47,14 @@ pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<Utc> {
 /// Convert slice of bytes to respective `Data` variant.
 pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
     let timestamp = timestamp_from_checked_bytes(&buf[6..14]);
-    let destination_address = LittleEndian::read_u16(&buf[14..16]);
-    let source_address = LittleEndian::read_u16(&buf[16..18]);
+    let destination_address = u16_from_le_bytes(&buf[14..16]);
+    let source_address = u16_from_le_bytes(&buf[16..18]);
     let protocol_version = buf[18];
     let major = protocol_version & 0xF0;
 
     if major == 0x10 {
-        let command = LittleEndian::read_u16(&buf[20..22]);
-        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+        let command = u16_from_le_bytes(&buf[20..22]);
+        let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
         let frame_count = (frame_data_length >> 2) as u8;
 
         let mut frame_data = [0u8; 508];
@@ -74,9 +73,9 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
             frame_data,
         })
     } else if major == 0x20 {
-        let command = LittleEndian::read_u16(&buf[20..22]);
-        let param16 = LittleEndian::read_i16(&buf[26..28]);
-        let param32 = LittleEndian::read_i32(&buf[28..32]);
+        let command = u16_from_le_bytes(&buf[20..22]);
+        let param16 = i16_from_le_bytes(&buf[26..28]);
+        let param32 = i32_from_le_bytes(&buf[28..32]);
 
         Data::Datagram(Datagram {
             header: Header {
@@ -92,7 +91,7 @@ pub fn data_from_checked_bytes(channel: u8, buf: &[u8]) -> Data {
         })
     } else if major == 0x30 {
         let command = buf[20];
-        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+        let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
 
         let mut frame_data = [0u8; 21];
         frame_data[0..frame_data_length].copy_from_slice(&buf[26..26 + frame_data_length]);
@@ -127,7 +126,7 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                     if length < 26 {
                         None
                     } else {
-                        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+                        let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
                         if length < 26 + frame_data_length {
                             None
                         } else {
@@ -144,7 +143,7 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                     if length < 26 {
                         None
                     } else {
-                        let frame_data_length = LittleEndian::read_u16(&buf[22..24]) as usize;
+                        let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
                         if length < 26 + frame_data_length {
                             None
                         } else {

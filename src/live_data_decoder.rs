@@ -1,7 +1,6 @@
 //! Functions in this module can be used to decode byte slices of data conforming to the
 //! VBus protocol specification into the respective `Data` variants.
 
-use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Utc};
 
 use crate::{
@@ -11,7 +10,7 @@ use crate::{
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
     telegram::Telegram,
-    utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set},
+    utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set}, little_endian::{u16_from_le_bytes, i16_from_le_bytes, i32_from_le_bytes},
 };
 
 /// Checks the provided slice of bytes whether it contains valid VBus live data.
@@ -99,8 +98,8 @@ pub fn data_from_checked_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]
     let header = Header {
         timestamp,
         channel,
-        destination_address: LittleEndian::read_u16(&buf[1..]),
-        source_address: LittleEndian::read_u16(&buf[3..]),
+        destination_address: u16_from_le_bytes(&buf[1..]),
+        source_address: u16_from_le_bytes(&buf[3..]),
         protocol_version: buf[5],
     };
 
@@ -119,7 +118,7 @@ pub fn data_from_checked_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]
 
         Data::Packet(Packet {
             header,
-            command: LittleEndian::read_u16(&buf[6..]),
+            command: u16_from_le_bytes(&buf[6..]),
             frame_count: buf[8],
             frame_data,
         })
@@ -129,9 +128,9 @@ pub fn data_from_checked_bytes(timestamp: DateTime<Utc>, channel: u8, buf: &[u8]
 
         Data::Datagram(Datagram {
             header,
-            command: LittleEndian::read_u16(&buf[6..]),
-            param16: LittleEndian::read_i16(&payload[0..]),
-            param32: LittleEndian::read_i32(&payload[2..]),
+            command: u16_from_le_bytes(&buf[6..]),
+            param16: i16_from_le_bytes(&payload[0..]),
+            param32: i32_from_le_bytes(&payload[2..]),
         })
     } else if major == 0x30 {
         let command = buf[6];

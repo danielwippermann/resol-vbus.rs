@@ -1,12 +1,10 @@
 //! Functions in the module can be used to convert a `Data` variant into the respective live
 //! representation according to the VBus protocol specification.
 
-use byteorder::{ByteOrder, LittleEndian};
-
 use crate::{
     data::Data,
     telegram::Telegram,
-    utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett},
+    utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett}, little_endian::{u16_to_le_bytes, i32_to_le_bytes, i16_to_le_bytes},
 };
 
 /// Returns the number of bytes that the live representation of the Data needs.
@@ -25,10 +23,10 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
     match *data {
         Data::Packet(ref packet) => {
             buf[0] = 0xAA;
-            LittleEndian::write_u16(&mut buf[1..3], packet.header.destination_address);
-            LittleEndian::write_u16(&mut buf[3..5], packet.header.source_address);
+            u16_to_le_bytes(&mut buf[1..3], packet.header.destination_address);
+            u16_to_le_bytes(&mut buf[3..5], packet.header.source_address);
             buf[5] = 0x10;
-            LittleEndian::write_u16(&mut buf[6..8], packet.command);
+            u16_to_le_bytes(&mut buf[6..8], packet.command);
             buf[8] = packet.frame_count;
             calc_and_set_checksum_v0(&mut buf[1..10]);
 
@@ -44,20 +42,20 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
         }
         Data::Datagram(ref dgram) => {
             buf[0] = 0xAA;
-            LittleEndian::write_u16(&mut buf[1..3], dgram.header.destination_address);
-            LittleEndian::write_u16(&mut buf[3..5], dgram.header.source_address);
+            u16_to_le_bytes(&mut buf[1..3], dgram.header.destination_address);
+            u16_to_le_bytes(&mut buf[3..5], dgram.header.source_address);
             buf[5] = 0x20;
-            LittleEndian::write_u16(&mut buf[6..8], dgram.command);
+            u16_to_le_bytes(&mut buf[6..8], dgram.command);
             let mut payload = [0u8; 6];
-            LittleEndian::write_i16(&mut payload[0..], dgram.param16);
-            LittleEndian::write_i32(&mut payload[2..], dgram.param32);
+            i16_to_le_bytes(&mut payload[0..], dgram.param16);
+            i32_to_le_bytes(&mut payload[2..], dgram.param32);
             copy_bytes_extracting_septett(&mut buf[8..15], &payload);
             calc_and_set_checksum_v0(&mut buf[1..16]);
         }
         Data::Telegram(ref tgram) => {
             buf[0] = 0xAA;
-            LittleEndian::write_u16(&mut buf[1..3], tgram.header.destination_address);
-            LittleEndian::write_u16(&mut buf[3..5], tgram.header.source_address);
+            u16_to_le_bytes(&mut buf[1..3], tgram.header.destination_address);
+            u16_to_le_bytes(&mut buf[3..5], tgram.header.source_address);
             buf[5] = 0x30;
             buf[6] = tgram.command;
             calc_and_set_checksum_v0(&mut buf[1..8]);

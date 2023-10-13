@@ -1,10 +1,9 @@
 //! Functions in the module can be used to convert a `Data` variant into the respective recorded
 //! representation according to the VBus Recording File Format.
 
-use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Utc};
 
-use crate::{data::Data, header::Header, utils::utc_timestamp};
+use crate::{data::Data, header::Header, utils::utc_timestamp, little_endian::{i64_to_le_bytes, u16_to_le_bytes, i16_to_le_bytes, i32_to_le_bytes}};
 
 /// Returns the number of bytes that the recorded representation of the Data needs.
 pub fn length_from_data(data: &Data) -> usize {
@@ -21,15 +20,15 @@ pub fn bytes_from_timestamp(timestamp: DateTime<Utc>, buf: &mut [u8]) {
     let timestamp_ms = timestamp.timestamp_subsec_millis();
     let timestamp = timestamp_s * 1000 + i64::from(timestamp_ms);
 
-    LittleEndian::write_i64(&mut buf[0..8], timestamp);
+    i64_to_le_bytes(&mut buf[0..8], timestamp);
 }
 
 /// Stores the record header in the provided byte slice.
 pub fn bytes_from_record(typ: u8, length: u16, timestamp: DateTime<Utc>, buf: &mut [u8]) {
     buf[0] = 0xA5;
     buf[1] = typ;
-    LittleEndian::write_u16(&mut buf[2..4], length);
-    LittleEndian::write_u16(&mut buf[4..6], length);
+    u16_to_le_bytes(&mut buf[2..4], length);
+    u16_to_le_bytes(&mut buf[4..6], length);
     bytes_from_timestamp(timestamp, &mut buf[6..14]);
 }
 
@@ -46,8 +45,8 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
 
     let header: &Header = data.as_ref();
     bytes_from_record(0x66, length as u16, header.timestamp, buf);
-    LittleEndian::write_u16(&mut buf[14..16], header.destination_address);
-    LittleEndian::write_u16(&mut buf[16..18], header.source_address);
+    u16_to_le_bytes(&mut buf[14..16], header.destination_address);
+    u16_to_le_bytes(&mut buf[16..18], header.source_address);
     buf[18] = header.protocol_version;
     buf[19] = 0;
 
@@ -55,28 +54,28 @@ pub fn bytes_from_data(data: &Data, buf: &mut [u8]) {
         Data::Packet(ref packet) => {
             let frame_data_length = packet.frame_count as usize * 4;
 
-            LittleEndian::write_u16(&mut buf[20..22], packet.command);
-            LittleEndian::write_u16(&mut buf[22..24], frame_data_length as u16);
+            u16_to_le_bytes(&mut buf[20..22], packet.command);
+            u16_to_le_bytes(&mut buf[22..24], frame_data_length as u16);
             buf[24] = 0;
             buf[25] = 0;
             buf[26..(26 + frame_data_length)]
                 .copy_from_slice(&packet.frame_data[0..frame_data_length]);
         }
         Data::Datagram(ref dgram) => {
-            LittleEndian::write_u16(&mut buf[20..22], dgram.command);
+            u16_to_le_bytes(&mut buf[20..22], dgram.command);
             buf[22] = 6;
             buf[23] = 0;
             buf[24] = 0;
             buf[25] = 0;
-            LittleEndian::write_i16(&mut buf[26..28], dgram.param16);
-            LittleEndian::write_i32(&mut buf[28..32], dgram.param32);
+            i16_to_le_bytes(&mut buf[26..28], dgram.param16);
+            i32_to_le_bytes(&mut buf[28..32], dgram.param32);
         }
         Data::Telegram(ref tgram) => {
             let frame_data_length = tgram.frame_count() as usize * 7;
 
             buf[20] = tgram.command;
             buf[21] = 0;
-            LittleEndian::write_u16(&mut buf[22..24], frame_data_length as u16);
+            u16_to_le_bytes(&mut buf[22..24], frame_data_length as u16);
             buf[24] = 0;
             buf[25] = 0;
             buf[26..(26 + frame_data_length)]
