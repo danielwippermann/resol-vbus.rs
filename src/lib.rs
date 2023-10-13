@@ -155,6 +155,7 @@ mod live_data_recording_reader;
 mod live_data_recording_writer;
 mod live_data_writer;
 mod packet;
+mod recording_comment;
 pub mod recording_decoder;
 pub mod recording_encoder;
 mod recording_reader;
@@ -181,6 +182,7 @@ pub use crate::{
     live_data_recording_writer::LiveDataRecordingWriter,
     live_data_writer::LiveDataWriter,
     packet::{Packet, PacketFieldId, PacketId, ToPacketFieldId, ToPacketId},
+    recording_comment::RecordingComment,
     recording_reader::RecordingReader,
     recording_writer::RecordingWriter,
     specification::Specification,

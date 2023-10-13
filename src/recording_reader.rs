@@ -6,6 +6,7 @@ use crate::{
     blob_reader::BlobReader,
     data_set::DataSet,
     error::Result,
+    recording_comment::RecordingComment,
     recording_decoder::{data_from_bytes, length_from_bytes, timestamp_from_checked_bytes},
     stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
 };
@@ -122,6 +123,48 @@ impl<R: Read> RecordingReader<R> {
         }
     }
 
+    /// Read a `DataSet` and corresponding comments from the stream until the `DataSet` is complete.
+    pub fn read_data_set_and_comments(&mut self) -> Result<Option<(DataSet, Vec<RecordingComment>)>> {
+        if let Some(data_set_timestamp) = self.read_to_next_data_set_record()? {
+            let mut data_set = DataSet::new();
+            data_set.timestamp = data_set_timestamp;
+
+            let mut comments = Vec::new();
+
+            let mut current_channel = 0u8;
+
+            loop {
+                let bytes = self.read_record()?;
+                let length = bytes.len();
+
+                if length == 0 || bytes[1] == 0x44 {
+                    break;
+                } else if bytes[1] == 0x66 {
+                    if let Some(data) = data_from_bytes(current_channel, bytes) {
+                        data_set.add_data(data);
+                    }
+                } else if bytes[1] == 0x77 {
+                    if length >= 16 {
+                        current_channel = bytes[14];
+                    }
+                } else if bytes [1] == 0x99 {
+                    let timestamp = timestamp_from_checked_bytes(&bytes[6..14]);
+                    let comment = RecordingComment::new(timestamp, Vec::from(&bytes [14..]));
+                    comments.push(comment);
+                } else {
+                    return Err(format!("Unsupported record type 0x{:02X}", bytes[1]).into());
+                }
+            }
+
+            self.previous_length = 0;
+            data_set.timestamp = data_set_timestamp;
+            Ok(Some((data_set, comments)))
+        } else {
+            Ok(None)
+        }
+    }
+
+
     /// Read from the stream until a valid `DataSet` variant can be decoded.
     pub fn read_data_set(&mut self) -> Result<Option<DataSet>> {
         if let Some(data_set_timestamp) = self.read_to_next_data_set_record()? {
@@ -144,6 +187,8 @@ impl<R: Read> RecordingReader<R> {
                     if length >= 16 {
                         current_channel = bytes[14];
                     }
+                } else if bytes[1] == 0x99 {
+                    // ignore comments
                 } else {
                     return Err(format!("Unsupported record type 0x{:02X}", bytes[1]).into());
                 }
@@ -215,6 +260,8 @@ impl<R: Read> RecordingReader<R> {
                 if length >= 16 {
                     current_channel = record[14];
                 }
+            } else if record[1] == 0x99 {
+                // ignore comments
             } else {
                 return Err(format!("Unsupported record type 0x{:02X}", record[1]).into());
             }
