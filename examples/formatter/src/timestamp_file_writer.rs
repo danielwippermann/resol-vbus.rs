@@ -3,10 +3,11 @@ use std::{
     io::{Error, ErrorKind, Result, Write},
 };
 
-use resol_vbus::chrono::{DateTime, Utc};
+use resol_vbus::chrono::{DateTime, Local, Utc};
 
 pub struct TimestampFileWriter {
     filename_pattern: String,
+    local_timezone: bool,
     timestamp: DateTime<Utc>,
     timestamp_changed: bool,
     current_filename: Option<String>,
@@ -14,9 +15,10 @@ pub struct TimestampFileWriter {
 }
 
 impl TimestampFileWriter {
-    pub fn new(filename_pattern: String) -> TimestampFileWriter {
+    pub fn new(filename_pattern: String, local_timezone: bool) -> TimestampFileWriter {
         TimestampFileWriter {
             filename_pattern,
+            local_timezone,
             timestamp: Utc::now(),
             timestamp_changed: true,
             current_filename: None,
@@ -42,7 +44,13 @@ impl TimestampFileWriter {
         if self.timestamp_changed {
             self.timestamp_changed = false;
 
-            let filename = Some(self.timestamp.format(&self.filename_pattern).to_string());
+            let filename = if self.local_timezone {
+                self.timestamp.with_timezone(&Local).format(&self.filename_pattern).to_string()
+            } else {
+                self.timestamp.format(&self.filename_pattern).to_string()
+            };
+
+            let filename = Some(filename);
             if self.current_filename != filename {
                 let file = File::create(filename.as_ref().unwrap())?;
 
