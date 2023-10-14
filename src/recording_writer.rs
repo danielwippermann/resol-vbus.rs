@@ -30,8 +30,7 @@ impl<W: Write> RecordingWriter<W> {
             max(memo, length)
         });
 
-        let mut bytes = Vec::new();
-        bytes.resize(max_length, 0u8);
+        let mut bytes = vec![0; max_length];
 
         let buf = &mut bytes[..];
         bytes_from_record(0x44, 14, timestamp, buf);

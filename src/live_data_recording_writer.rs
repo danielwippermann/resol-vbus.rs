@@ -29,8 +29,7 @@ impl<W: Write> LiveDataRecordingWriter<W> {
         let data_length = data.len();
         let record_length = 22 + data_length;
 
-        let mut bytes = Vec::new();
-        bytes.resize(record_length, 0u8);
+        let mut bytes = vec![0; record_length];
 
         let buf = &mut bytes[..];
 

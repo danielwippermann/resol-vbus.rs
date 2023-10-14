@@ -22,8 +22,7 @@ impl<W: Write> LiveDataWriter<W> {
     pub fn write_data(&mut self, data: &Data) -> Result<()> {
         let length = length_from_data(data);
 
-        let mut bytes = Vec::new();
-        bytes.resize(length, 0u8);
+        let mut bytes = vec![0; length];
 
         bytes_from_data(data, &mut bytes);
 

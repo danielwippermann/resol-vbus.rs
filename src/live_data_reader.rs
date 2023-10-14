@@ -36,8 +36,7 @@ impl<R: Read> LiveDataReader<R> {
     }
 
     fn read_to_buf(&mut self) -> Result<usize> {
-        let mut buf = Vec::new();
-        buf.resize(4096, 0);
+        let mut buf = vec![0; 4096];
 
         let size = self.reader.read(&mut buf)?;
         self.buf.extend_from_slice(&buf[0..size]);
