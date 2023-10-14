@@ -891,6 +891,19 @@ mod tests {
         assert_eq!("11_6651_7E11_10_0200", data_slice[4].id_string());
         assert_eq!("11_0000_7E11_20_0500_0000", data_slice[5].id_string());
         assert_eq!("11_7771_2011_30_25", data_slice[6].id_string());
+
+        data_set.sort_by_id_slice(&[PacketId(0x11, 0x0015, 0x7E11, 0x0100)]);
+
+        let data_slice = data_set.as_data_slice();
+
+        assert_eq!(7, data_slice.len());
+        assert_eq!("11_0015_7E11_10_0100", data_slice[0].id_string());
+        assert_eq!("11_0010_7E11_10_0100", data_slice[1].id_string());
+        assert_eq!("11_0010_7E22_10_0100", data_slice[2].id_string());
+        assert_eq!("11_6651_7E11_10_0200", data_slice[3].id_string());
+        assert_eq!("12_0010_7E11_10_0100", data_slice[4].id_string());
+        assert_eq!("11_0000_7E11_20_0500_0000", data_slice[5].id_string());
+        assert_eq!("11_7771_2011_30_25", data_slice[6].id_string());
     }
 
     #[test]
