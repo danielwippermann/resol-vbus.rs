@@ -330,7 +330,10 @@ impl<R: Read> AsMut<R> for RecordingReader<R> {
 mod tests {
     use super::*;
 
-    use crate::{test_data::RECORDING_1, utils::utc_timestamp};
+    use crate::{
+        test_data::{RECORDING_1, RECORDING_4},
+        utils::utc_timestamp,
+    };
 
     #[test]
     fn test_set_min_max_timestamps() {
@@ -414,8 +417,167 @@ mod tests {
     }
 
     #[test]
+    fn test_read_data_set_and_comments() {
+        let mut rr = RecordingReader::new(RECORDING_1);
+        let (data_set, comments) = rr.read_data_set_and_comments().unwrap().unwrap();
+
+        assert_eq!(
+            "2017-01-09T09:57:29.009+00:00",
+            data_set.timestamp.to_rfc3339()
+        );
+        assert_eq!(9, data_set.as_data_slice().len());
+        assert_eq!(
+            "00_0010_0053_10_0100",
+            data_set.as_data_slice()[0].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E11_10_0100",
+            data_set.as_data_slice()[1].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E21_10_0100",
+            data_set.as_data_slice()[2].id_string()
+        );
+        assert_eq!(
+            "01_0015_7E11_10_0100",
+            data_set.as_data_slice()[3].id_string()
+        );
+        assert_eq!(
+            "01_6651_7E11_10_0200",
+            data_set.as_data_slice()[4].id_string()
+        );
+        assert_eq!(
+            "01_6652_7E11_10_0200",
+            data_set.as_data_slice()[5].id_string()
+        );
+        assert_eq!(
+            "01_6653_7E11_10_0200",
+            data_set.as_data_slice()[6].id_string()
+        );
+        assert_eq!(
+            "01_6654_7E11_10_0200",
+            data_set.as_data_slice()[7].id_string()
+        );
+        assert_eq!(
+            "01_6655_7E11_10_0200",
+            data_set.as_data_slice()[8].id_string()
+        );
+        assert_eq!(0, comments.len());
+
+        assert_eq!(true, rr.read_data_set_and_comments().unwrap().is_none());
+
+        let mut rr = RecordingReader::new(RECORDING_4);
+        let (data_set, comments) = rr.read_data_set_and_comments().unwrap().unwrap();
+
+        assert_eq!(
+            "2017-01-09T09:57:29.009+00:00",
+            data_set.timestamp.to_rfc3339()
+        );
+        assert_eq!(9, data_set.as_data_slice().len());
+        assert_eq!(
+            "00_0010_0053_10_0100",
+            data_set.as_data_slice()[0].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E11_10_0100",
+            data_set.as_data_slice()[1].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E21_10_0100",
+            data_set.as_data_slice()[2].id_string()
+        );
+        assert_eq!(
+            "01_0015_7E11_10_0100",
+            data_set.as_data_slice()[3].id_string()
+        );
+        assert_eq!(
+            "01_6651_7E11_10_0200",
+            data_set.as_data_slice()[4].id_string()
+        );
+        assert_eq!(
+            "01_6652_7E11_10_0200",
+            data_set.as_data_slice()[5].id_string()
+        );
+        assert_eq!(
+            "01_6653_7E11_10_0200",
+            data_set.as_data_slice()[6].id_string()
+        );
+        assert_eq!(
+            "01_6654_7E11_10_0200",
+            data_set.as_data_slice()[7].id_string()
+        );
+        assert_eq!(
+            "01_6655_7E11_10_0200",
+            data_set.as_data_slice()[8].id_string()
+        );
+        assert_eq!(1, comments.len());
+        assert_eq!(23, comments[0].comment().len());
+
+        assert_eq!(true, rr.read_data_set_and_comments().unwrap().is_none());
+
+        // Unsupported record type
+        let bytes: &[u8] = &[
+            0xA5, 0x44, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xA5, 0x88, 0x0E, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let mut rr = RecordingReader::new(bytes);
+
+        let error = rr.read_data_set_and_comments().err().unwrap();
+
+        assert_eq!("Unsupported record type 0x88", error.to_string());
+    }
+
+    #[test]
     fn test_read_data_set() {
         let mut rr = RecordingReader::new(RECORDING_1);
+        let data_set = rr.read_data_set().unwrap().unwrap();
+
+        assert_eq!(
+            "2017-01-09T09:57:29.009+00:00",
+            data_set.timestamp.to_rfc3339()
+        );
+        assert_eq!(9, data_set.as_data_slice().len());
+        assert_eq!(
+            "00_0010_0053_10_0100",
+            data_set.as_data_slice()[0].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E11_10_0100",
+            data_set.as_data_slice()[1].id_string()
+        );
+        assert_eq!(
+            "01_0010_7E21_10_0100",
+            data_set.as_data_slice()[2].id_string()
+        );
+        assert_eq!(
+            "01_0015_7E11_10_0100",
+            data_set.as_data_slice()[3].id_string()
+        );
+        assert_eq!(
+            "01_6651_7E11_10_0200",
+            data_set.as_data_slice()[4].id_string()
+        );
+        assert_eq!(
+            "01_6652_7E11_10_0200",
+            data_set.as_data_slice()[5].id_string()
+        );
+        assert_eq!(
+            "01_6653_7E11_10_0200",
+            data_set.as_data_slice()[6].id_string()
+        );
+        assert_eq!(
+            "01_6654_7E11_10_0200",
+            data_set.as_data_slice()[7].id_string()
+        );
+        assert_eq!(
+            "01_6655_7E11_10_0200",
+            data_set.as_data_slice()[8].id_string()
+        );
+
+        assert_eq!(true, rr.read_data_set().unwrap().is_none());
+
+        let mut rr = RecordingReader::new(RECORDING_4);
         let data_set = rr.read_data_set().unwrap().unwrap();
 
         assert_eq!(
@@ -543,6 +705,10 @@ mod tests {
         // with min and max timestamp filtering
         let mut rr = RecordingReader::new(RECORDING_1);
         rr.set_min_max_timestamps(Some(timestamp), Some(timestamp_plus_one));
+        assert_eq!(9, rr.read_topology_data_set()?.len());
+
+        // with comments records in input
+        let mut rr = RecordingReader::new(RECORDING_4);
         assert_eq!(9, rr.read_topology_data_set()?.len());
 
         // Unsupported record type
