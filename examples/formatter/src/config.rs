@@ -16,4 +16,5 @@ pub struct Config<'a> {
     pub topology_data_set: &'a DataSet,
     pub data_set_reader: &'a mut dyn DataSetReader,
     pub output_pattern: Option<&'a str>,
+    pub local_timezone: bool,
 }
