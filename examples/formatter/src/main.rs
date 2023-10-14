@@ -8,7 +8,7 @@
 use std::{fs::File, io::Read};
 
 use clap::{Arg, Command};
-use log::{trace};
+use log::trace;
 use resol_vbus::{
     chrono::{DateTime, Duration, Local, Utc},
     *,
@@ -112,9 +112,9 @@ fn run() -> Result<()> {
             Arg::new("type")
                 .help("Sets the output type")
                 .required(true)
-                .takes_value(true)
+                .num_args(1)
                 .value_name("TYPE")
-                .possible_values(&[
+                .value_parser([
                     "raw-stats",
                     "stats",
                     "packets",
@@ -129,63 +129,73 @@ fn run() -> Result<()> {
             Arg::new("sieve_interval")
                 .help("Sieves input data and removes multiple data sets within the same interval")
                 .long("sieve-interval")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("SECONDS"),
         )
         .arg(
             Arg::new("ttl")
                 .help("Remove data from data sets if it was not updated for this amount of time")
                 .long("ttl")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("SECONDS"),
         )
         .arg(
             Arg::new("min_timestamp")
                 .help("Ignore data sets before this point in time")
                 .long("min-timestamp")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("DATETIME"),
         )
         .arg(
             Arg::new("max_timestamp")
                 .help("Ignore data sets after this point in time")
                 .long("max-timestamp")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("DATETIME"),
         )
         .arg(
             Arg::new("vsf_filename")
                 .help("Location of the VSF file")
                 .long("vsf")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("FILENAME"),
         )
         .arg(
             Arg::new("language")
                 .help("Language")
                 .long("language")
-                .takes_value(true)
-                .value_name("LANGUAGE"),
+                .num_args(1)
+                .value_name("LANGUAGE")
+                .value_parser([
+                    "en",
+                    "de",
+                    "fr",
+                ]),
         )
         .arg(
             Arg::new("output_pattern")
                 .help("Output filename pattern, optionally containing strftime placeholders")
                 .long("output")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("PATTERN"),
+        )
+        .arg(
+            Arg::new("local_timezone")
+                .help("Use local timezone in text formatters and filename generation")
+                .long("local-timezone"),
         )
         .arg(
             Arg::new("INPUT")
                 .help("Sets the input files to use")
                 .required(true)
-                .multiple_occurrences(true),
+                .num_args(1..),
         )
         .get_matches();
 
-    let typ = matches.value_of("type").unwrap();
+    let typ = matches.get_one::<String>("type").unwrap();
 
-    let sieve_interval = if let Some(arg) = matches.value_of("sieve_interval") {
-        let seconds = arg.parse()?;
+    let sieve_interval = if let Some(arg) = matches.get_one::<i64>("sieve_interval") {
+        let seconds = *arg;
         if seconds > 0 {
             Some(Duration::seconds(seconds))
         } else {
@@ -195,28 +205,28 @@ fn run() -> Result<()> {
         None
     };
 
-    let ttl_duration = if let Some(arg) = matches.value_of("ttl") {
-        let seconds = arg.parse()?;
+    let ttl_duration = if let Some(arg) = matches.get_one::<i64>("ttl") {
+        let seconds = *arg;
         Some(Duration::seconds(seconds))
     } else {
         None
     };
 
-    let min_timestamp = if let Some(arg) = matches.value_of("min_timestamp") {
+    let min_timestamp = if let Some(arg) = matches.get_one::<String>("min_timestamp") {
         Some(arg.parse()?)
     } else {
         None
     };
 
-    let max_timestamp = if let Some(arg) = matches.value_of("max_timestamp") {
+    let max_timestamp = if let Some(arg) = matches.get_one::<String>("max_timestamp") {
         Some(arg.parse()?)
     } else {
         None
     };
 
-    let vsf_filename = matches.value_of("vsf_filename");
+    let vsf_filename = matches.get_one::<String>("vsf_filename");
 
-    let language = match matches.value_of("language") {
+    let language = match matches.get_one::<String>("language").map(|s| s.as_str()) {
         None => Language::De,
         Some("en") => Language::En,
         Some("de") => Language::De,
@@ -224,10 +234,12 @@ fn run() -> Result<()> {
         Some(lang) => panic!("Unexpected language {}", lang),
     };
 
-    let output_pattern = matches.value_of("output_pattern");
+    let output_pattern = matches.get_one::<String>("output_pattern").map(|s| s.as_str());
+
+    let local_timezone = matches.contains_id("local_timezone");
 
     let input_filenames = matches
-        .values_of("INPUT")
+        .get_many::<String>("INPUT")
         .unwrap()
         .map(|s| s.to_string())
         .collect::<Vec<_>>();
@@ -265,6 +277,7 @@ fn run() -> Result<()> {
             topology_data_set: &topology_data_set,
             data_set_reader: &mut rr,
             output_pattern,
+            local_timezone,
         };
 
         if process_data_set_stream(typ, &mut config)? {
@@ -290,6 +303,7 @@ fn run() -> Result<()> {
                 topology_data_set: &topology_data_set,
                 data_set_reader: &mut ldrr,
                 output_pattern,
+                local_timezone,
             };
 
             if process_data_set_stream(typ, &mut config)? {
