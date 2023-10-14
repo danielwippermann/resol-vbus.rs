@@ -14,8 +14,9 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
     let topology_data_set = config.topology_data_set;
     let spec = config.specification;
     let pattern = config.output_pattern.unwrap_or("Output.csv");
+    let local_timezone = config.local_timezone;
 
-    let mut output_writer = TimestampFileWriter::new(pattern.to_owned());
+    let mut output_writer = TimestampFileWriter::new(pattern.to_owned(), local_timezone);
 
     let mut cumultative_data_set = topology_data_set.clone();
 
@@ -28,7 +29,7 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
     let sep = "\t";
     let eol = "\n";
 
-    while let Some(data_set) = dsr.read_data_set()? {
+    while let Some((data_set, comments)) = dsr.read_data_set_and_comments()? {
         let timestamp = data_set.timestamp;
         let local_timestamp = timestamp.with_timezone(&Local);
 
@@ -112,7 +113,11 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
         if new_interval {
             // write!(output, "{:?} {:?} {:?} {:?} {:?} {:?}  ", timestamp.timestamp(), local_timestamp.timestamp(), timestamp.naive_utc().timestamp(), timestamp.naive_local().timestamp(), local_timestamp.naive_utc().timestamp(), local_timestamp.naive_local().timestamp());
 
-            write!(output, "{}", local_timestamp.to_rfc3339())?;
+            if local_timezone {
+                write!(output, "{}", local_timestamp.to_rfc3339())?;
+            } else {
+                write!(output, "{}", timestamp.to_rfc3339())?;
+            }
 
             for field in field_iterator.fields_in_data_set(&cumultative_data_set) {
                 write!(output, "{}{}", sep, field.fmt_raw_value(false))?;
@@ -129,6 +134,15 @@ pub fn convert_to_text_data(config: &mut Config<'_>) -> Result<()> {
             //         write!(output, "\t")?;
             //     }
             // }
+
+            for comment in comments {
+                let comment_str = match std::str::from_utf8(comment.comment()) {
+                    Ok(comment_str) => comment_str,
+                    Err(_) => "<non UTF-8 comment>",
+                };
+
+                write!(output, "{}{}", sep, comment_str)?;
+            }
 
             write!(output, "{}", eol)?;
         }

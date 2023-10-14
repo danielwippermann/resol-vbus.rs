@@ -34,8 +34,9 @@ pub fn generate(config: &mut Config<'_>) -> Result<()> {
     let dsr = &mut config.data_set_reader;
     let spec = config.specification;
     let pattern = config.output_pattern.unwrap_or("Output.json");
+    let local_timezone = config.local_timezone;
 
-    let mut output_writer = TimestampFileWriter::new(pattern.to_owned());
+    let mut output_writer = TimestampFileWriter::new(pattern.to_owned(), local_timezone);
 
     let field_iterator = AllFieldsIterator::new(spec);
 

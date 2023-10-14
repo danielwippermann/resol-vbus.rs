@@ -11,8 +11,9 @@ pub fn generate(config: &mut Config<'_>) -> Result<()> {
     let ttl_duration = config.ttl;
     let topology_data_set = config.topology_data_set;
     let pattern = config.output_pattern.unwrap_or("Output.vbus");
+    let local_timezone = config.local_timezone;
 
-    let output_writer = TimestampFileWriter::new(pattern.to_owned());
+    let output_writer = TimestampFileWriter::new(pattern.to_owned(), local_timezone);
 
     let mut cumultative_data_set = topology_data_set.clone();
 
@@ -26,7 +27,7 @@ pub fn generate(config: &mut Config<'_>) -> Result<()> {
 
         let new_interval = timestamp_interval.is_new_interval(&local_timestamp);
 
-        output.get_mut().set_timestamp(timestamp)?;
+        output.as_mut().set_timestamp(timestamp)?;
 
         cumultative_data_set.add_data_set(data_set);
         if let Some(duration) = ttl_duration {
