@@ -12,7 +12,7 @@ edition = "2021"
 travis-ci = { repository = "danielwippermann/resol-vbus.rs" }
 
 [dependencies]
-chrono = "0.4"
+chrono = "0.4.30"
 
 [features]
 no-default-spec = []
