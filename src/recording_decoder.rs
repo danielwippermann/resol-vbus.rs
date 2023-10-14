@@ -7,10 +7,11 @@ use crate::{
     data::Data,
     datagram::Datagram,
     header::Header,
+    little_endian::{i16_from_le_bytes, i32_from_le_bytes, i64_from_le_bytes, u16_from_le_bytes},
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
     utils::utc_timestamp_with_nsecs,
-    Telegram, little_endian::{u16_from_le_bytes, i64_from_le_bytes, i16_from_le_bytes, i32_from_le_bytes},
+    Telegram,
 };
 
 /// Checks the provided slice of bytes whether it contains a valid VBus record.

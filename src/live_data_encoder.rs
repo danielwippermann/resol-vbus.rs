@@ -3,8 +3,9 @@
 
 use crate::{
     data::Data,
+    little_endian::{i16_to_le_bytes, i32_to_le_bytes, u16_to_le_bytes},
     telegram::Telegram,
-    utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett}, little_endian::{u16_to_le_bytes, i32_to_le_bytes, i16_to_le_bytes},
+    utils::{calc_and_set_checksum_v0, copy_bytes_extracting_septett},
 };
 
 /// Returns the number of bytes that the live representation of the Data needs.

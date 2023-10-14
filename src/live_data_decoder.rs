@@ -7,10 +7,11 @@ use crate::{
     data::Data,
     datagram::Datagram,
     header::Header,
+    little_endian::{i16_from_le_bytes, i32_from_le_bytes, u16_from_le_bytes},
     packet::Packet,
     stream_blob_length::StreamBlobLength::{self, BlobLength, Malformed, Partial},
     telegram::Telegram,
-    utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set}, little_endian::{u16_from_le_bytes, i16_from_le_bytes, i32_from_le_bytes},
+    utils::{calc_and_compare_checksum_v0, copy_bytes_injecting_septett, has_msb_set},
 };
 
 /// Checks the provided slice of bytes whether it contains valid VBus live data.

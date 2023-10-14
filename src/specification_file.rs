@@ -7,7 +7,8 @@
 //! for details.
 use crate::{
     error::{Error, Result},
-    utils::calc_crc16, little_endian::{u16_from_le_bytes, i32_from_le_bytes, i64_from_le_bytes},
+    little_endian::{i32_from_le_bytes, i64_from_le_bytes, u16_from_le_bytes},
+    utils::calc_crc16,
 };
 
 /// A list of errors that can occur if the VSF1 data cannot be parsed.

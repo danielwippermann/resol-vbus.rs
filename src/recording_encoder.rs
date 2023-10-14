@@ -3,7 +3,12 @@
 
 use chrono::{DateTime, Utc};
 
-use crate::{data::Data, header::Header, utils::utc_timestamp, little_endian::{i64_to_le_bytes, u16_to_le_bytes, i16_to_le_bytes, i32_to_le_bytes}};
+use crate::{
+    data::Data,
+    header::Header,
+    little_endian::{i16_to_le_bytes, i32_to_le_bytes, i64_to_le_bytes, u16_to_le_bytes},
+    utils::utc_timestamp,
+};
 
 /// Returns the number of bytes that the recorded representation of the Data needs.
 pub fn length_from_data(data: &Data) -> usize {
