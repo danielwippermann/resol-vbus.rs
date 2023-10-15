@@ -220,7 +220,7 @@ pub fn current_timestamp() -> DateTime<Utc> {
 
 #[cfg(target_arch = "wasm32")]
 fn current_timestamp_internal() -> DateTime<Utc> {
-    Utc.timestamp(0, 0)
+    Utc.timestamp_opt(0, 0).unwrap()
 }
 
 #[cfg(not(target_arch = "wasm32"))]
