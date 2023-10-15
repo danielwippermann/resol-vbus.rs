@@ -101,6 +101,18 @@ fn slice_table_entry(buf: &[u8], offset: usize, length: usize, index: usize) -> 
 /// ```rust
 /// use resol_vbus::{Specification, SpecificationFile, Language};
 ///
+/// # #[cfg(feature = "no-default-spec")]
+/// # trait SpecificationFileNewDefault {
+/// #     fn new_default() -> Self;
+/// # }
+/// #
+/// # #[cfg(feature = "no-default-spec")]
+/// # impl SpecificationFileNewDefault for SpecificationFile {
+/// #     fn new_default() -> SpecificationFile {
+/// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+/// #     }
+/// # }
+///
 /// let get_loc_text = |language| {
 ///     // Create a new `Specification` for the provided language
 ///     let spec = Specification::from_file(SpecificationFile::new_default(), language);
@@ -895,6 +907,10 @@ mod tests {
         },
     };
 
+    fn testable_specification_file() -> SpecificationFile {
+        SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    }
+
     #[test]
     fn test_error_kind_derived_impls() {
         let error_kind = ErrorKind::InvalidFileHeader;
@@ -1068,7 +1084,7 @@ mod tests {
 
     #[test]
     fn test_specification_file_derived_impls() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         test_debug_derive(&spec_file);
     }
@@ -2164,12 +2180,12 @@ mod tests {
 
     #[test]
     fn test_new_default() {
-        let _spec_file = SpecificationFile::new_default();
+        let _spec_file = testable_specification_file();
     }
 
     #[test]
     fn test_unit_family_by_id() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         assert_eq!(
             UnitFamily::None,
@@ -2208,14 +2224,14 @@ mod tests {
     #[test]
     #[should_panic(expected = "Unsupported unit family ID UnitFamilyId(-2)")]
     fn test_unit_family_by_id_panic() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         spec_file.unit_family_by_id(&UnitFamilyId(-2));
     }
 
     #[test]
     fn test_unit_by_unit_code() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         let unit = spec_file
             .unit_by_unit_code("DegreesCelsius")
@@ -2226,7 +2242,7 @@ mod tests {
 
     #[test]
     fn test_type_by_id() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         assert_eq!(Type::Number, spec_file.type_by_id(&TypeId(1)));
         assert_eq!(Type::Time, spec_file.type_by_id(&TypeId(3)));
@@ -2237,14 +2253,14 @@ mod tests {
     #[test]
     #[should_panic(expected = "Unsupported type ID TypeId(-1)")]
     fn test_type_by_id_panic() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         spec_file.type_by_id(&TypeId(-1));
     }
 
     #[test]
     fn test_convert_value() {
-        let spec_file = SpecificationFile::new_default();
+        let spec_file = testable_specification_file();
 
         let assert_err_with_units = |expected_error, src_unit, dst_unit| {
             let error = spec_file

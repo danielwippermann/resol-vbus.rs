@@ -21,6 +21,18 @@ use crate::{
 /// ```rust
 /// use resol_vbus::{SpecificationFile, Specification, Language};
 ///
+/// # #[cfg(feature = "no-default-spec")]
+/// # trait SpecificationFileNewDefault {
+/// #     fn new_default() -> Self;
+/// # }
+/// #
+/// # #[cfg(feature = "no-default-spec")]
+/// # impl SpecificationFileNewDefault for SpecificationFile {
+/// #     fn new_default() -> SpecificationFile {
+/// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+/// #     }
+/// # }
+///
 /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
 ///
 /// let device_spec = spec.get_device_spec(0x00, 0x7E11, 0x0010);
@@ -54,6 +66,18 @@ pub struct DeviceSpec {
 ///
 /// ```rust
 /// use resol_vbus::{SpecificationFile, Specification, Language};
+///
+/// # #[cfg(feature = "no-default-spec")]
+/// # trait SpecificationFileNewDefault {
+/// #     fn new_default() -> Self;
+/// # }
+/// #
+/// # #[cfg(feature = "no-default-spec")]
+/// # impl SpecificationFileNewDefault for SpecificationFile {
+/// #     fn new_default() -> SpecificationFile {
+/// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+/// #     }
+/// # }
 ///
 /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
 ///
@@ -104,6 +128,18 @@ pub struct PacketSpec {
 /// ```rust
 /// use resol_vbus::{SpecificationFile, Specification, Language};
 /// use resol_vbus::specification_file::{UnitFamily, Type};
+///
+/// # #[cfg(feature = "no-default-spec")]
+/// # trait SpecificationFileNewDefault {
+/// #     fn new_default() -> Self;
+/// # }
+/// #
+/// # #[cfg(feature = "no-default-spec")]
+/// # impl SpecificationFileNewDefault for SpecificationFile {
+/// #     fn new_default() -> SpecificationFile {
+/// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+/// #     }
+/// # }
 ///
 /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
 ///
@@ -182,6 +218,18 @@ pub struct PacketFieldFormatter<'a> {
 ///
 /// ```rust
 /// use resol_vbus::{SpecificationFile, Specification, Language};
+///
+/// # #[cfg(feature = "no-default-spec")]
+/// # trait SpecificationFileNewDefault {
+/// #     fn new_default() -> Self;
+/// # }
+/// #
+/// # #[cfg(feature = "no-default-spec")]
+/// # impl SpecificationFileNewDefault for SpecificationFile {
+/// #     fn new_default() -> SpecificationFile {
+/// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+/// #     }
+/// # }
 ///
 /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
 ///
@@ -478,6 +526,18 @@ impl Specification {
     /// ```rust
     /// use resol_vbus::{SpecificationFile, Specification, Language};
     ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
+    ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
     ///
     /// // work with the spec...
@@ -512,6 +572,18 @@ impl Specification {
     /// ```rust
     /// use resol_vbus::{SpecificationFile, Specification, Language};
     ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
+    ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
     ///
     /// let device_spec = spec.get_device_spec(0x00, 0x7E11, 0x0010);
@@ -544,6 +616,18 @@ impl Specification {
     ///
     /// ```rust
     /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
     ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
     ///
@@ -582,6 +666,18 @@ impl Specification {
     ///
     /// ```rust
     /// use resol_vbus::{SpecificationFile, Specification, Language, PacketId};
+    ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
     ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::De);
     ///
@@ -639,6 +735,18 @@ impl Specification {
     /// use resol_vbus::{SpecificationFile, Specification, Language};
     /// use resol_vbus::utils::utc_timestamp;
     ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
+    ///
     /// let fmt_localized_timestamp = |language| {
     ///     let spec = Specification::from_file(SpecificationFile::new_default(), language);
     ///
@@ -667,6 +775,18 @@ impl Specification {
     /// use resol_vbus::{SpecificationFile, Specification, Language};
     /// use resol_vbus::specification_file::UnitId;
     ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
+    ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
     ///
     /// assert_eq!(UnitId(62), spec.unit_by_unit_code("DegreesCelsius").unwrap().unit_id);
@@ -682,6 +802,18 @@ impl Specification {
     ///
     /// ```rust
     /// use resol_vbus::{SpecificationFile, Specification, Language};
+    ///
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # trait SpecificationFileNewDefault {
+    /// #     fn new_default() -> Self;
+    /// # }
+    /// #
+    /// # #[cfg(feature = "no-default-spec")]
+    /// # impl SpecificationFileNewDefault for SpecificationFile {
+    /// #     fn new_default() -> SpecificationFile {
+    /// #         SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    /// #     }
+    /// # }
     ///
     /// let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
     ///
@@ -1028,6 +1160,10 @@ mod tests {
         Header, Packet,
     };
 
+    fn testable_specification_file() -> SpecificationFile {
+        SpecificationFile::from_bytes(include_bytes!("../res/vbus_specification.vsf")).unwrap()
+    }
+
     #[test]
     fn test_device_spec_derived_impls() {
         let ds = DeviceSpec {
@@ -1187,7 +1323,7 @@ mod tests {
     #[test]
     fn test_specification_derived_impls() {
         let spec = Specification {
-            file: SpecificationFile::new_default(),
+            file: testable_specification_file(),
             language: Language::En,
             devices: RefCell::new(Vec::new()),
             packets: RefCell::new(Vec::new()),
@@ -1831,7 +1967,7 @@ mod tests {
     #[test]
     fn test_fmt_timestamp() {
         let fmt_localized_timestamp = |language: Language| {
-            let spec = Specification::from_file(SpecificationFile::new_default(), language);
+            let spec = Specification::from_file(testable_specification_file(), language);
 
             format!("{}", spec.fmt_timestamp(&utc_timestamp(1485688933)))
         };
@@ -1843,7 +1979,7 @@ mod tests {
 
     #[test]
     fn test_unit_by_unit_code() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let unit = spec
             .unit_by_unit_code("DegreesCelsius")
@@ -1856,7 +1992,7 @@ mod tests {
 
     #[test]
     fn test_convert_value() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let src_unit = spec
             .unit_by_unit_code("DegreesCelsius")
@@ -1875,7 +2011,7 @@ mod tests {
 
     #[test]
     fn test_packet_spec_get_field_spec_position() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
 
@@ -1885,7 +2021,7 @@ mod tests {
 
     #[test]
     fn test_packet_spec_get_field_spec_by_position() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
 
@@ -1897,7 +2033,7 @@ mod tests {
 
     #[test]
     fn test_data_set_packet_field_new() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
 
@@ -1927,7 +2063,7 @@ mod tests {
 
     #[test]
     fn test_data_set_packet_field_accessors() {
-        let spec = Specification::from_file(SpecificationFile::new_default(), Language::En);
+        let spec = Specification::from_file(testable_specification_file(), Language::En);
 
         let packet_spec = spec.get_packet_spec(0x00, 0x0010, 0x7E11, 0x0100);
 
