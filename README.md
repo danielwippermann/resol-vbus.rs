@@ -2,7 +2,7 @@
 
 A Rust library for processing RESOL VBus data.
 
-[![Rust](https://github.com/danielwippermann/resol-vbus.rs/actions/workflows/rust.yml/badge.svg)](https://github.com/danielwippermann/resol-vbus.rs/actions/workflows/rust.yml)
+[![Rust](https://github.com/danielwippermann/resol-vbus.rs/actions/workflows/test.yml/badge.svg)](https://github.com/danielwippermann/resol-vbus.rs/actions/workflows/test.yml)
 [![codecov](https://codecov.io/github/danielwippermann/resol-vbus.rs/branch/master/graph/badge.svg?token=kBErkGDKrY)](https://codecov.io/github/danielwippermann/resol-vbus.rs)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fdanielwippermann%2Fresol-vbus.rs.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fdanielwippermann%2Fresol-vbus.rs?ref=badge_shield)
 
