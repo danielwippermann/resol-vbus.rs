@@ -153,5 +153,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
           env_vars: OS,RUST
