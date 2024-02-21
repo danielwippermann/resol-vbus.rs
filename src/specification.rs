@@ -1,6 +1,6 @@
 //! This module provides the `Specification` and its associated types to allow interpretation
 //! of the fields contained within the `frame_data` payload of `Packet` values.
-use std::{cell::RefCell, clone::Clone, fmt, rc::Rc};
+use std::{cell::RefCell, fmt, rc::Rc};
 
 use chrono::{DateTime, TimeZone};
 

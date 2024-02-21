@@ -97,7 +97,6 @@ mod tests {
         recording_decoder::data_from_checked_bytes,
         test_data::{RECORDING_1, RECORDING_3, TELEGRAM_RECORDING_1},
         test_utils::to_hex_string,
-        utils::utc_timestamp,
     };
 
     #[test]

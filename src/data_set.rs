@@ -1,5 +1,5 @@
 use std::{
-    cmp::{Ord, Ordering},
+    cmp::Ordering,
     hash::Hasher,
     slice::{Iter, IterMut},
 };

@@ -170,7 +170,6 @@ mod tests {
     use super::*;
 
     use crate::{
-        stream_blob_length::StreamBlobLength::{BlobLength, Malformed, Partial},
         test_data::{LIVE_DATA_1, LIVE_TELEGRAM_1},
         test_utils::to_hex_string,
         utils::utc_timestamp,

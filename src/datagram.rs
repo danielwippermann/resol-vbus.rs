@@ -165,7 +165,7 @@ impl AsRef<Header> for Datagram {
 mod tests {
     use super::*;
 
-    use crate::{header::Header, id_hash, utils::utc_timestamp};
+    use crate::{id_hash, utils::utc_timestamp};
 
     #[test]
     fn test_id_hash() {
