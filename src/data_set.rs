@@ -217,7 +217,7 @@ impl AsRef<[Data]> for DataSet {
 mod tests {
     use super::*;
 
-    use chrono::Duration;
+    use chrono::TimeDelta;
 
     use crate::{
         id_hash::id_hash,
@@ -227,8 +227,8 @@ mod tests {
         utils::utc_timestamp,
     };
 
-    fn seconds(seconds: i64) -> Duration {
-        Duration::try_seconds(seconds).expect("Should not have overflowed")
+    fn seconds(seconds: i64) -> TimeDelta {
+        TimeDelta::try_seconds(seconds).expect("Should not have overflowed")
     }
 
     #[test]
