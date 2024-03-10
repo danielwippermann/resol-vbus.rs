@@ -762,7 +762,7 @@ impl Specification {
             language: self.language,
             typ: Type::DateTime,
             precision: 0,
-            raw_value: timestamp.naive_local().timestamp() - 978_307_200,
+            raw_value: timestamp.naive_local().and_utc().timestamp() - 978_307_200,
             unit_text: "",
         }
     }

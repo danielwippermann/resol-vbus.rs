@@ -227,6 +227,10 @@ mod tests {
         utils::utc_timestamp,
     };
 
+    fn seconds(seconds: i64) -> Duration {
+        Duration::try_seconds(seconds).expect("Should not have overflowed")
+    }
+
     #[test]
     fn test_with_timestamp() {
         let data_set = DataSet::with_timestamp(utc_timestamp(1485688933));
@@ -297,7 +301,7 @@ mod tests {
             data_set.as_data_slice()[0].id_string()
         );
 
-        let other_timestamp = timestamp + Duration::seconds(1);
+        let other_timestamp = timestamp + seconds(1);
 
         let data = data_from_checked_bytes(other_timestamp, channel, &LIVE_DATA_1[0..]);
         data_set.add_data(data);
@@ -446,23 +450,23 @@ mod tests {
         let mut data_set = DataSet::new();
         data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(10),
+            timestamp + seconds(10),
             channel,
             &LIVE_DATA_1[0..],
         ));
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(20),
+            timestamp + seconds(20),
             channel,
             &LIVE_DATA_1[352..],
         ));
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(30),
+            timestamp + seconds(30),
             channel,
             &LIVE_TELEGRAM_1[0..],
         ));
-        data_set.remove_data_older_than(timestamp + Duration::seconds(20));
+        data_set.remove_data_older_than(timestamp + seconds(20));
 
-        assert_eq!(timestamp + Duration::seconds(30), data_set.timestamp);
+        assert_eq!(timestamp + seconds(30), data_set.timestamp);
         assert_eq!(2, data_set.as_data_slice().len());
         assert_eq!(
             "11_0000_7E11_20_0500_0000",
@@ -515,23 +519,23 @@ mod tests {
         let mut data_set = DataSet::new();
         data_set.timestamp = utc_timestamp(0);
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(10),
+            timestamp + seconds(10),
             channel,
             &LIVE_DATA_1[0..],
         ));
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(20),
+            timestamp + seconds(20),
             channel,
             &LIVE_DATA_1[352..],
         ));
         data_set.add_data(data_from_checked_bytes(
-            timestamp + Duration::seconds(30),
+            timestamp + seconds(30),
             channel,
             &LIVE_TELEGRAM_1[0..],
         ));
-        data_set.clear_packets_older_than(timestamp + Duration::seconds(20));
+        data_set.clear_packets_older_than(timestamp + seconds(20));
 
-        assert_eq!(timestamp + Duration::seconds(30), data_set.timestamp);
+        assert_eq!(timestamp + seconds(30), data_set.timestamp);
 
         let data_slice = data_set.as_data_slice();
         assert_eq!(3, data_slice.len());
