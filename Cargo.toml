@@ -13,7 +13,7 @@ rust-version = "1.61.0"
 travis-ci = { repository = "danielwippermann/resol-vbus.rs" }
 
 [dependencies]
-chrono = "0.4.35"
+chrono = "0.4.38"
 
 [features]
 no-default-spec = []
