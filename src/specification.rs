@@ -349,7 +349,7 @@ fn get_or_create_cached_device_spec(
     };
 
     let name = match channel {
-        0 => name,
+        0 | 255 => name,
         _ => format!("VBus {channel}: {name}"),
     };
 
