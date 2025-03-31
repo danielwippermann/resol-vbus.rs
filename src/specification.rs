@@ -930,7 +930,7 @@ impl<'a> RawValueFormatter<'a> {
     }
 }
 
-impl<'a> fmt::Display for RawValueFormatter<'a> {
+impl fmt::Display for RawValueFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.typ {
             Type::Number => {
@@ -1005,7 +1005,7 @@ impl<'a> fmt::Display for RawValueFormatter<'a> {
     }
 }
 
-impl<'a> fmt::Display for PacketFieldFormatter<'a> {
+impl fmt::Display for PacketFieldFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(raw_value) = self.raw_value {
             let formatter = RawValueFormatter::new(

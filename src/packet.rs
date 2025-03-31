@@ -143,7 +143,7 @@ impl ToPacketId for str {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PacketFieldId<'a>(pub PacketId, pub &'a str);
 
-impl<'a> PacketFieldId<'a> {
+impl PacketFieldId<'_> {
     /// Get the packet ID string for a given `PacketFieldId` value.
     ///
     /// ## Examples
@@ -179,7 +179,7 @@ pub trait ToPacketFieldId {
     fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>>;
 }
 
-impl<'a> ToPacketFieldId for PacketFieldId<'a> {
+impl ToPacketFieldId for PacketFieldId<'_> {
     fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>> {
         Ok(*self)
     }
