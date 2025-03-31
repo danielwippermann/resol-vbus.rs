@@ -15,7 +15,8 @@ impl TimestampInterval {
 
     pub fn is_new_interval(&mut self, timestamp: &DateTime<Local>) -> bool {
         if let Some(interval) = self.interval {
-            let current_interval = timestamp.naive_local().timestamp() / interval.num_seconds();
+            let current_interval =
+                timestamp.naive_local().and_utc().timestamp() / interval.num_seconds();
 
             let new_interval = match self.last_interval {
                 Some(last_interval) => current_interval != last_interval,

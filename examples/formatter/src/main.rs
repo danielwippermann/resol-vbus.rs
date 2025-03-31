@@ -4,6 +4,7 @@
 #![deny(rust_2018_compatibility)]
 #![deny(rust_2018_idioms)]
 #![deny(rust_2021_compatibility)]
+#![allow(dead_code)]
 
 use std::{fs::File, io::Read};
 
@@ -166,11 +167,7 @@ fn run() -> Result<()> {
                 .long("language")
                 .num_args(1)
                 .value_name("LANGUAGE")
-                .value_parser([
-                    "en",
-                    "de",
-                    "fr",
-                ]),
+                .value_parser(["en", "de", "fr"]),
         )
         .arg(
             Arg::new("output_pattern")
@@ -234,7 +231,9 @@ fn run() -> Result<()> {
         Some(lang) => panic!("Unexpected language {}", lang),
     };
 
-    let output_pattern = matches.get_one::<String>("output_pattern").map(|s| s.as_str());
+    let output_pattern = matches
+        .get_one::<String>("output_pattern")
+        .map(|s| s.as_str());
 
     let local_timezone = matches.contains_id("local_timezone");
 
@@ -270,9 +269,9 @@ fn run() -> Result<()> {
         let mut config = Config {
             sieve_interval,
             ttl: ttl_duration,
-            min_timestamp,
-            max_timestamp,
-            language,
+            // min_timestamp,
+            // max_timestamp,
+            // language,
             specification: &spec,
             topology_data_set: &topology_data_set,
             data_set_reader: &mut rr,
@@ -296,9 +295,9 @@ fn run() -> Result<()> {
             let mut config = Config {
                 sieve_interval,
                 ttl: ttl_duration,
-                min_timestamp,
-                max_timestamp,
-                language,
+                // min_timestamp,
+                // max_timestamp,
+                // language,
                 specification: &spec,
                 topology_data_set: &topology_data_set,
                 data_set_reader: &mut ldrr,
