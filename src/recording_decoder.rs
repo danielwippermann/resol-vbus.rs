@@ -37,11 +37,25 @@ pub fn length_from_bytes(buf: &[u8]) -> StreamBlobLength {
     }
 }
 
+/// Clamp bounds for the seconds portion of a timestamp, chosen well within the
+/// range of dates `chrono::Utc` can represent (~±262k years around the epoch)
+/// and far outside any timestamp a real recording would carry. Values beyond
+/// this range are produced by malformed/crafted input.
+const MIN_TIMESTAMP_SECONDS: i64 = -1_000_000_000_000; // ~ year -29,000
+const MAX_TIMESTAMP_SECONDS: i64 = 1_000_000_000_000; // ~ year 33,000
+
 /// Convert slice of bytes to `DateTime<Utc>` object.
+///
+/// The extraction never panics, even for out-of-range or negative timestamps
+/// found in malformed input: the seconds value is clamped into the range
+/// `chrono::Utc` can represent and the nanoseconds portion is computed with
+/// Euclidean division so that negative values yield a valid remainder.
 pub fn timestamp_from_checked_bytes(buf: &[u8]) -> DateTime<Utc> {
     let timestamp_ms = i64_from_le_bytes(&buf[0..8]);
-    let timestamp_s = timestamp_ms / 1000;
-    let timestamp_ns = (timestamp_ms % 1000) as u32 * 1_000_000;
+    let timestamp_s = timestamp_ms
+        .div_euclid(1000)
+        .clamp(MIN_TIMESTAMP_SECONDS, MAX_TIMESTAMP_SECONDS);
+    let timestamp_ns = (timestamp_ms.rem_euclid(1000)) as u32 * 1_000_000;
     utc_timestamp_with_nsecs(timestamp_s, timestamp_ns)
 }
 
@@ -128,7 +142,8 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                         None
                     } else {
                         let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
-                        if length < 26 + frame_data_length {
+                        // frame_data can hold at most 508 bytes (127 frames of 4 bytes)
+                        if frame_data_length > 508 || length < 26 + frame_data_length {
                             None
                         } else {
                             Some(data_from_checked_bytes(channel, buf))
@@ -145,7 +160,8 @@ pub fn data_from_bytes(channel: u8, buf: &[u8]) -> Option<Data> {
                         None
                     } else {
                         let frame_data_length = u16_from_le_bytes(&buf[22..24]) as usize;
-                        if length < 26 + frame_data_length {
+                        // frame_data can hold at most 21 bytes (3 frames of 7 bytes)
+                        if frame_data_length > 21 || length < 26 + frame_data_length {
                             None
                         } else {
                             Some(data_from_checked_bytes(channel, buf))
