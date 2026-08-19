@@ -23,7 +23,7 @@ impl<W: Write> RecordingWriter<W> {
         let timestamp = data_set.timestamp;
 
         let mut data_set: Vec<_> = data_set.iter().collect();
-        data_set.sort_by(|l, r| l.as_header().channel.cmp(&r.as_header().channel));
+        data_set.sort_by_key(|data| data.as_header().channel);
 
         let max_length = data_set.iter().fold(16, |memo, data| {
             let length = length_from_data(data);
