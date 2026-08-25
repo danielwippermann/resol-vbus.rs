@@ -2,6 +2,8 @@ use std::{collections::HashSet, io::Read};
 
 use chrono::{DateTime, Utc};
 
+use anyhow::anyhow;
+
 use crate::{
     data::Data, data_set::DataSet, error::Result, live_data_decoder, recording_decoder,
     recording_reader::RecordingReader, stream_blob_length::StreamBlobLength::*,
@@ -149,16 +151,16 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    return Err(format!("Record type 0x88 too small: {len}").into());
+                    return Err(anyhow!("Record type 0x88 too small: {len}"));
                 }
             } else if record[1] == 0x77 {
                 if len >= 16 {
                     current_channel = record[14];
                 } else {
-                    return Err(format!("Record type 0x77 too small: {len}").into());
+                    return Err(anyhow!("Record type 0x77 too small: {len}"));
                 }
             } else {
-                return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
+                return Err(anyhow!("Unexpected record type 0x{:02X}", record[1]));
             }
         }
 
@@ -262,16 +264,16 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         self.buf.extend_from_slice(&record[22..]);
                         break;
                     } else {
-                        return Err(format!("Record type 0x88 too small: {len}").into());
+                        return Err(anyhow!("Record type 0x88 too small: {len}"));
                     }
                 } else if record[1] == 0x77 {
                     if len >= 16 {
                         self.current_channel = record[14];
                     } else {
-                        return Err(format!("Record type 0x77 too small: {len}").into());
+                        return Err(anyhow!("Record type 0x77 too small: {len}"));
                     }
                 } else {
-                    return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
+                    return Err(anyhow!("Unexpected record type 0x{:02X}", record[1]));
                 }
             }
         }
@@ -345,7 +347,7 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         drop(self.buf.drain(0..consumed));
                     }
                 } else {
-                    return Err(format!("Record type 0x88 too small: {len}").into());
+                    return Err(anyhow!("Record type 0x88 too small: {len}"));
                 }
             } else if record[1] == 0x77 {
                 if len >= 16 {
@@ -354,10 +356,10 @@ impl<T: Read> LiveDataRecordingReader<T> {
                         stats.max_channel = current_channel;
                     }
                 } else {
-                    return Err(format!("Record type 0x77 too small: {len}").into());
+                    return Err(anyhow!("Record type 0x77 too small: {len}"));
                 }
             } else {
-                return Err(format!("Unexpected record type 0x{:02X}", record[1]).into());
+                return Err(anyhow!("Unexpected record type 0x{:02X}", record[1]));
             }
         }
 

@@ -3,6 +3,8 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+use anyhow::anyhow;
+
 use crate::{error::Result, header::Header, id_hash::IdHash};
 
 /// A tuple of identification information about a `Packet` value.
@@ -60,68 +62,70 @@ impl ToPacketId for str {
         let is_not_hex_char = |c: char| !c.is_ascii_hexdigit();
 
         if self.len() < 20 {
-            return Err(format!("Invalid length of input {self:?}").into());
+            return Err(anyhow!("Invalid length of input {self:?}"));
         }
 
         let mut parts = self.split('_');
 
         let channel_str = parts.next().unwrap();
         if channel_str.len() != 2 {
-            return Err(format!("Invalid length of channel {channel_str:?}").into());
+            return Err(anyhow!("Invalid length of channel {channel_str:?}"));
         }
         if channel_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in channel {channel_str:?}").into());
+            return Err(anyhow!("Invalid characters in channel {channel_str:?}"));
         }
         let channel = u8::from_str_radix(channel_str, 16).unwrap();
 
         let destination_address_str = parts.next().unwrap();
         if destination_address_str.len() != 4 {
-            return Err(format!(
-                "Invalid length of destination address {destination_address_str:?}",
-            )
-            .into());
+            return Err(anyhow!(
+                "Invalid length of destination address {destination_address_str:?}"
+            ));
         }
         if destination_address_str.chars().any(&is_not_hex_char) {
-            return Err(format!(
+            return Err(anyhow!(
                 "Invalid characters in destination address {destination_address_str:?}"
-            )
-            .into());
+            ));
         }
         let destination_address = u16::from_str_radix(destination_address_str, 16).unwrap();
 
         let source_address_str = parts.next().unwrap();
         if source_address_str.len() != 4 {
-            return Err(format!("Invalid length of source address {source_address_str:?}").into());
+            return Err(anyhow!(
+                "Invalid length of source address {source_address_str:?}"
+            ));
         }
         if source_address_str.chars().any(&is_not_hex_char) {
-            return Err(
-                format!("Invalid characters in source address {source_address_str:?}").into(),
-            );
+            return Err(anyhow!(
+                "Invalid characters in source address {source_address_str:?}"
+            ));
         }
         let source_address = u16::from_str_radix(source_address_str, 16).unwrap();
 
         let protocol_version_str = parts.next().unwrap();
         if protocol_version_str.len() != 2 {
-            return Err(
-                format!("Invalid length of protocol version {protocol_version_str:?}").into(),
-            );
+            return Err(anyhow!(
+                "Invalid length of protocol version {protocol_version_str:?}"
+            ));
         }
         if protocol_version_str.chars().any(&is_not_hex_char) {
-            return Err(
-                format!("Invalid characters in protocol version {protocol_version_str:?}").into(),
-            );
+            return Err(anyhow!(
+                "Invalid characters in protocol version {protocol_version_str:?}"
+            ));
         }
         let protocol_version = u8::from_str_radix(protocol_version_str, 16).unwrap();
         if (protocol_version & 0xF0) != 0x10 {
-            return Err(format!("Unsupported protocol version 0x{protocol_version:02X}").into());
+            return Err(anyhow!(
+                "Unsupported protocol version 0x{protocol_version:02X}"
+            ));
         }
 
         let command_str = parts.next().unwrap();
         if command_str.len() != 4 {
-            return Err(format!("Invalid length of command {command_str:?}").into());
+            return Err(anyhow!("Invalid length of command {command_str:?}"));
         }
         if command_str.chars().any(&is_not_hex_char) {
-            return Err(format!("Invalid characters in command {command_str:?}").into());
+            return Err(anyhow!("Invalid characters in command {command_str:?}"));
         }
         let command = u16::from_str_radix(command_str, 16).unwrap();
 
@@ -197,7 +201,7 @@ impl ToPacketFieldId for str {
     /// ```
     fn to_packet_field_id(&self) -> Result<PacketFieldId<'_>> {
         if self.len() < 21 {
-            return Err(format!("Invalid length of input {self:?}").into());
+            return Err(anyhow!("Invalid length of input {self:?}"));
         }
 
         let packet_id = self.to_packet_id()?;
@@ -488,7 +492,6 @@ mod tests {
     use super::*;
 
     use crate::{
-        error::Error,
         test_utils::{
             test_clone_derive, test_copy_derive, test_debug_derive, test_eq_derive,
             test_hash_derive, test_ord_derive, test_partial_eq_derive, test_partial_ord_derive,
@@ -548,52 +551,88 @@ mod tests {
             "11_1213_1415_10_1718_XXX_X_X".to_packet_id().unwrap()
         );
         assert_eq!(
-            Error::new("Invalid length of input \"11_1213_1415_10_171\""),
-            "11_1213_1415_10_171".to_packet_id().unwrap_err()
+            "Invalid length of input \"11_1213_1415_10_171\"",
+            "11_1213_1415_10_171"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid length of channel \"111\""),
-            "111_1213_1415_10_1718".to_packet_id().unwrap_err()
+            "Invalid length of channel \"111\"",
+            "111_1213_1415_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid characters in channel \"1G\""),
-            "1G_1213_1415_10_1718".to_packet_id().unwrap_err()
+            "Invalid characters in channel \"1G\"",
+            "1G_1213_1415_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid length of destination address \"12131\""),
-            "11_12131_1415_10_1718".to_packet_id().unwrap_err()
+            "Invalid length of destination address \"12131\"",
+            "11_12131_1415_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid characters in destination address \"121G\""),
-            "11_121G_1415_10_1718".to_packet_id().unwrap_err()
+            "Invalid characters in destination address \"121G\"",
+            "11_121G_1415_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid length of source address \"14151\""),
-            "11_1213_14151_10_1718".to_packet_id().unwrap_err()
+            "Invalid length of source address \"14151\"",
+            "11_1213_14151_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid characters in source address \"141G\""),
-            "11_1213_141G_10_1718".to_packet_id().unwrap_err()
+            "Invalid characters in source address \"141G\"",
+            "11_1213_141G_10_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid length of protocol version \"101\""),
-            "11_1213_1415_101_1718".to_packet_id().unwrap_err()
+            "Invalid length of protocol version \"101\"",
+            "11_1213_1415_101_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid characters in protocol version \"1G\""),
-            "11_1213_1415_1G_1718".to_packet_id().unwrap_err()
+            "Invalid characters in protocol version \"1G\"",
+            "11_1213_1415_1G_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Unsupported protocol version 0x20"),
-            "11_1213_1415_20_1718".to_packet_id().unwrap_err()
+            "Unsupported protocol version 0x20",
+            "11_1213_1415_20_1718"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid length of command \"17181\""),
-            "11_1213_1415_10_17181".to_packet_id().unwrap_err()
+            "Invalid length of command \"17181\"",
+            "11_1213_1415_10_17181"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
         assert_eq!(
-            Error::new("Invalid characters in command \"171G\""),
-            "11_1213_1415_10_171G".to_packet_id().unwrap_err()
+            "Invalid characters in command \"171G\"",
+            "11_1213_1415_10_171G"
+                .to_packet_id()
+                .unwrap_err()
+                .to_string()
         );
     }
 
@@ -637,8 +676,8 @@ mod tests {
         let result = "11_1213_1415_10_1718".to_packet_field_id().unwrap_err();
 
         assert_eq!(
-            Error::new("Invalid length of input \"11_1213_1415_10_1718\""),
-            result
+            "Invalid length of input \"11_1213_1415_10_1718\"",
+            result.to_string()
         );
     }
 

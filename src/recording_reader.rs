@@ -2,6 +2,8 @@ use std::{collections::HashSet, io::Read};
 
 use chrono::{DateTime, Utc};
 
+use anyhow::anyhow;
+
 use crate::{
     blob_reader::BlobReader,
     data_set::DataSet,
@@ -154,7 +156,7 @@ impl<R: Read> RecordingReader<R> {
                     let comment = RecordingComment::new(timestamp, Vec::from(&bytes[14..]));
                     comments.push(comment);
                 } else {
-                    return Err(format!("Unsupported record type 0x{:02X}", bytes[1]).into());
+                    return Err(anyhow!("Unsupported record type 0x{:02X}", bytes[1]));
                 }
             }
 
@@ -191,7 +193,7 @@ impl<R: Read> RecordingReader<R> {
                 } else if bytes[1] == 0x99 {
                     // ignore comments
                 } else {
-                    return Err(format!("Unsupported record type 0x{:02X}", bytes[1]).into());
+                    return Err(anyhow!("Unsupported record type 0x{:02X}", bytes[1]));
                 }
             }
 
@@ -264,7 +266,7 @@ impl<R: Read> RecordingReader<R> {
             } else if record[1] == 0x99 {
                 // ignore comments
             } else {
-                return Err(format!("Unsupported record type 0x{:02X}", record[1]).into());
+                return Err(anyhow!("Unsupported record type 0x{:02X}", record[1]));
             }
         }
 

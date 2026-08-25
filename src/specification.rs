@@ -819,7 +819,7 @@ impl Specification {
     ///
     /// let src_unit = spec.unit_by_unit_code("DegreesCelsius").unwrap();
     /// let dst_unit = spec.unit_by_unit_code("DegreesFahrenheit").unwrap();
-    /// assert_eq!(Ok(32.0), spec.convert_value(0.0, src_unit, dst_unit));
+    /// assert_eq!(32.0, spec.convert_value(0.0, src_unit, dst_unit).unwrap());
     /// ```
     pub fn convert_value(&self, value: f64, src_unit: &Unit, dst_unit: &Unit) -> Result<f64> {
         self.file.convert_value(value, src_unit, dst_unit)
