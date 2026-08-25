@@ -152,7 +152,7 @@ impl DataSet {
 
     /// Sort the `Data` values contained in this `DataSet`.
     pub fn sort(&mut self) {
-        self.set.sort_by(|l, r| l.partial_cmp(r).unwrap());
+        self.set.sort();
     }
 
     /// Sort the `Data` values contained in this `DataSet`.
@@ -180,14 +180,14 @@ impl DataSet {
                 } else if r_pos.is_some() {
                     Ordering::Greater
                 } else {
-                    l_id.cmp(&r_id)
+                    l.cmp(r)
                 }
             } else if l.is_packet() {
                 Ordering::Less
             } else if r.is_packet() {
                 Ordering::Greater
             } else {
-                l.partial_cmp(r).expect("Comparison should always succeed")
+                l.cmp(r)
             }
         })
     }

@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering::{self, Equal, Greater, Less},
-    hash::Hasher,
-};
+use std::{cmp::Ordering, hash::Hasher};
 
 use crate::{
     datagram::Datagram, header::Header, id_hash::IdHash, packet::Packet, telegram::Telegram,
@@ -145,6 +142,14 @@ impl Data {
             Data::Telegram(ref tgram) => tgram.id_string(),
         }
     }
+
+    fn data_variant_rank(&self) -> u8 {
+        match self {
+            Data::Packet(_) => 1,
+            Data::Datagram(_) => 2,
+            Data::Telegram(_) => 3,
+        }
+    }
 }
 
 impl IdHash for Data {
@@ -172,43 +177,74 @@ impl PartialEq for Data {
         let left_header = left.as_header();
         let right_header = right.as_header();
 
-        if left_header.channel != right_header.channel
-            || left_header.destination_address != right_header.destination_address
-            || left_header.source_address != right_header.source_address
-            || left_header.protocol_version != right_header.protocol_version
-        {
-            false
-        } else {
-            match *left {
-                Data::Packet(ref left_packet) => {
-                    if let Data::Packet(ref right_packet) = *right {
-                        left_packet.command == right_packet.command
-                    } else {
-                        false
-                    }
-                }
-                Data::Datagram(ref left_dgram) => {
-                    if let Data::Datagram(ref right_dgram) = *right {
-                        if left_dgram.command != right_dgram.command {
-                            false
-                        } else if left_dgram.command != 0x0900 {
-                            true
-                        } else {
-                            left_dgram.param16 == right_dgram.param16
-                        }
-                    } else {
-                        false
-                    }
-                }
-                Data::Telegram(ref left_tgram) => {
-                    if let Data::Telegram(ref right_tgram) = *right {
-                        left_tgram.command == right_tgram.command
-                    } else {
-                        false
-                    }
-                }
+        let headers_eq = left_header.channel == right_header.channel
+            && left_header.destination_address == right_header.destination_address
+            && left_header.source_address == right_header.source_address
+            && left_header.protocol_version == right_header.protocol_version;
+
+        match (left, right) {
+            (Data::Packet(left_packet), Data::Packet(right_packet)) => {
+                headers_eq && left_packet.command == right_packet.command
             }
+            (Data::Datagram(left_dgram), Data::Datagram(right_dgram)) => {
+                headers_eq
+                    && left_dgram.command == right_dgram.command
+                    && (left_dgram.command != 0x0900 || left_dgram.param16 == right_dgram.param16)
+            }
+            (Data::Telegram(left_tgram), Data::Telegram(right_tgram)) => {
+                headers_eq && left_tgram.command == right_tgram.command
+            }
+            _ => false,
         }
+    }
+}
+
+impl Eq for Data {}
+
+impl Ord for Data {
+    /// Compares two `Data` values are "identical".
+    ///
+    /// Each `Data` variant has a set of fields that make up its "identity". The `Ord` trait
+    /// implementation compares those fields.
+    ///
+    /// See the descriptions for the `Header`, `Packet`, `Datagram` and `Telegram` types to find
+    /// out which fields are considered in each case.
+    fn cmp(&self, right: &Data) -> Ordering {
+        let left_header = self.as_header();
+        let right_header = right.as_header();
+
+        left_header
+            .channel
+            .cmp(&right_header.channel)
+            .then_with(|| {
+                left_header
+                    .destination_address
+                    .cmp(&right_header.destination_address)
+            })
+            .then_with(|| left_header.source_address.cmp(&right_header.source_address))
+            .then_with(|| {
+                left_header
+                    .protocol_version
+                    .cmp(&right_header.protocol_version)
+            })
+            .then_with(|| match (self, right) {
+                (Data::Packet(left_packet), Data::Packet(right_packet)) => {
+                    left_packet.command.cmp(&right_packet.command)
+                }
+                (Data::Datagram(left_dgram), Data::Datagram(right_dgram)) => {
+                    left_dgram.command.cmp(&right_dgram.command).then_with(|| {
+                        if left_dgram.command == 0x0900 {
+                            left_dgram.param16.cmp(&right_dgram.param16)
+                        } else {
+                            Ordering::Equal
+                        }
+                    })
+                }
+                (Data::Telegram(left_tgram), Data::Telegram(right_tgram)) => {
+                    left_tgram.command.cmp(&right_tgram.command)
+                }
+                (left, right) => left.data_variant_rank().cmp(&right.data_variant_rank()),
+            })
     }
 }
 
@@ -221,64 +257,7 @@ impl PartialOrd for Data {
     /// See the descriptions for the `Header`, `Packet`, `Datagram` and `Telegram` types to find
     /// out which fields are considered in each case.
     fn partial_cmp(&self, right: &Data) -> Option<Ordering> {
-        let left = self;
-
-        let left_header = left.as_header();
-        let right_header = right.as_header();
-
-        if left_header.channel < right_header.channel {
-            Some(Less)
-        } else if left_header.channel > right_header.channel {
-            Some(Greater)
-        } else if left_header.destination_address < right_header.destination_address {
-            Some(Less)
-        } else if left_header.destination_address > right_header.destination_address {
-            Some(Greater)
-        } else if left_header.source_address < right_header.source_address {
-            Some(Less)
-        } else if left_header.source_address > right_header.source_address {
-            Some(Greater)
-        } else if left_header.protocol_version < right_header.protocol_version {
-            Some(Less)
-        } else if left_header.protocol_version > right_header.protocol_version {
-            Some(Greater)
-        } else {
-            match *left {
-                Data::Packet(ref left_packet) => {
-                    if let Data::Packet(ref right_packet) = *right {
-                        Some(left_packet.command.cmp(&right_packet.command))
-                    } else {
-                        None
-                    }
-                }
-                Data::Datagram(ref left_dgram) => {
-                    if let Data::Datagram(ref right_dgram) = *right {
-                        if left_dgram.command < right_dgram.command {
-                            Some(Less)
-                        } else if left_dgram.command > right_dgram.command {
-                            Some(Greater)
-                        } else if left_dgram.command != 0x0900 {
-                            Some(Equal)
-                        } else if left_dgram.param16 < right_dgram.param16 {
-                            Some(Less)
-                        } else if left_dgram.param16 > right_dgram.param16 {
-                            Some(Greater)
-                        } else {
-                            Some(Equal)
-                        }
-                    } else {
-                        None
-                    }
-                }
-                Data::Telegram(ref left_tgram) => {
-                    if let Data::Telegram(ref right_tgram) = *right {
-                        Some(left_tgram.command.cmp(&right_tgram.command))
-                    } else {
-                        None
-                    }
-                }
-            }
-        }
+        Some(self.cmp(right))
     }
 }
 
@@ -313,6 +292,8 @@ impl AsRef<Header> for Data {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::cmp::Ordering::*;
 
     use chrono::{DateTime, Utc};
 
@@ -727,7 +708,7 @@ mod tests {
     }
 
     #[test]
-    fn test_partial_cmp() {
+    fn test_cmp() {
         let timestamp = utc_timestamp(1485688933);
         let channel = 0x11;
 
@@ -743,142 +724,127 @@ mod tests {
         let other_timestamp = utc_timestamp(0);
 
         // Between variants
-        assert_eq!(Some(Greater), packet_data.partial_cmp(&dgram_data));
-        assert_eq!(Some(Less), packet_data.partial_cmp(&tgram_data));
-        assert_eq!(Some(Less), dgram_data.partial_cmp(&tgram_data));
+        assert_eq!(Greater, packet_data.cmp(&dgram_data));
+        assert_eq!(Less, packet_data.cmp(&tgram_data));
+        assert_eq!(Less, dgram_data.cmp(&tgram_data));
 
         // ---- Packet ----
         let other = packet.clone();
-        assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Equal, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.timestamp = other_timestamp;
-        assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Equal, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.channel -= 1;
-        assert_eq!(Some(Less), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Less, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.channel += 1;
-        assert_eq!(Some(Greater), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Greater, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.destination_address -= 1;
-        assert_eq!(Some(Less), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Less, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.destination_address += 1;
-        assert_eq!(Some(Greater), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Greater, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.source_address -= 1;
-        assert_eq!(Some(Less), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Less, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.source_address += 1;
-        assert_eq!(Some(Greater), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Greater, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.protocol_version -= 1;
-        assert_eq!(Some(Less), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Less, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.header.protocol_version += 1;
-        assert_eq!(Some(Greater), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Greater, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.command -= 1;
-        assert_eq!(Some(Less), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Less, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.command += 1;
-        assert_eq!(Some(Greater), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Greater, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.frame_count ^= 1;
-        assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Equal, Data::Packet(other).cmp(&packet_data));
 
         let mut other = packet.clone();
         other.frame_data[0] ^= 1;
-        assert_eq!(Some(Equal), Data::Packet(other).partial_cmp(&packet_data));
+        assert_eq!(Equal, Data::Packet(other).cmp(&packet_data));
 
         let mut other = dgram.clone();
         other.header.destination_address = packet.header.destination_address;
         other.header.source_address = packet.header.source_address;
         other.header.protocol_version = packet.header.protocol_version; // normally illegal, just not testing purposes!
-        assert_eq!(None, packet_data.partial_cmp(&Data::Datagram(other)));
+        assert_eq!(Less, packet_data.cmp(&Data::Datagram(other)));
 
         // ---- Datagram ----
         let other = dgram.clone();
-        assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Equal, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.timestamp = other_timestamp;
-        assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Equal, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.channel -= 1;
-        assert_eq!(Some(Less), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Less, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.channel += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&dgram_data)
-        );
+        assert_eq!(Greater, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.destination_address += 1; // NOTE(daniel): subtraction would underflow
-        assert_eq!(Some(Less), dgram_data.partial_cmp(&Data::Datagram(other)));
+        assert_eq!(Less, dgram_data.cmp(&Data::Datagram(other)));
 
         let mut other = dgram.clone();
         other.header.destination_address += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&dgram_data)
-        );
+        assert_eq!(Greater, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.source_address -= 1;
-        assert_eq!(Some(Less), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Less, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.source_address += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&dgram_data)
-        );
+        assert_eq!(Greater, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.protocol_version -= 1;
-        assert_eq!(Some(Less), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Less, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.header.protocol_version += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&dgram_data)
-        );
+        assert_eq!(Greater, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.command -= 1;
-        assert_eq!(Some(Less), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Less, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.command += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&dgram_data)
-        );
+        assert_eq!(Greater, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.command = 0x0900;
         let other_right = other.clone();
         other.param16 -= 1;
         assert_eq!(
-            Some(Less),
-            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+            Less,
+            Data::Datagram(other).cmp(&Data::Datagram(other_right))
         );
 
         let mut other = dgram.clone();
@@ -886,101 +852,86 @@ mod tests {
         let other_right = other.clone();
         other.param16 += 1;
         assert_eq!(
-            Some(Greater),
-            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+            Greater,
+            Data::Datagram(other).cmp(&Data::Datagram(other_right))
         );
 
         let mut other = dgram.clone();
         other.param16 ^= 1;
-        assert_eq!(Some(Equal), Data::Datagram(other).partial_cmp(&dgram_data));
+        assert_eq!(Equal, Data::Datagram(other).cmp(&dgram_data));
 
         let mut other = dgram.clone();
         other.command = 0x0900;
         let other_right = other.clone();
         other.param32 ^= 1;
         assert_eq!(
-            Some(Equal),
-            Data::Datagram(other).partial_cmp(&Data::Datagram(other_right))
+            Equal,
+            Data::Datagram(other).cmp(&Data::Datagram(other_right))
         );
 
         let mut other = packet.clone();
         other.header.destination_address = dgram.header.destination_address;
         other.header.source_address = dgram.header.source_address;
         other.header.protocol_version = dgram.header.protocol_version; // normally illegal, just not testing purposes!
-        assert_eq!(None, dgram_data.partial_cmp(&Data::Packet(other)));
+        assert_eq!(Greater, dgram_data.cmp(&Data::Packet(other)));
 
         // ---- Telegram ----
         let other = tgram.clone();
-        assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Equal, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.timestamp = other_timestamp;
-        assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Equal, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.channel -= 1;
-        assert_eq!(Some(Less), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Less, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.channel += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Telegram(other).partial_cmp(&tgram_data)
-        );
+        assert_eq!(Greater, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.destination_address -= 1;
-        assert_eq!(Some(Less), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Less, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.destination_address += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Telegram(other).partial_cmp(&tgram_data)
-        );
+        assert_eq!(Greater, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.source_address -= 1;
-        assert_eq!(Some(Less), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Less, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.source_address += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Telegram(other).partial_cmp(&tgram_data)
-        );
+        assert_eq!(Greater, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.protocol_version -= 1;
-        assert_eq!(Some(Less), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Less, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.header.protocol_version += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Telegram(other).partial_cmp(&tgram_data)
-        );
+        assert_eq!(Greater, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.command -= 1;
-        assert_eq!(Some(Less), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Less, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.command += 1;
-        assert_eq!(
-            Some(Greater),
-            Data::Telegram(other).partial_cmp(&tgram_data)
-        );
+        assert_eq!(Greater, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = tgram.clone();
         other.frame_data[0] ^= 1;
-        assert_eq!(Some(Equal), Data::Telegram(other).partial_cmp(&tgram_data));
+        assert_eq!(Equal, Data::Telegram(other).cmp(&tgram_data));
 
         let mut other = packet.clone();
         other.header.destination_address = tgram.header.destination_address;
         other.header.source_address = tgram.header.source_address;
         other.header.protocol_version = tgram.header.protocol_version; // normally illegal, just not testing purposes!
-        assert_eq!(None, tgram_data.partial_cmp(&Data::Packet(other)));
+        assert_eq!(Greater, tgram_data.cmp(&Data::Packet(other)));
     }
 
     #[test]
